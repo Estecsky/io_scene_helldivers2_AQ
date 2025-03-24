@@ -2,6 +2,8 @@ bl_info = {
     "name": "Helldivers 2 Archives",
     "blender": (4, 0, 0),
     "category": "Import-Export",
+    "author": "kboykboy2, AQ_Echoo",
+    "warning": "此为修改版"
 }
 
 #region Imports
@@ -52,7 +54,166 @@ MaterialID  = 16915718763308572383
 TextureTypeLookup = {
     "original": ("pbr: ", "", "", "", "", "normal: ", "", "sss color: ", "", "color: ", "", "", ""),
     "basic": ("pbr: ", "color: ", "normal: "),
-    "emissive": ("normal/ao/cavity: ", "emission: ", "color/metallic: ")
+    "basic+": (
+        "PBR: ",
+        "Base Color: ",
+        "Normal: "
+    ),
+    "bloom": (
+        "Normal: ",
+        "Bloom Color: ",
+        "Bloom Color: "
+    ),
+    "glass": (
+        "Glass stain: ",""
+    ),
+    "emissive": ("normal/ao/cavity: ", "emission: ", "color/metallic: "),
+    "advanced_no_emi": (
+    "",
+    "",
+    "Normal/AO/Roughness: ",
+    "Metallic: ",
+    "",
+    "Color/Emission Mask: ",
+    "",
+    "",
+    "",
+    "",
+    ""
+    ),
+    "advanced_yellow": (
+    "",
+    "",
+    "Normal/AO/Roughness: ",
+    "Metallic: ",
+    "",
+    "Color/Emission Mask: ",
+    "",
+    "",
+    "",
+    "",
+    ""
+    ),
+    "advanced_orange": (
+    "",
+    "",
+    "Normal/AO/Roughness: ",
+    "Metallic: ",
+    "",
+    "Color/Emission Mask: ",
+    "",
+    "",
+    "",
+    "",
+    ""
+    ),
+    "advanced_red": (
+    "",
+    "",
+    "Normal/AO/Roughness: ",
+    "Metallic: ",
+    "",
+    "Color/Emission Mask: ",
+    "",
+    "",
+    "",
+    "",
+    ""
+    ),
+    "advanced_pink": (
+    "",
+    "",
+    "Normal/AO/Roughness: ",
+    "Metallic: ",
+    "",
+    "Color/Emission Mask: ",
+    "",
+    "",
+    "",
+    "",
+    ""
+    ),
+    "advanced_purple": (
+    "",
+    "",
+    "Normal/AO/Roughness: ",
+    "Metallic: ",
+    "",
+    "Color/Emission Mask: ",
+    "",
+    "",
+    "",
+    "",
+    ""
+    ),
+    "advanced_dark-blue": (
+    "",
+    "",
+    "Normal/AO/Roughness: ",
+    "Metallic: ",
+    "",
+    "Color/Emission Mask: ",
+    "",
+    "",
+    "",
+    "",
+    ""
+    ),
+    "advanced_blue": (
+    "",
+    "",
+    "Normal/AO/Roughness: ",
+    "Metallic: ",
+    "",
+    "Color/Emission Mask: ",
+    "",
+    "",
+    "",
+    "",
+    ""
+    ),
+    "advanced_light-blue": (
+    "",
+    "",
+    "Normal/AO/Roughness: ",
+    "Metallic: ",
+    "",
+    "Color/Emission Mask: ",
+    "",
+    "",
+    "",
+    "",
+    ""
+    ),
+    "advanced_blue-green": (
+    "",
+    "",
+    "Normal/AO/Roughness: ",
+    "Metallic: ",
+    "",
+    "Color/Emission Mask: ",
+    "",
+    "",
+    "",
+    "",
+    ""
+    ),
+    "advanced_green": (
+    "",
+    "",
+    "Normal/AO/Roughness: ",
+    "Metallic: ",
+    "",
+    "Color/Emission Mask: ",
+    "",
+    "",
+    "",
+    "",
+    ""
+    ),
+
+    
+    
 }
 
 #endregion
@@ -955,10 +1116,10 @@ class TocManager():
 
     #______________________#
     # ---- Patch Code ---- #
-    def PatchActiveArchive(self):
-        self.ActivePatch.ToFile()
+    def PatchActiveArchive(self,path=None):
+        self.ActivePatch.ToFile(path= path)
 
-    def CreatePatchFromActive(self):
+    def CreatePatchFromActive(self,NewPatchIndex):
         if self.ActiveArchive == None:
             raise Exception("No Archive exists to create patch from, please open one first")
 
@@ -971,9 +1132,20 @@ class TocManager():
             num = int(path[path.find(".patch_")+len(".patch_"):]) + 1
             path = path[:path.find(".patch_")] + ".patch_" + str(num)
         else:
-            path += ".patch_0"
+            path = path + ".patch_" + str(NewPatchIndex)
         self.ActivePatch.UpdatePath(path)
         self.Patches.append(self.ActivePatch)
+        
+    def RenameActivePatch(self, NewPath):
+        if self.ActivePatch == None:
+            raise Exception("No patch exists, please create one first")
+        path = self.ActivePatch.Path
+        
+        fileNamelist = path.split("\\")[:-1]
+        fileNamelist.append(NewPath)
+        Rename_path = "\\".join(fileNamelist)
+        return Rename_path
+        
 
     def SetActivePatch(self, Patch):
         self.ActivePatch = Patch
@@ -2357,14 +2529,23 @@ class CreatePatchFromActiveOperator(Operator):
     bl_label = "Create Patch"
     bl_idname = "helldiver2.archive_createpatch"
 
+    NewPatchIndex : IntProperty(name="New Patch Index", default=0)
+    def draw(self, context):
+        layout = self.layout; row = layout.row()
+        row.prop(self, "NewPatchIndex", icon='COPY_ID')
+        print("NewPatchIndex:", self.NewPatchIndex)
+    
     def execute(self, context):
-        Global_TocManager.CreatePatchFromActive()
+        Global_TocManager.CreatePatchFromActive(NewPatchIndex = self.NewPatchIndex)
 
         # Redraw
         for area in context.screen.areas:
             if area.type == "VIEW_3D": area.tag_redraw()
         
         return{'FINISHED'}
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
 
 class PatchArchiveOperator(Operator):
     bl_label = "Patch Archive"
@@ -2372,8 +2553,19 @@ class PatchArchiveOperator(Operator):
 
     def execute(self, context):
         global Global_TocManager
-        Global_TocManager.PatchActiveArchive()
+        if bpy.context.scene.Hd2ToolPanelSettings.IsRenamePatch and bpy.context.scene.Hd2ToolPanelSettings.NewPatchName:
+            check_name = bpy.context.scene.Hd2ToolPanelSettings.NewPatchName
+            if check_name.find(".patch_") == -1:
+                self.report({'ERROR'}, "文件名没有加上.patch_，自行检查")
+                return {'CANCELLED'}
+            if check_name.find("9ba626afa44a3aa3.patch_") == -1:
+                self.report({'WARNING'}, "没有重命名为基础资产的patch")
+            New_path = Global_TocManager.RenameActivePatch(NewPath = bpy.context.scene.Hd2ToolPanelSettings.NewPatchName)
+            Global_TocManager.PatchActiveArchive(path= New_path)
+        else:
+            Global_TocManager.PatchActiveArchive()
         return{'FINISHED'}
+    
 
 #endregion
 
@@ -2767,7 +2959,22 @@ class AddMaterialOperator(Operator):
     bl_idname = "helldiver2.material_add"
 
     materials = (
+        ("bloom", "Bloom", "A bloom material with two color, normal map which does not render in the UI"),
         ("original", "Original", "The original template used for all mods uploaded to Nexus prior to the addon's public release, which is bloated with additional unnecessary textures. Sourced from a terminid."),
+        ("advanced_no_emi", "Advanced 无光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),   
+        ("advanced_orange", "Advanced 橙光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_yellow", "Advanced 黄光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_red", "Advanced 红光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_pink", "Advanced 粉光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_purple", "Advanced 紫光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_dark-blue", "Advanced 深蓝光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_blue", "Advanced 蓝光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_light-blue", "Advanced 浅蓝光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_blue-green", "Advanced 蓝绿光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_green", "Advanced 绿光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+
+        ("glass", "透明玻璃", "透明玻璃，不知道能干嘛，自己猜()"),
+        ("basic+", "Basic+", "A basic material with a color, normal, and PBR map which renders in the UI, Sourced from the super credits prop"),
         ("basic", "Basic", "A basic material with a color, normal, and PBR map. Sourced from a trash bag prop."),
         ("emissive", "Emissive", "A basic material with a color, normal, and emission map. Sourced from a vending machine."),
     )
@@ -3057,6 +3264,10 @@ class Hd2ToolPanelSettings(PropertyGroup):
     AutoLods         : BoolProperty(name="Auto LODs", description = "Automatically generate LOD entries based on LOD0, does not actually reduce the quality of the mesh", default = True)
     # Search
     SearchField : StringProperty(default = "")
+    
+    # add
+    IsRenamePatch : BoolProperty(name="RenamePatch",default = False,description = "重命名patch")
+    NewPatchName : StringProperty(name="NewPatchName",default = "")
 
 class HellDivers2ToolsPanel(Panel):
     bl_label = "Helldivers 2"
@@ -3156,8 +3367,16 @@ class HellDivers2ToolsPanel(Panel):
         row.prop(scene.Hd2ToolPanelSettings, "Patches", text="Patches")
         if len(Global_TocManager.Patches) > 0:
             Global_TocManager.SetActivePatchByName(scene.Hd2ToolPanelSettings.Patches)
+        row.prop(scene.Hd2ToolPanelSettings,"IsRenamePatch",icon = "GREASEPENCIL",text="")
         row.operator("helldiver2.archive_import", icon= 'IMPORT', text="").is_patch = True
-
+        #-------------add------------
+        #---------------------------
+        if scene.Hd2ToolPanelSettings.IsRenamePatch:
+            row = layout.row()
+            row.label(text="重命名已经打开",icon="ERROR")
+            row = layout.row()
+            row.prop(scene.Hd2ToolPanelSettings, "NewPatchName", text="修改为 ")
+        
         # Draw Archive Contents
         row = layout.row()
         row.prop(scene.Hd2ToolPanelSettings, "ContentsExpanded",

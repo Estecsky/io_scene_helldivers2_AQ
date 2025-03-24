@@ -1,8 +1,11 @@
-# io_scene_helldivers2
-A Blender addon facilitating the modding of textures, meshes and materials contained within Helldivers 2 archives.
+# 个人魔改版
+- 添加新材质
+- 添加patch重命名功能与新建材质时调整序号功能
 
-### DEPRECATED
-This project is not recieving support from the original developers but a community version was made and is recieving consistant updates, that can be found [here](https://github.com/Boxofbiscuits97/HD2SDK-CommunityEdition)
+
+
+## io_scene_helldivers2
+A Blender addon facilitating the modding of textures, meshes and materials contained within Helldivers 2 archives.
 
 ### DISCLAIMER
 Helldivers 2 is a multiplayer game with anti-cheat measures. While the client-side cosmetic mods that this tool is capable of producing are unlikely to trigger those measures (and has yet to do so in over 40 hours of personal testing), modding of any sort is done entirely at the risk of the end-user and neither ToastedShoes, Kboy, Irastris, GitHub, Nexus Mods, or any other entity can be held responsible for damages that may result from utilizing this tool and/or mods produced with it. **You have been warned!**
