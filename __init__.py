@@ -5,6 +5,7 @@ bl_info = {
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
     "version": (1, 1, 0),
+    "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
 #region Imports
