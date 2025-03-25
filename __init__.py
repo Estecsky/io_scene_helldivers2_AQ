@@ -3,7 +3,8 @@ bl_info = {
     "blender": (4, 0, 0),
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
-    "warning": "此为修改版"
+    "warning": "此为修改版",
+    "version": (1, 1, 0),
 }
 
 #region Imports
