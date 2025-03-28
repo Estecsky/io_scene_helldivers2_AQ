@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 1, 0),
+    "version": (1, 3, 0),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -28,6 +28,9 @@ from bpy.types import Panel, Operator, PropertyGroup, Scene, Menu
 from .math import MakeTenBitUnsigned, TenBitUnsigned
 from .memoryStream import MemoryStream
 
+
+from . import addon_updater_ops
+from . import addonPreferences
 #endregion
 
 #region Global Variables
@@ -510,6 +513,8 @@ def CreateModel(model, id, customization_info, bone_names):
         # check physics
         if not bpy.context.scene.Hd2ToolPanelSettings.ImportPhysics and mesh.IsPhysicsBody():
             continue
+        if not bpy.context.scene.Hd2ToolPanelSettings.ImportStatic and mesh.IsStaticMesh():
+            continue
         # do safety check
         for face in mesh.Indices:
             for index in face:
@@ -599,7 +604,11 @@ def CreateModel(model, id, customization_info, bone_names):
         bm.from_mesh(new_object.data)
         # assign materials
         matNum = 0
+        goreIndex = None
         for material in mesh.Materials:
+            if str(material.MatID) == "12070197922454493211":
+                goreIndex = matNum
+                PrettyPrint(f"Found gore material at index: {matNum}")
             # append material to slot
             try: new_object.data.materials.append(bpy.data.materials[material.MatID])
             except: raise Exception(f"Tool was unable to find material that this mesh uses, ID: {material.MatID}")
@@ -609,6 +618,19 @@ def CreateModel(model, id, customization_info, bone_names):
             for f in bm.faces[StartIndex:(numTris+(StartIndex))]:
                 f.material_index = matNum
             matNum += 1
+            
+        # remove gore mesh
+        if bpy.context.scene.Hd2ToolPanelSettings.RemoveGoreMeshes and goreIndex:
+            PrettyPrint(f"Removing Gore Mesh")
+            verticies = []
+            for vert in bm.verts:
+                if len(vert.link_faces) == 0:
+                    continue
+                if vert.link_faces[0].material_index == goreIndex:
+                    verticies.append(vert)
+            for vert in verticies:
+                bm.verts.remove(vert)
+                
         # convert bmesh to mesh
         bm.to_mesh(new_object.data)
 
@@ -823,7 +845,31 @@ class TocEntry:
             self.LoadedData = callback(self.FileID, self.TocData, self.GpuData, self.StreamData, Reload, MakeBlendObject)
             if self.LoadedData == None: raise Exception("Archive Entry Load Failed")
             self.IsLoaded   = True
-        else: raise Exception("Load Callback could not be found")
+            if self.TypeID == MeshID and not self.IsModified:
+                for object in bpy.data.objects:
+                    try:
+                        objectID = object["Z_ObjectID"]
+                        infoIndex = object["MeshInfoIndex"]
+                        if objectID == str(self.FileID):
+                            PrettyPrint(f"Writing Vertex Groups for {object.name}")
+                            vertexNames = []
+                            for group in object.vertex_groups:
+                                vertexNames.append(group.name)
+                            newGroups = [objectID, infoIndex, vertexNames]
+                            if newGroups not in self.VertexGroups:
+                                self.VertexGroups.append(newGroups)
+                            PrettyPrint(self.VertexGroups)
+                            PrettyPrint(f"Writing Transforms for {object.name}")
+                            transforms = []
+                            transforms.append(object.location)
+                            transforms.append(object.rotation_euler)
+                            transforms.append(object.scale)
+                            objectTransforms = [objectID, infoIndex, transforms]
+                            if objectTransforms not in self.Transforms:
+                                self.Transforms.append(objectTransforms)
+                            PrettyPrint(self.Transforms)
+                    except:
+                        PrettyPrint(f"Object: {object.name} has No HD2 Properties")
     # -- Write Data -- #
     def Save(self):
         if not self.IsLoaded: self.Load(True, False)
@@ -1571,17 +1617,26 @@ class StingrayLocalTransform: # Stingray Local Transform: https://help.autodesk.
         self.scale  = f.vec3_float(self.scale)
         self.dummy  = f.float32(self.dummy)
         return self
+    def SerializeV2(self, f): # Quick and dirty solution, unknown exactly what this is for
+        f.seek(f.tell()+48)
+        self.pos    = f.vec3_float(self.pos)
+        self.dummy  = f.float32(self.dummy)
+        return self
 
 class TransformInfo: # READ ONLY
     def __init__(self):
         self.NumTransforms = 0
         self.Transforms = []
+        self.PositionTransforms = []
     def Serialize(self, f):
         if f.IsWriting():
             raise Exception("This struct is read only (write not implemented)")
         self.NumTransforms = f.uint32(self.NumTransforms)
         f.seek(f.tell()+12)
         self.Transforms = [StingrayLocalTransform().Serialize(f) for n in range(self.NumTransforms)]
+        self.PositionTransforms = [StingrayLocalTransform().SerializeV2(f) for n in range(self.NumTransforms)]
+        for n in range(self.NumTransforms):
+            self.Transforms[n].pos = self.PositionTransforms[n].pos
 
 class CustomizationInfo: # READ ONLY
     def __init__(self):
@@ -1920,6 +1975,11 @@ class RawMeshClass:
         if self.IsPhysicsBody():
             IsLod = False
         return IsLod
+    def IsStaticMesh(self):
+        for vertex in self.VertexWeights:
+            if vertex != [0, 0, 0, 0]:
+                return False
+        return True
 
     def InitBlank(self, numVertices, numIndices, numUVs, numBoneIndices):
         self.VertexPositions    = [[0,0,0] for n in range(numVertices)]
@@ -2233,10 +2293,23 @@ class StingrayMeshFile:
                     Section.IndexOffset = IndexOffset
                     PrettyPrint(f"Updated Section Offset: {Section.IndexOffset}")
                 for fidx in range(int(Section.NumIndices/3)):
-                    v1 = IndexInt(mesh.Indices[TotalIndex][0])
-                    v2 = IndexInt(mesh.Indices[TotalIndex][1])
-                    v3 = IndexInt(mesh.Indices[TotalIndex][2])
-                    mesh.Indices[TotalIndex] = [v1, v2, v3]
+                    indices = mesh.Indices[TotalIndex]
+                    for i in range(3):
+                        value = indices[i]
+                        if not (0 <= value <= 0xffff) and IndexStride == 2:
+                            PrettyPrint(f"Index: {value} TotalIndex: {TotalIndex}indecies out of bounds", "ERROR")
+                            CompiledIncorrectly = True
+                            value = min(max(0, value), 0xffff)
+                        elif not (0 <= value <= 0xffffffff) and IndexStride == 4:
+                            PrettyPrint(f"Index: {value} TotalIndex: {TotalIndex} indecies out of bounds", "ERROR")
+                            CompiledIncorrectly = True
+                            value = min(max(0, value), 0xffffffff)
+                        indices[i] = IndexInt(value)
+                    mesh.Indices[TotalIndex] = indices
+                    # v1 = IndexInt(mesh.Indices[TotalIndex][0])
+                    # v2 = IndexInt(mesh.Indices[TotalIndex][1])
+                    # v3 = IndexInt(mesh.Indices[TotalIndex][2])
+                    # mesh.Indices[TotalIndex] = [v1, v2, v3]
                     TotalIndex += 1
                 IndexOffset  += Section.NumIndices
         # update stream info
@@ -2257,7 +2330,7 @@ class StingrayMeshFile:
                 if Mesh_Info.Sections[0].NumVertices != RealNumVerts:
                     for Section in Mesh_Info.Sections:
                         Section.NumVertices = RealNumVerts
-                    self.ReInitRawMeshVerts()
+                    self.ReInitRawMeshVerts(mesh)
 
     def SerializeVertexBuffer(self, gpu, Stream_Info, stream_idx, OrderedMeshes):
         # Vertex Buffer
@@ -2379,6 +2452,12 @@ class StingrayMeshFile:
             NewMesh     = RawMeshClass()
             Mesh_Info   = self.MeshInfoArray[n]
             # print("Num: ", len(self.StreamInfoArray), " Index: ", Mesh_Info.StreamIndex)
+            indexerror = Mesh_Info.StreamIndex >= len(self.StreamInfoArray)
+            messageerror = "ERROR" if indexerror else "INFO"
+            message = "Stream index out of bounds" if indexerror else ""
+            PrettyPrint(f"Num: {len(self.StreamInfoArray)} Index: {Mesh_Info.StreamIndex}    {message}", messageerror)
+            if indexerror: continue
+            
             Stream_Info = self.StreamInfoArray[Mesh_Info.StreamIndex]
             NewMesh.MeshInfoIndex = n
             NewMesh.MeshID = Mesh_Info.MeshID
@@ -2396,10 +2475,10 @@ class StingrayMeshFile:
             NewMesh.InitBlank(Mesh_Info.GetNumVertices(), Mesh_Info.GetNumIndices(), numUVs, numBoneIndices)
             self.RawMeshes.append(NewMesh)
     
-    def ReInitRawMeshVerts(self):
-        for mesh in self.RawMeshes:
-            Mesh_Info = self.MeshInfoArray[self.DEV_MeshInfoMap[mesh.MeshInfoIndex]]
-            mesh.ReInitVerts(Mesh_Info.GetNumVertices())
+    def ReInitRawMeshVerts(self, mesh):
+        # for mesh in self.RawMeshes:
+        Mesh_Info = self.MeshInfoArray[self.DEV_MeshInfoMap[mesh.MeshInfoIndex]]
+        mesh.ReInitVerts(Mesh_Info.GetNumVertices())
 
     def SetupRawMeshComponents(self, OrderedMeshes):
         for stream_idx in range(len(OrderedMeshes)):
@@ -2531,11 +2610,11 @@ class CreatePatchFromActiveOperator(Operator):
     bl_label = "Create Patch"
     bl_idname = "helldiver2.archive_createpatch"
 
-    NewPatchIndex : IntProperty(name="New Patch Index", default=0)
+    NewPatchIndex : IntProperty(name="新Patch序号", default=0)
     def draw(self, context):
         layout = self.layout; row = layout.row()
         row.prop(self, "NewPatchIndex", icon='COPY_ID')
-        print("NewPatchIndex:", self.NewPatchIndex)
+        # print("NewPatchIndex:", self.NewPatchIndex)
     
     def execute(self, context):
         Global_TocManager.CreatePatchFromActive(NewPatchIndex = self.NewPatchIndex)
@@ -3225,11 +3304,12 @@ class HelpOperator(Operator):
         return{'FINISHED'}
 
 class ArchiveSpreadsheetOperator(Operator):
-    bl_label  = "Archive Spreadsheet"
+    bl_label  = "Archive CN Spreadsheet"
     bl_idname = "helldiver2.archive_spreadsheet"
+    bl_description = "打开绝地潜兵2中文Archive 收集表"
 
     def execute(self, context):
-        url = "https://docs.google.com/spreadsheets/d/1oQys_OI5DWou4GeRE3mW56j7BIi4M7KftBIPAl1ULFw"
+        url = "https://www.kdocs.cn/l/csRnAs7QlZvQ"
         webbrowser.open(url, new=0, autoraise=True)
         return{'FINISHED'}
 
@@ -3260,10 +3340,12 @@ class Hd2ToolPanelSettings(PropertyGroup):
     ImportLods       : BoolProperty(name="Import LODs", description = "Import LODs", default = False)
     ImportGroup0     : BoolProperty(name="Import Group 0 Only", description = "Only import the first vertex group, ignore others", default = True)
     ImportPhysics    : BoolProperty(name="Import Physics", description = "Import Physics Bodies", default = False)
+    ImportStatic     : BoolProperty(name="Import Static Meshes", description = "Import Static Meshes", default = False)
     MakeCollections  : BoolProperty(name="Make Collections", description = "Make new collection when importing meshes", default = True)
     Force2UVs        : BoolProperty(name="Force 2 UV Sets", description = "Force at least 2 UV sets, some materials require this", default = True)
     Force1Group      : BoolProperty(name="Force 1 Group", description = "Force mesh to only have 1 vertex group", default = True)
     AutoLods         : BoolProperty(name="Auto LODs", description = "Automatically generate LOD entries based on LOD0, does not actually reduce the quality of the mesh", default = True)
+    RemoveGoreMeshes : BoolProperty(name="Remove Gore Meshes", description = "Automatically delete all of the verticies with the gore material when loading a model", default = True)
     # Search
     SearchField : StringProperty(default = "")
     
@@ -3272,7 +3354,7 @@ class Hd2ToolPanelSettings(PropertyGroup):
     NewPatchName : StringProperty(name="NewPatchName",default = "")
 
 class HellDivers2ToolsPanel(Panel):
-    bl_label = "Helldivers 2"
+    bl_label = f"Helldivers 2 AQ Modified{bl_info['version']}"
     bl_idname = "SF_PT_Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -3331,7 +3413,7 @@ class HellDivers2ToolsPanel(Panel):
         row.prop(scene.Hd2ToolPanelSettings, "MenuExpanded",
             icon="DOWNARROW_HLT" if scene.Hd2ToolPanelSettings.MenuExpanded else "RIGHTARROW",
             icon_only=True, emboss=False, text="Settings")
-        row.operator("helldiver2.help", icon='HELP', text="")
+        # row.operator("helldiver2.help", icon='HELP', text="")
         row.operator("helldiver2.archive_spreadsheet", icon='INFO', text="")
         if scene.Hd2ToolPanelSettings.MenuExpanded:
             row = layout.row(); row.separator(); row.label(text="Display Types"); box = row.box(); row = box.grid_flow(columns=1)
@@ -3339,12 +3421,14 @@ class HellDivers2ToolsPanel(Panel):
             row.prop(scene.Hd2ToolPanelSettings, "ShowTextures")
             row.prop(scene.Hd2ToolPanelSettings, "ShowMaterials")
             row.prop(scene.Hd2ToolPanelSettings, "ShowOthers")
-            row = layout.row(); row.separator(); row.label(text="Import Options"); box = row.box(); row = box.grid_flow(columns=1)
-            row.prop(scene.Hd2ToolPanelSettings, "ImportMaterials")
-            row.prop(scene.Hd2ToolPanelSettings, "ImportLods")
-            row.prop(scene.Hd2ToolPanelSettings, "ImportGroup0")
-            row.prop(scene.Hd2ToolPanelSettings, "MakeCollections")
-            row.prop(scene.Hd2ToolPanelSettings, "ImportPhysics")
+            row = layout.row(); row.separator(); row.label(text="导入设置"); box = row.box(); row = box.grid_flow(columns=1)
+            row.prop(scene.Hd2ToolPanelSettings, "ImportMaterials",text="导入材质")
+            row.prop(scene.Hd2ToolPanelSettings, "ImportLods",text="导入Lods")
+            row.prop(scene.Hd2ToolPanelSettings, "ImportGroup0",text="只导入Group 0")
+            row.prop(scene.Hd2ToolPanelSettings, "MakeCollections",text="为每个物体创建集合")
+            row.prop(scene.Hd2ToolPanelSettings, "ImportPhysics",text="导入物理")
+            row.prop(scene.Hd2ToolPanelSettings, "ImportStatic",text="导入静态网格（无权重）")
+            row.prop(scene.Hd2ToolPanelSettings, "RemoveGoreMeshes",text="删除断肢网格")
             row = layout.row(); row.separator(); row.label(text="Export Options"); box = row.box(); row = box.grid_flow(columns=1)
             row.prop(scene.Hd2ToolPanelSettings, "Force2UVs")
             row.prop(scene.Hd2ToolPanelSettings, "Force1Group")
@@ -3352,7 +3436,7 @@ class HellDivers2ToolsPanel(Panel):
 
         # Draw Archive Import/Export Buttons
         row = layout.row(); row = layout.row()
-        row.operator("helldiver2.archive_import", icon= 'IMPORT').is_patch = False
+        row.operator("helldiver2.archive_import", icon= 'IMPORT',text="导入Archive").is_patch = False
         row.operator("helldiver2.archive_unloadall", icon= 'FILE_REFRESH', text="")
         row = layout.row()
         row.prop(scene.Hd2ToolPanelSettings, "LoadedArchives", text="Archives")
@@ -3363,8 +3447,8 @@ class HellDivers2ToolsPanel(Panel):
 
         # Draw Patch Stuff
         row = layout.row(); row = layout.row()
-        row.operator("helldiver2.archive_createpatch", icon= 'COLLECTION_NEW', text="New Patch")
-        row.operator("helldiver2.archive_export", icon= 'DISC', text="Write Patch")
+        row.operator("helldiver2.archive_createpatch", icon= 'COLLECTION_NEW', text="新建Patch")
+        row.operator("helldiver2.archive_export", icon= 'DISC', text="写入Patch")
         row = layout.row()
         row.prop(scene.Hd2ToolPanelSettings, "Patches", text="Patches")
         if len(Global_TocManager.Patches) > 0:
@@ -3654,12 +3738,16 @@ def register():
         bpy.utils.register_class(cls)
     Scene.Hd2ToolPanelSettings = PointerProperty(type=Hd2ToolPanelSettings)
     bpy.utils.register_class(WM_MT_button_context)
+    addonPreferences.register()
+    addon_updater_ops.register(bl_info)
 
 def unregister():
     bpy.utils.unregister_class(WM_MT_button_context)
     del Scene.Hd2ToolPanelSettings
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+    addonPreferences.unregister()
+    addon_updater_ops.unregister()
 
 if __name__=="__main__":
     register()
