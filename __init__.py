@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 3, 0),
+    "version": (1, 4, 0),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -14,7 +14,7 @@ bl_info = {
 import ctypes, os, tempfile, subprocess, time, webbrowser
 import random as r
 from copy import deepcopy
-from math import ceil
+from math import ceil # type: ignore
 from pathlib import Path
 
 # Blender
@@ -44,9 +44,13 @@ Global_materialpath      = f"{AddonPath}\\materials"
 Global_typehashpath      = f"{AddonPath}\\hashlists\\typehash.txt"
 Global_filehashpath      = f"{AddonPath}\\hashlists\\filehash.txt"
 Global_friendlynamespath = f"{AddonPath}\\hashlists\\friendlynames.txt"
+Global_variablespath     = f"{AddonPath}\\hashlists\\shadervariables.txt"
+Global_variablesCNpath   = f"{AddonPath}\\hashlists\\shadervariables_combine_CN.txt"
 
 Global_CPPHelper = ctypes.cdll.LoadLibrary(Global_dllpath) if os.path.isfile(Global_dllpath) else None
 
+Global_ShaderVariables = {}
+Global_ShaderVariables_CN = {}
 #endregion
 
 #region Common Hashes & Lookups
@@ -746,6 +750,19 @@ def LoadNameHashes():
                 Global_NameHashes.append([int(parts[0]), parts[1].replace("\n", "")])
                 Loaded.append(int(parts[0]))
 
+def LoadShaderVariables():
+    global Global_ShaderVariables
+    with open(Global_variablespath, 'r') as f:
+        for line in f.readlines():
+            Global_ShaderVariables[int(line.split()[1], 16)] = line.split()[0]
+# 载入翻译
+def LoadShaderVariables_CN():
+    global Global_ShaderVariables_CN
+    with open(Global_variablesCNpath, 'r', encoding='utf-8') as f:
+        for line in f.readlines():
+            Global_ShaderVariables_CN[line.split()[1]] = line.split()[0]
+
+
 #endregion
 
 #region Classes and Functions: Stingray Archives
@@ -1250,13 +1267,28 @@ class TocManager():
 #endregion
 
 #region Classes and Functions: Stingray Materials
+class ShaderVariable:
+    klasses = {
+        0: "Scalar",
+        1: "Vector2",
+        2: "Vector3",
+        3: "Vector4",
+        12: "Other"
+    }
+
+    def __init__(self):
+        self.klass = self.klassName = self.elements = self.ID = self.offset = self.elementStride = 0
+        self.values = []
+        self.name = ""
 
 class StingrayMaterial:
     def __init__(self):
-        self.undat1 = self.undat3 = self.undat4 = self.undat5 = self.RemainingData = bytearray()
-        self.EndOffset = self.undat2 = self.UnkID = self.NumTextures = self.NumUnk = 0
+        self.undat1 = self.undat3 = self.undat4 = self.undat5 = self.undat6 = self.RemainingData = bytearray()
+        # self.EndOffset = self.undat2 = self.UnkID = self.NumTextures = self.NumUnk = 0
+        self.EndOffset = self.undat2 = self.UnkID = self.NumTextures = self.NumVariables = self.VariableDataSize = 0
         self.TexUnks = []
         self.TexIDs  = []
+        self.ShaderVariables = []
 
         self.DEV_ShowEditor = False
         self.DEV_DDSPaths = []
@@ -1268,16 +1300,45 @@ class StingrayMaterial:
         self.undat3      = f.bytes(self.undat3, 32)
         self.NumTextures = f.uint32(self.NumTextures)
         self.undat4      = f.bytes(self.undat4, 36)
-        self.NumUnk      = f.uint32(self.NumUnk)
-        self.undat5      = f.bytes(self.undat5, 28)
+        # self.NumUnk      = f.uint32(self.NumUnk)
+        # self.undat5      = f.bytes(self.undat5, 28)
+        self.NumVariables= f.uint32(self.NumVariables)
+        self.undat5      = f.bytes(self.undat5, 12)
+        self.VariableDataSize = f.uint32(self.VariableDataSize)
+        self.undat6      = f.bytes(self.undat6, 12)
         if f.IsReading():
             self.TexUnks = [0 for n in range(self.NumTextures)]
             self.TexIDs = [0 for n in range(self.NumTextures)]
+            self.ShaderVariables = [ShaderVariable() for n in range(self.NumVariables)]
         self.TexUnks = [f.uint32(TexUnk) for TexUnk in self.TexUnks]
         self.TexIDs  = [f.uint64(TexID) for TexID in self.TexIDs]
+    # ShaderVariables added
+        for variable in self.ShaderVariables:
+            variable.klass = f.uint32(variable.klass)
+            variable.klassName = ShaderVariable.klasses[variable.klass]
+            variable.elements = f.uint32(variable.elements)
+            variable.ID = f.uint32(variable.ID)
+            if variable.ID in Global_ShaderVariables:
+                variable.name = Global_ShaderVariables[variable.ID]
+            variable.offset = f.uint32(variable.offset)
+            variable.elementStride = f.uint32(variable.elementStride)
+            if f.IsReading():
+                variable.values = [0 for n in range(variable.klass + 1)]  # Create an array with the length of the data which is one greater than the klass value
+
+        variableValueLocation = f.Location # Record and add all of the extra data that is skipped around during the variable offsets
 
         if f.IsReading():self.RemainingData = f.bytes(self.RemainingData, len(f.Data) - f.tell())
         if f.IsWriting():self.RemainingData = f.bytes(self.RemainingData)
+        
+        f.Location = variableValueLocation
+
+        for variable in self.ShaderVariables:
+            oldLocation = f.Location
+            f.Location = f.Location + variable.offset
+            for idx in range(len(variable.values)):
+                variable.values[idx] = f.float32(variable.values[idx])
+            f.Location = oldLocation
+            
         self.EditorUpdate()
 
     def EditorUpdate(self):
@@ -1302,6 +1363,7 @@ def LoadStingrayMaterial(ID, TocData, GpuData, StreamData, Reload, MakeBlendObje
 def SaveStingrayMaterial(ID, TocData, GpuData, StreamData, LoadedData):
     mat = LoadedData
     for TexIdx in range(len(mat.TexIDs)):
+        oldTexID = mat.TexIDs[TexIdx]
         if mat.DEV_DDSPaths[TexIdx] != None:
             # get texture data
             StingrayTex = StingrayTexture()
@@ -1328,6 +1390,8 @@ def SaveStingrayMaterial(ID, TocData, GpuData, StreamData, LoadedData):
                 Entry.IsCreated = True
                 Global_TocManager.AddNewEntryToPatch(Entry)
                 mat.TexIDs[TexIdx] = Entry.FileID
+                
+        Global_TocManager.RemoveEntryFromPatch(oldTexID, TexID)
     f = MemoryStream(IOMode="write")
     LoadedData.Serialize(f)
     return [f.Data, b"", b""]
@@ -1560,7 +1624,8 @@ class StingrayCompositeMesh:
             f.seek(ceil(float(f.tell())/16)*16); self.StreamInfoOffset = f.tell()
         self.NumStreams = f.uint32(len(self.StreamInfoArray))
         if f.IsWriting():
-            if not redo_offsets: self.StreamInfoOffsets = [0 for n in range(self.NumStreams)]
+            if not redo_offsets: self.StreamInfoOffsets = [0 for n in range(self.NumStreams)] #type: ignore
+            else: self.StreamInfoOffsets = [f.tell() for n in range(self.NumStreams)]
             self.StreamInfoUnk = [mesh_info.MeshID for mesh_info in self.MeshInfoArray[:self.NumStreams]]
         if f.IsReading():
             self.StreamInfoOffsets = [0 for n in range(self.NumStreams)]
@@ -2686,6 +2751,82 @@ class ArchiveEntryOperator(Operator):
 
         Global_TocManager.SelectEntries([Entry])
         return {'FINISHED'}
+    
+class MaterialShaderVariableEntryOperator(Operator):
+    bl_label = "Shader Variable"
+    bl_idname = "helldiver2.material_shader_variable"
+    bl_description = "Material Shader Variable"
+
+    object_id: StringProperty()
+    variable_index: bpy.props.IntProperty()
+    value_index: bpy.props.IntProperty()
+    value: bpy.props.FloatProperty(
+        name="Variable Value",
+        description="Enter a floating point number"
+    )
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "value")
+
+    def execute(self, context):
+        Entry = Global_TocManager.GetEntry(self.object_id, MaterialID)
+        if Entry:
+            Entry.LoadedData.ShaderVariables[self.variable_index].values[self.value_index] = self.value
+            PrettyPrint(f"Set value to: {self.value} at variable: {self.variable_index} value: {self.value_index} for material ID: {self.object_id}")
+        else:
+            self.report({'ERROR'}, f"Could not find entry for ID: {self.object_id}")
+            return {'CANCELLED'}
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+    
+class MaterialShaderVariableColorEntryOperator(Operator):
+    bl_label = "Color Picker"
+    bl_idname = "helldiver2.material_shader_variable_color"
+    bl_description = "Material Shader Variable Color"
+
+    object_id: StringProperty()
+    variable_index: bpy.props.IntProperty()
+    color: bpy.props.FloatVectorProperty(
+                name=f"Color",
+                subtype="COLOR",
+                size=3,
+                min=0.0,
+                max=1.0,
+                default=(1.0, 1.0, 1.0)
+            )
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "color")
+
+    def execute(self, context):
+        Entry = Global_TocManager.GetEntry(self.object_id, MaterialID)
+        if Entry:
+            for idx in range(3):
+                Entry.LoadedData.ShaderVariables[self.variable_index].values[idx] = self.color[idx]
+            PrettyPrint(f"Set color to: {self.color}for material ID: {self.object_id}")
+        else:
+            self.report({'ERROR'}, f"Could not find entry for ID: {self.object_id}")
+            return {'CANCELLED'}
+        
+        # Redraw
+        for area in context.screen.areas:
+            if area.type == "VIEW_3D": area.tag_redraw()
+
+        return {'FINISHED'}
+    
+    def invoke(self, context, event):
+        Entry = Global_TocManager.GetEntry(self.object_id, MaterialID)
+        if Entry:
+            for idx in range(3):
+                self.color[idx] = Entry.LoadedData.ShaderVariables[self.variable_index].values[idx]
+        else:
+            self.report({'ERROR'}, f"Could not find entry for ID: {self.object_id}")
+            return {'CANCELLED'}
+        return context.window_manager.invoke_props_dialog(self)
 
 class AddEntryToPatchOperator(Operator):
     bl_label = "Add Entry To Patch"
@@ -3346,6 +3487,7 @@ class Hd2ToolPanelSettings(PropertyGroup):
     Force1Group      : BoolProperty(name="Force 1 Group", description = "Force mesh to only have 1 vertex group", default = True)
     AutoLods         : BoolProperty(name="Auto LODs", description = "Automatically generate LOD entries based on LOD0, does not actually reduce the quality of the mesh", default = True)
     RemoveGoreMeshes : BoolProperty(name="Remove Gore Meshes", description = "Automatically delete all of the verticies with the gore material when loading a model", default = True)
+    shadervariablesUI : BoolProperty(name="Shader Variables UI", description = "显示着色器变量参数UI", default = True)
     # Search
     SearchField : StringProperty(default = "")
     
@@ -3361,6 +3503,7 @@ class HellDivers2ToolsPanel(Panel):
     bl_category = "Modding"
 
     def draw_material_editor(self, Entry, layout, row):
+        scene = bpy.context.scene
         if Entry.IsLoaded:
             mat = Entry.LoadedData
             if mat.DEV_ShowEditor:
@@ -3374,6 +3517,41 @@ class HellDivers2ToolsPanel(Panel):
                     props = row.operator("helldiver2.material_settex", icon='FILEBROWSER', text="")
                     props.object_id = str(Entry.FileID)
                     props.tex_idx = i
+                #======
+                row = layout.row(); row.separator(factor=2.0)
+                # row.label(text="材质参数栏",icon='OPTIONS')
+                row.prop(scene.Hd2ToolPanelSettings, "shadervariablesUI",
+                icon="DOWNARROW_HLT" if scene.Hd2ToolPanelSettings.shadervariablesUI else "RIGHTARROW",
+                icon_only=True, emboss=False, text="着色器变量参数栏")
+                #=====
+                if scene.Hd2ToolPanelSettings.shadervariablesUI:
+                    for i, variable in enumerate(mat.ShaderVariables):
+                        row = layout.row(); row.separator(factor=2.0)
+                        split = row.split(factor=0.5)
+                        row = split.column()
+                        row.alignment = 'RIGHT'
+                        name = variable.ID
+                        if variable.name != "":
+                            global Global_ShaderVariables_CN
+                            name = variable.name
+                            if Global_ShaderVariables_CN[name]:
+                                name = Global_ShaderVariables_CN[name]
+                        row.label(text=f"{variable.klassName}: {name}", icon='OPTIONS')
+                        row = split.column()
+                        row.alignment = 'LEFT'
+                        sections = len(variable.values)
+                        if sections == 3: sections = 4 # add an extra for the color picker
+                        row = row.split(factor=1/sections)
+                        for j, value in enumerate(variable.values):
+                            ShaderVariable = row.operator("helldiver2.material_shader_variable", text=str(round(value, 2)))
+                            ShaderVariable.value = value
+                            ShaderVariable.object_id = str(Entry.FileID)
+                            ShaderVariable.variable_index = i
+                            ShaderVariable.value_index = j
+                        if len(variable.values) == 3:
+                            ColorPicker = row.operator("helldiver2.material_shader_variable_color", text="", icon='EYEDROPPER')
+                            ColorPicker.object_id = str(Entry.FileID)
+                            ColorPicker.variable_index = i
 
     def draw_entry_buttons(self, box, row, Entry, PatchOnly):
         if Entry.TypeID == MeshID:
@@ -3725,6 +3903,9 @@ classes = (
     RenamePatchEntryOperator,
     DuplicateEntryOperator,
     SetEntryFriendlyNameOperator,
+    MaterialShaderVariableEntryOperator,
+    MaterialShaderVariableColorEntryOperator,
+    
 )
 
 Global_TocManager = TocManager()
@@ -3734,6 +3915,8 @@ def register():
     LoadNormalPalette(Global_palettepath)
     LoadTypeHashes()
     LoadNameHashes()
+    LoadShaderVariables()
+    LoadShaderVariables_CN()
     for cls in classes:
         bpy.utils.register_class(cls)
     Scene.Hd2ToolPanelSettings = PointerProperty(type=Hd2ToolPanelSettings)
