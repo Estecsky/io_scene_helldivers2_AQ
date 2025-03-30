@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 4, 0),
+    "version": (1, 4, 1),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -392,7 +392,12 @@ def GetMeshData(og_object):
 
     # get normals, tangents, bitangents
     #mesh.calc_tangents()
-    mesh.calc_normals_split()
+    # 4.3 compatibility change
+    if bpy.app.version[0] >= 4 and bpy.app.version[1] == 0:
+        if not mesh.has_custom_normals:
+            mesh.create_normals_split()
+        mesh.calc_normals_split()
+        
     for loop in mesh.loops:
         normals[loop.vertex_index]    = loop.normal.normalized()
         #tangents[loop.vertex_index]   = loop.tangent.normalized()
@@ -562,7 +567,12 @@ def CreateModel(model, id, customization_info, bone_names):
         new_collection.objects.link(new_object)
         # -- || ASSIGN NORMALS || -- #
         if len(mesh.VertexNormals) == len(mesh.VertexPositions):
-            new_mesh.use_auto_smooth = True
+            # 4.3 compatibility change
+            if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
+                new_mesh.shade_smooth()
+            else:
+                new_mesh.use_auto_smooth = True
+            
             new_mesh.polygons.foreach_set('use_smooth',  [True] * len(new_mesh.polygons))
             if not isinstance(mesh.VertexNormals[0], int):
                 new_mesh.normals_split_custom_set_from_vertices(mesh.VertexNormals)
@@ -637,6 +647,17 @@ def CreateModel(model, id, customization_info, bone_names):
                 
         # convert bmesh to mesh
         bm.to_mesh(new_object.data)
+        #平滑着色
+        if bpy.context.scene.Hd2ToolPanelSettings.ShadeSmooth:
+            # 4.3 compatibility change
+            if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
+                new_mesh.shade_auto_smooth(use_auto_smooth=False)
+                new_mesh.shade_smooth()
+
+            else:
+                new_mesh.use_auto_smooth = False
+                new_mesh.shade_smooth()
+            
 
 
         # Create skeleton
@@ -3488,6 +3509,7 @@ class Hd2ToolPanelSettings(PropertyGroup):
     AutoLods         : BoolProperty(name="Auto LODs", description = "Automatically generate LOD entries based on LOD0, does not actually reduce the quality of the mesh", default = True)
     RemoveGoreMeshes : BoolProperty(name="Remove Gore Meshes", description = "Automatically delete all of the verticies with the gore material when loading a model", default = True)
     shadervariablesUI : BoolProperty(name="Shader Variables UI", description = "显示着色器变量参数UI", default = True)
+    ShadeSmooth      : BoolProperty(name="Shade Smooth", description = "导入模型时平滑着色", default = True)
     # Search
     SearchField : StringProperty(default = "")
     
@@ -3607,6 +3629,7 @@ class HellDivers2ToolsPanel(Panel):
             row.prop(scene.Hd2ToolPanelSettings, "ImportPhysics",text="导入物理")
             row.prop(scene.Hd2ToolPanelSettings, "ImportStatic",text="导入静态网格（无权重）")
             row.prop(scene.Hd2ToolPanelSettings, "RemoveGoreMeshes",text="删除断肢网格")
+            row.prop(scene.Hd2ToolPanelSettings, "ShadeSmooth",text="导入模型时平滑着色")
             row = layout.row(); row.separator(); row.label(text="Export Options"); box = row.box(); row = box.grid_flow(columns=1)
             row.prop(scene.Hd2ToolPanelSettings, "Force2UVs")
             row.prop(scene.Hd2ToolPanelSettings, "Force1Group")
