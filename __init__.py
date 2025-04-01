@@ -1386,10 +1386,30 @@ def SaveStingrayMaterial(ID, TocData, GpuData, StreamData, LoadedData):
     for TexIdx in range(len(mat.TexIDs)):
         oldTexID = mat.TexIDs[TexIdx]
         if mat.DEV_DDSPaths[TexIdx] != None:
-            # get texture data
-            StingrayTex = StingrayTexture()
-            with open(mat.DEV_DDSPaths[TexIdx], 'r+b') as f:
-                StingrayTex.FromDDS(f.read())
+            
+            if CheckTextureExtension(mat.DEV_DDSPaths[TexIdx]):
+                # get texture data
+                StingrayTex = StingrayTexture()
+                with open(mat.DEV_DDSPaths[TexIdx], 'r+b') as f:
+                    StingrayTex.FromDDS(f.read())
+            else: # 如果是tga,就使用texconv转换dds并保存到软件缓存路径
+                tempdir = tempfile.gettempdir()
+                if "[-_彩色_-]" in mat.DEV_DDSPaths[TexIdx]:
+                    mat.DEV_DDSPaths[TexIdx] = mat.DEV_DDSPaths[TexIdx].replace("[-_彩色_-]", "")
+                    DDS_Export_SRGB(tempdir=tempdir,input_path=mat.DEV_DDSPaths[TexIdx])
+                    
+                elif "[-_线性_-] " in mat.DEV_DDSPaths[TexIdx]:
+                    mat.DEV_DDSPaths[TexIdx] = mat.DEV_DDSPaths[TexIdx].replace("[-_线性_-] ", "") 
+                    DDS_Export_Linear(tempdir=tempdir,input_path=mat.DEV_DDSPaths[TexIdx])
+                    
+                else:
+                    DDS_Export_SRGB(tempdir=tempdir,input_path=mat.DEV_DDSPaths[TexIdx])
+                
+                tga2dds_path = os.path.join(tempdir, CheckTextureName(mat.DEV_DDSPaths[TexIdx])+".dds")
+                StingrayTex = StingrayTexture()
+                with open(tga2dds_path, 'r+b') as f:
+                    StingrayTex.FromDDS(f.read())
+                
             Toc = MemoryStream(IOMode="write")
             Gpu = MemoryStream(IOMode="write")
             Stream = MemoryStream(IOMode="write")
@@ -1402,6 +1422,7 @@ def SaveStingrayMaterial(ID, TocData, GpuData, StreamData, LoadedData):
             Entry.SetData(Toc.Data, Gpu.Data, Stream.Data, False)
             Global_TocManager.AddNewEntryToPatch(Entry)
             mat.TexIDs[TexIdx] = Entry.FileID
+                
         else:
             Global_TocManager.Load(int(mat.TexIDs[TexIdx]), TexID, False, True)
             Entry = Global_TocManager.GetEntry(int(mat.TexIDs[TexIdx]), TexID, True)
@@ -1449,6 +1470,26 @@ def AddMaterialToBlend_EMPTY(ID):
         mat = bpy.data.materials.new(str(ID)); mat.name = str(ID)
         mat.diffuse_color = (r.random(), r.random(), r.random(), 1)
 
+# 检查导入纹理的格式
+def CheckTextureExtension(TexPath):
+    file_name,file_extension = os.path.splitext(os.path.basename(TexPath))
+    if file_extension.lower() == ".dds":
+        return True
+    else:
+        return False
+    
+def CheckTextureName(TexPath):
+    file_name,file_extension = os.path.splitext(os.path.basename(TexPath))
+    return file_name
+
+
+def DDS_Export_SRGB(tempdir,input_path):
+    subprocess.run([Global_texconvpath, "-y", "-o", tempdir, "-ft", "dds", "-dx10", "-f", "BC7_UNORM_SRGB","-srgbi",input_path ], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    PrettyPrint("DDS_Export_SRGB", "info")
+    
+def DDS_Export_Linear(tempdir,input_path):
+    subprocess.run([Global_texconvpath, "-y", "-o", tempdir, "-ft", "dds", "-dx10", "-f", "BC7_UNORM",input_path ], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    PrettyPrint("DDS_Export_Linear", "info")
 #endregion
 
 #region Classes and Functions: Stingray Textures
@@ -2661,6 +2702,22 @@ def SaveStingrayMesh(ID, TocData, GpuData, StreamData, StingrayMesh):
 
 #endregion
 
+#region Operators: Panel Settings
+class ButtonOpenCacheDirectory(Operator):
+    bl_idname ="helldiver2.open_cache_directory"
+    bl_label = "Open Cache Directory"
+    bl_description = "打开缓存目录"
+    
+    def execute(self, context):
+        tempdir = tempfile.gettempdir()
+        os.startfile(tempdir)
+    
+        return {"FINISHED"}
+
+
+
+#endregion
+
 #region Operators: Archives & Patches
 
 class LoadArchiveOperator(Operator, ImportHelper):
@@ -2731,6 +2788,10 @@ class PatchArchiveOperator(Operator):
             Global_TocManager.PatchActiveArchive(path= New_path)
         else:
             Global_TocManager.PatchActiveArchive()
+        try:
+            self.report({'INFO'}, f"写入patch完成,文件保存为{StreamToc.Path}")
+        except Exception as e:
+            self.report({'INFO'}, e)
         return{'FINISHED'}
     
 
@@ -3266,24 +3327,72 @@ class SetMaterialTexture(Operator, ImportHelper):
     bl_label = "Set Material Texture"
     bl_idname = "helldiver2.material_settex"
 
+
     filename_ext = ".dds"
 
-    filter_glob: StringProperty(default="*.dds", options={'HIDDEN'})
+    filter_glob: StringProperty(default="*.dds;*.tga", options={'HIDDEN'})
+
+
 
     object_id: StringProperty(options={"HIDDEN"})
     tex_idx: IntProperty(options={"HIDDEN"})
+    
+    def ColorSpaceEnum():
+        return [("sRGB", "sRGB", ""), ("Linear", "Linear", "")]
 
+    SaveColorSpace: EnumProperty(name="色彩空间", items=[("Linear", "Linear", ""),("sRGB", "sRGB", "")])
+   
+    
+    
+    def draw(self, context):
+        props = bpy.context.scene.Hd2ToolPanelSettings
+        is_tga_on = props.tga_Tex_Import_Switch
+        if is_tga_on:
+            layout = self.layout
+            layout.label(text="导入的纹理在保存时将会转换为下列的色彩空间",icon="ERROR")
+            layout.label(text="纹理色彩空间为：")
+            layout.prop(self, "SaveColorSpace")
+            
+    
+    def addprefix(self, path, prefix):
+        Ori_filename = os.path.basename(path)
+        
+        add_prefix_in_path = os.path.join(os.path.dirname(path), f"{prefix}"+ Ori_filename)
+        return add_prefix_in_path
+    
     def execute(self, context):
         Entry = Global_TocManager.GetEntry(int(self.object_id), MaterialID)
         if Entry != None:
             if Entry.IsLoaded:
-                Entry.LoadedData.DEV_DDSPaths[self.tex_idx] = self.filepath
-        
+                if self.SaveColorSpace == "sRGB" and ".tga" in os.path.basename(self.filepath):
+                    print("sRGB")
+                    Entry.LoadedData.DEV_DDSPaths[self.tex_idx] = self.addprefix(path=self.filepath,prefix="[-_彩色_-]")
+                    print(Entry.LoadedData.DEV_DDSPaths[self.tex_idx])
+                if self.SaveColorSpace == "Linear" and ".tga" in os.path.basename(self.filepath):
+                    print("Linear")
+                    Entry.LoadedData.DEV_DDSPaths[self.tex_idx] = self.addprefix(path=self.filepath,prefix="[-_线性_-] ")
+                    print(Entry.LoadedData.DEV_DDSPaths[self.tex_idx])
+                else:
+                    
+                    Entry.LoadedData.DEV_DDSPaths[self.tex_idx] = self.filepath
         # Redraw
         for area in context.screen.areas:
             if area.type == "VIEW_3D": area.tag_redraw()
         
         return{'FINISHED'}
+    def invoke(self, context, event):
+        props = bpy.context.scene.Hd2ToolPanelSettings
+        is_tga_on = props.tga_Tex_Import_Switch
+        if not is_tga_on:
+            self.filter_glob = "*.dds"
+        else:
+            self.filter_glob = "*.dds;*.tga"
+            
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+            
+        
+        
 
 #endregion
 
@@ -3516,6 +3625,7 @@ class Hd2ToolPanelSettings(PropertyGroup):
     # add
     IsRenamePatch : BoolProperty(name="RenamePatch",default = False,description = "重命名patch")
     NewPatchName : StringProperty(name="NewPatchName",default = "")
+    tga_Tex_Import_Switch : BoolProperty(name="TGA_Tex_Import_Switch",default = False,description = "开启TGA纹理导入开关，tga会自动转换为dds,文件输出目录为软件缓存目录")
 
 class HellDivers2ToolsPanel(Panel):
     bl_label = f"Helldivers 2 AQ Modified{bl_info['version']}"
@@ -3526,15 +3636,16 @@ class HellDivers2ToolsPanel(Panel):
 
     def draw_material_editor(self, Entry, layout, row):
         scene = bpy.context.scene
+        filepath = ""
         if Entry.IsLoaded:
             mat = Entry.LoadedData
             if mat.DEV_ShowEditor:
                 for i, t in enumerate(mat.TexIDs):
                     row = layout.row(); row.separator(factor=2.0)
                     ddsPath = mat.DEV_DDSPaths[i]
-                    if ddsPath != None: filepath = Path(ddsPath)
+                    if ddsPath != None: filepath = ddsPath
                     prefix = TextureTypeLookup[Entry.MaterialTemplate][i] if Entry.MaterialTemplate != None else ""
-                    label = filepath.name if ddsPath != None else str(t)
+                    label = os.path.basename(filepath) if ddsPath != None else str(t)
                     row.label(text=prefix+label, icon='FILE_IMAGE')
                     props = row.operator("helldiver2.material_settex", icon='FILEBROWSER', text="")
                     props.object_id = str(Entry.FileID)
@@ -3630,10 +3741,17 @@ class HellDivers2ToolsPanel(Panel):
             row.prop(scene.Hd2ToolPanelSettings, "ImportStatic",text="导入静态网格（无权重）")
             row.prop(scene.Hd2ToolPanelSettings, "RemoveGoreMeshes",text="删除断肢网格")
             row.prop(scene.Hd2ToolPanelSettings, "ShadeSmooth",text="导入模型时平滑着色")
+            row.prop(scene.Hd2ToolPanelSettings, "tga_Tex_Import_Switch",text="开启TGA纹理导入")
             row = layout.row(); row.separator(); row.label(text="Export Options"); box = row.box(); row = box.grid_flow(columns=1)
             row.prop(scene.Hd2ToolPanelSettings, "Force2UVs")
             row.prop(scene.Hd2ToolPanelSettings, "Force1Group")
             row.prop(scene.Hd2ToolPanelSettings, "AutoLods")
+            
+            row = layout.row()
+            row.separator()
+            row.label(text="缓存目录")
+            row = row.grid_flow(columns=1)
+            row.operator("helldiver2.open_cache_directory",text="打开缓存目录",icon='FILE_FOLDER')
 
         # Draw Archive Import/Export Buttons
         row = layout.row(); row = layout.row()
@@ -3928,6 +4046,7 @@ classes = (
     SetEntryFriendlyNameOperator,
     MaterialShaderVariableEntryOperator,
     MaterialShaderVariableColorEntryOperator,
+    ButtonOpenCacheDirectory,
     
 )
 
