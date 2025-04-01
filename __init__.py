@@ -1484,11 +1484,11 @@ def CheckTextureName(TexPath):
 
 
 def DDS_Export_SRGB(tempdir,input_path):
-    subprocess.run([Global_texconvpath, "-y", "-o", tempdir, "-ft", "dds", "-dx10", "-f", "BC7_UNORM_SRGB","-srgbi",input_path ], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    subprocess.run([Global_texconvpath, "-y", "-o", tempdir, "-ft", "dds", "-dx10", "-f", "BC7_UNORM_SRGB","-m","1","-srgb",input_path ], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     PrettyPrint("DDS_Export_SRGB", "info")
     
 def DDS_Export_Linear(tempdir,input_path):
-    subprocess.run([Global_texconvpath, "-y", "-o", tempdir, "-ft", "dds", "-dx10", "-f", "BC7_UNORM",input_path ], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    subprocess.run([Global_texconvpath, "-y", "-o", tempdir, "-ft", "dds", "-dx10", "-f", "BC7_UNORM","-m","1","--ignore-srgb",input_path ], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     PrettyPrint("DDS_Export_Linear", "info")
 #endregion
 
