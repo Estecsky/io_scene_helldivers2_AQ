@@ -2788,10 +2788,9 @@ class PatchArchiveOperator(Operator):
             Global_TocManager.PatchActiveArchive(path= New_path)
         else:
             Global_TocManager.PatchActiveArchive()
-        try:
-            self.report({'INFO'}, f"写入patch完成,文件保存为{StreamToc.Path}")
-        except Exception as e:
-            self.report({'INFO'}, e)
+
+        self.report({'INFO'}, "写入patch完成")
+
         return{'FINISHED'}
     
 
