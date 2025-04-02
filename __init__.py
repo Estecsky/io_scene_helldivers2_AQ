@@ -27,7 +27,7 @@ from bpy.types import Panel, Operator, PropertyGroup, Scene, Menu
 # NOTE: Not bothering to do importlib reloading shit because these modules are unlikely to be modified frequently enough to warrant testing without Blender restarts
 from .math import MakeTenBitUnsigned, TenBitUnsigned
 from .memoryStream import MemoryStream
-
+from .AQ_Prefs_HD2 import AQ_PublicClass
 
 from . import addon_updater_ops
 from . import addonPreferences
@@ -51,6 +51,7 @@ Global_CPPHelper = ctypes.cdll.LoadLibrary(Global_dllpath) if os.path.isfile(Glo
 
 Global_ShaderVariables = {}
 Global_ShaderVariables_CN = {}
+Global_PatchBasePath = ""
 #endregion
 
 #region Common Hashes & Lookups
@@ -1020,12 +1021,13 @@ class StreamToc:
         return self.Serialize(SerializeData)
 
     def ToFile(self, path=None):
+        global Global_PatchBasePath
         self.TocFile = MemoryStream(IOMode = "write")
         self.GpuFile = MemoryStream(IOMode = "write")
         self.StreamFile = MemoryStream(IOMode = "write")
         self.Serialize()
         if path == None: path = self.Path
-
+        Global_PatchBasePath = path
         with open(path, 'w+b') as f:
             f.write(bytes(self.TocFile.Data))
         with open(path+".gpu_resources", 'w+b') as f:
@@ -1484,11 +1486,11 @@ def CheckTextureName(TexPath):
 
 
 def DDS_Export_SRGB(tempdir,input_path):
-    subprocess.run([Global_texconvpath, "-y", "-o", tempdir, "-ft", "dds", "-dx10", "-f", "BC7_UNORM_SRGB","-m","1","-srgb",input_path ], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    subprocess.run([Global_texconvpath, "-y", "-o", tempdir, "-ft", "dds", "-dx10", "-f", "BC7_UNORM_SRGB","-m","1","-srgb","-alpha",input_path ], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     PrettyPrint("DDS_Export_SRGB", "info")
     
 def DDS_Export_Linear(tempdir,input_path):
-    subprocess.run([Global_texconvpath, "-y", "-o", tempdir, "-ft", "dds", "-dx10", "-f", "BC7_UNORM","-m","1","--ignore-srgb",input_path ], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    subprocess.run([Global_texconvpath, "-y", "-o", tempdir, "-ft", "dds", "-dx10", "-f", "BC7_UNORM","-m","1","--ignore-srgb","-alpha",input_path ], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     PrettyPrint("DDS_Export_Linear", "info")
 #endregion
 
@@ -2777,6 +2779,7 @@ class PatchArchiveOperator(Operator):
 
     def execute(self, context):
         global Global_TocManager
+        global Global_PatchBasePath
         if bpy.context.scene.Hd2ToolPanelSettings.IsRenamePatch and bpy.context.scene.Hd2ToolPanelSettings.NewPatchName:
             check_name = bpy.context.scene.Hd2ToolPanelSettings.NewPatchName
             if check_name.find(".patch_") == -1:
@@ -2789,8 +2792,9 @@ class PatchArchiveOperator(Operator):
         else:
             Global_TocManager.PatchActiveArchive()
 
-        self.report({'INFO'}, "写入patch完成")
-
+        self.report({'INFO'}, f"写入patch完成,文件保存在{Global_PatchBasePath}")
+        
+        Global_PatchBasePath = ""
         return{'FINISHED'}
     
 
@@ -3344,11 +3348,12 @@ class SetMaterialTexture(Operator, ImportHelper):
     
     
     def draw(self, context):
-        props = bpy.context.scene.Hd2ToolPanelSettings
-        is_tga_on = props.tga_Tex_Import_Switch
+        addon_prefs = AQ_PublicClass.get_addon_prefs()
+        is_tga_on = addon_prefs.tga_Tex_Import_Switch
         if is_tga_on:
             layout = self.layout
-            layout.label(text="导入的纹理在保存时将会转换为下列的色彩空间",icon="ERROR")
+            layout.label(text="颜色贴图使用sRGB,法向金属糙度等使用线性",icon="INFO")
+            layout.label(text="导入的纹理在保存时将会转换为下列的色彩空间",icon="INFO")
             layout.label(text="纹理色彩空间为：")
             layout.prop(self, "SaveColorSpace")
             
@@ -3364,13 +3369,11 @@ class SetMaterialTexture(Operator, ImportHelper):
         if Entry != None:
             if Entry.IsLoaded:
                 if self.SaveColorSpace == "sRGB" and ".tga" in os.path.basename(self.filepath):
-                    print("sRGB")
+                    
                     Entry.LoadedData.DEV_DDSPaths[self.tex_idx] = self.addprefix(path=self.filepath,prefix="[-_彩色_-]")
-                    print(Entry.LoadedData.DEV_DDSPaths[self.tex_idx])
                 if self.SaveColorSpace == "Linear" and ".tga" in os.path.basename(self.filepath):
-                    print("Linear")
+                    
                     Entry.LoadedData.DEV_DDSPaths[self.tex_idx] = self.addprefix(path=self.filepath,prefix="[-_线性_-] ")
-                    print(Entry.LoadedData.DEV_DDSPaths[self.tex_idx])
                 else:
                     
                     Entry.LoadedData.DEV_DDSPaths[self.tex_idx] = self.filepath
@@ -3380,12 +3383,17 @@ class SetMaterialTexture(Operator, ImportHelper):
         
         return{'FINISHED'}
     def invoke(self, context, event):
-        props = bpy.context.scene.Hd2ToolPanelSettings
-        is_tga_on = props.tga_Tex_Import_Switch
+        try:
+            addon_prefs = AQ_PublicClass.get_addon_prefs()
+            is_tga_on = addon_prefs.tga_Tex_Import_Switch
+        except AttributeError as err:
+            is_tga_on = False
+            print(err)
+            print("没有找到插件偏好设置")
         if not is_tga_on:
             self.filter_glob = "*.dds"
         else:
-            self.filter_glob = "*.dds;*.tga"
+            self.filter_glob = "*.tga"
             
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
@@ -3624,7 +3632,6 @@ class Hd2ToolPanelSettings(PropertyGroup):
     # add
     IsRenamePatch : BoolProperty(name="RenamePatch",default = False,description = "重命名patch")
     NewPatchName : StringProperty(name="NewPatchName",default = "")
-    tga_Tex_Import_Switch : BoolProperty(name="TGA_Tex_Import_Switch",default = False,description = "开启TGA纹理导入开关，tga会自动转换为dds,文件输出目录为软件缓存目录")
 
 class HellDivers2ToolsPanel(Panel):
     bl_label = f"Helldivers 2 AQ Modified{bl_info['version']}"
@@ -3717,7 +3724,7 @@ class HellDivers2ToolsPanel(Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
-
+        addon_prefs = AQ_PublicClass.get_addon_prefs()
         # Draw Settings, Documentation and Spreadsheet
         row = layout.row()
         row.prop(scene.Hd2ToolPanelSettings, "MenuExpanded",
@@ -3740,7 +3747,7 @@ class HellDivers2ToolsPanel(Panel):
             row.prop(scene.Hd2ToolPanelSettings, "ImportStatic",text="导入静态网格（无权重）")
             row.prop(scene.Hd2ToolPanelSettings, "RemoveGoreMeshes",text="删除断肢网格")
             row.prop(scene.Hd2ToolPanelSettings, "ShadeSmooth",text="导入模型时平滑着色")
-            row.prop(scene.Hd2ToolPanelSettings, "tga_Tex_Import_Switch",text="开启TGA纹理导入")
+            row.prop(addon_prefs, "tga_Tex_Import_Switch",text="开启TGA纹理导入")
             row = layout.row(); row.separator(); row.label(text="Export Options"); box = row.box(); row = box.grid_flow(columns=1)
             row.prop(scene.Hd2ToolPanelSettings, "Force2UVs")
             row.prop(scene.Hd2ToolPanelSettings, "Force1Group")
