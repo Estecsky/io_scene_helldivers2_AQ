@@ -43,11 +43,15 @@ class HD2_AddonPreferences(bpy.types.AddonPreferences):
     )  # type: ignore
     
     tga_Tex_Import_Switch : BoolProperty(name="TGA_Tex_Import_Switch",default = False,description = "开启TGA纹理导入开关，tga会自动转换为dds,文件输出目录为软件缓存目录")
+    ShowArchivePatchPath : BoolProperty(name="ShowArchivePatchPath",default = False,description = "实时显示活动Archive和Patch的路径")
+    ShowZipPatchButton : BoolProperty(name="ShowZipPatchButton",default = False,description = "显示打包Patch为Zip功能")
     def draw(self, context):
 
         # layout = self.layout
         layout = self.layout
         layout.prop(self, "tga_Tex_Import_Switch",text="TGA纹理导入开关")
+        layout.prop(self, "ShowArchivePatchPath",text="实时显示活动Archive和Patch的路径")
+        layout.prop(self, "ShowZipPatchButton",text="显示打包Patch为Zip功能")
         addon_updater_ops.update_settings_ui(self, context)
 
 def register():

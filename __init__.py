@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 4, 3),
+    "version": (1, 5, 0),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -31,6 +31,7 @@ from .AQ_Prefs_HD2 import AQ_PublicClass
 
 from . import addon_updater_ops
 from . import addonPreferences
+import zipfile
 #endregion
 
 #region Global Variables
@@ -285,14 +286,20 @@ def GetDisplayData():
     # Set display archive TODO: Global_TocManager.LastSelected Draw Index could be wrong if we switch to patch only mode, that should be fixed
     DisplayTocEntries = []
     DisplayTocTypes   = []
+    DisplayTocPatchPath = ""
+    DisplayTocArchivePath = ""
+    DisplayTocPatchPath_Add = ""
     DisplayArchive = Global_TocManager.ActiveArchive
     if bpy.context.scene.Hd2ToolPanelSettings.PatchOnly:
         if Global_TocManager.ActivePatch != None:
             DisplayTocEntries = [[Entry, True] for Entry in Global_TocManager.ActivePatch.TocEntries]
             DisplayTocTypes   = Global_TocManager.ActivePatch.TocTypes
+            DisplayTocPatchPath = Global_TocManager.ActivePatch.Path
+            DisplayTocPatchPath_Add = Global_TocManager.ActivePatch.Path
     elif Global_TocManager.ActiveArchive != None:
         DisplayTocEntries = [[Entry, False] for Entry in Global_TocManager.ActiveArchive.TocEntries]
         DisplayTocTypes   = [Type for Type in Global_TocManager.ActiveArchive.TocTypes]
+        DisplayTocArchivePath = Global_TocManager.ActiveArchive.Path
         AddedTypes   = [Type.TypeID for Type in DisplayTocTypes]
         AddedEntries = [Entry[0].FileID for Entry in DisplayTocEntries]
         if Global_TocManager.ActivePatch != None:
@@ -304,7 +311,19 @@ def GetDisplayData():
                 if Entry.FileID not in AddedEntries:
                     AddedEntries.append(Entry.FileID)
                     DisplayTocEntries.append([Entry, True])
-    return [DisplayTocEntries, DisplayTocTypes]
+        try:
+            DisplayTocPatchPath_Add = Global_TocManager.ActivePatch.Path
+            DisplayTocPatchPath = Global_TocManager.ActivePatch.Path
+        except:
+            DisplayTocPatchPath = ""
+            DisplayTocPatchPath_Add = ""
+    elif Global_TocManager.ActivePatch != None:
+        # DisplayTocEntries_Add = [[Entry, True] for Entry in Global_TocManager.ActivePatch.TocEntries]
+        # DisplayTocTypes_Add   = Global_TocManager.ActivePatch.TocTypes
+        DisplayTocPatchPath_Add = Global_TocManager.ActivePatch.Path
+        
+    return [DisplayTocEntries, DisplayTocTypes, DisplayTocArchivePath, DisplayTocPatchPath,
+            DisplayTocPatchPath_Add]
 
 #endregion
 
@@ -1022,12 +1041,15 @@ class StreamToc:
 
     def ToFile(self, path=None):
         global Global_PatchBasePath
+        Global_PatchBasePath = ""
         self.TocFile = MemoryStream(IOMode = "write")
         self.GpuFile = MemoryStream(IOMode = "write")
         self.StreamFile = MemoryStream(IOMode = "write")
         self.Serialize()
         if path == None: path = self.Path
+        
         Global_PatchBasePath = path
+        
         with open(path, 'w+b') as f:
             f.write(bytes(self.TocFile.Data))
         with open(path+".gpu_resources", 'w+b') as f:
@@ -2715,8 +2737,48 @@ class ButtonOpenCacheDirectory(Operator):
         os.startfile(tempdir)
     
         return {"FINISHED"}
+    
+    
+class ButtonOpenPatchOutDirectory(Operator):
+    bl_idname ="helldiver2.open_patch_out_directory"
+    bl_label = "Open Patch Out Directory"
+    bl_description = "打开输出目录"
+    
+    @classmethod
+    def poll(cls, context):
+        return os.path.exists(Global_PatchBasePath)
+    
+    
+    def execute(self, context):
+        tempdir = tempfile.gettempdir()
+        if os.path.dirname(Global_PatchBasePath) != tempdir:
+            os.startfile(os.path.dirname(Global_PatchBasePath))
 
+        
+        return {"FINISHED"}
 
+class ButtonAutoRenamePatch(Operator):
+    bl_idname ="helldiver2.button_auto_rename_patch"
+    bl_label = "auto_rename_patch"
+    bl_description = "将patch重命名为基础资产的patch"
+    
+    NewRenamePatchIndex : IntProperty(name="序号", default=0)
+    def draw(self, context):
+        layout = self.layout; row = layout.row()
+        row.label(text="Patch末尾序号:")
+        row.prop(self, "NewRenamePatchIndex", icon='COPY_ID')
+    
+    def execute(self, context):
+        bpy.context.scene.Hd2ToolPanelSettings.NewPatchName = "9ba626afa44a3aa3.patch_" + str(self.NewRenamePatchIndex)
+        
+            # Redraw
+        for area in context.screen.areas:
+            if area.type == "VIEW_3D": area.tag_redraw()
+        
+        return {"FINISHED"}
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
 
 #endregion
 
@@ -2780,6 +2842,67 @@ class PatchArchiveOperator(Operator):
     def execute(self, context):
         global Global_TocManager
         global Global_PatchBasePath
+        
+        if bpy.context.scene.Hd2ToolPanelSettings.IsChangeOutPath and bpy.context.scene.Hd2ToolPanelSettings.NewPatchOutPath:
+            if bpy.context.scene.Hd2ToolPanelSettings.IsRenamePatch and bpy.context.scene.Hd2ToolPanelSettings.NewPatchName:
+                check_name = bpy.context.scene.Hd2ToolPanelSettings.NewPatchName
+                if check_name.find(".patch_") == -1:
+                    self.report({'ERROR'}, "文件名没有加上.patch_，自行检查")
+                    return {'CANCELLED'}
+                if check_name.find("9ba626afa44a3aa3.patch_") == -1:
+                    self.report({'WARNING'}, "没有重命名为基础资产的patch")
+                # New_path = Global_TocManager.RenameActivePatch(NewPath = bpy.context.scene.Hd2ToolPanelSettings.NewPatchName)
+                New_path = os.path.join(bpy.context.scene.Hd2ToolPanelSettings.NewPatchOutPath, check_name)
+                Global_TocManager.PatchActiveArchive(path= New_path)
+            else:
+                New_path = os.path.join(bpy.context.scene.Hd2ToolPanelSettings.NewPatchOutPath, Global_TocManager.ActivePatch.Name)
+                Global_TocManager.PatchActiveArchive(path= New_path)
+        else:
+            if bpy.context.scene.Hd2ToolPanelSettings.IsRenamePatch and bpy.context.scene.Hd2ToolPanelSettings.NewPatchName:
+                check_name = bpy.context.scene.Hd2ToolPanelSettings.NewPatchName
+                if check_name.find(".patch_") == -1:
+                    self.report({'ERROR'}, "文件名没有加上.patch_，自行检查")
+                    return {'CANCELLED'}
+                if check_name.find("9ba626afa44a3aa3.patch_") == -1:
+                    self.report({'WARNING'}, "没有重命名为基础资产的patch")
+                New_path = Global_TocManager.RenameActivePatch(NewPath = bpy.context.scene.Hd2ToolPanelSettings.NewPatchName)
+                Global_TocManager.PatchActiveArchive(path= New_path)
+            else:
+                Global_TocManager.PatchActiveArchive()
+
+        self.report({'INFO'}, f"写入patch完成,文件保存在{Global_PatchBasePath}")
+        bpy.context.scene.Hd2ToolPanelSettings.IsZipPatch = False
+        return{'FINISHED'}
+    
+class ZipPatchArchiveOperator(Operator,ExportHelper):
+    bl_label = "Zip Patch Export"
+    bl_idname = "helldiver2.archive_zippatch_export"
+    bl_description = "将patch导出为zip文件"
+    
+    filename_ext = ".zip"
+    
+    filter_glob: StringProperty(
+        default="*.zip",
+        options={"HIDDEN"},
+
+    )
+    filepath: StringProperty(
+        default="patch.zip",
+        subtype="FILE_PATH",
+    )
+    
+    
+    @classmethod
+    def poll(cls, context):
+        return Global_TocManager.ActivePatch != None
+    
+    
+    def execute(self, context):
+        tempdir = tempfile.gettempdir()
+        global Global_TocManager
+        global Global_PatchBasePath
+        
+
         if bpy.context.scene.Hd2ToolPanelSettings.IsRenamePatch and bpy.context.scene.Hd2ToolPanelSettings.NewPatchName:
             check_name = bpy.context.scene.Hd2ToolPanelSettings.NewPatchName
             if check_name.find(".patch_") == -1:
@@ -2787,16 +2910,28 @@ class PatchArchiveOperator(Operator):
                 return {'CANCELLED'}
             if check_name.find("9ba626afa44a3aa3.patch_") == -1:
                 self.report({'WARNING'}, "没有重命名为基础资产的patch")
-            New_path = Global_TocManager.RenameActivePatch(NewPath = bpy.context.scene.Hd2ToolPanelSettings.NewPatchName)
+            # New_path = Global_TocManager.RenameActivePatch(NewPath = bpy.context.scene.Hd2ToolPanelSettings.NewPatchName)
+            New_path = os.path.join(tempdir, check_name)
             Global_TocManager.PatchActiveArchive(path= New_path)
         else:
-            Global_TocManager.PatchActiveArchive()
+            New_path = os.path.join(tempdir, Global_TocManager.ActivePatch.Name)
+            Global_TocManager.PatchActiveArchive(path= New_path)
 
-        self.report({'INFO'}, f"写入patch完成,文件保存在{Global_PatchBasePath}")
-        
-        Global_PatchBasePath = ""
-        return{'FINISHED'}
-    
+        # 打包文件
+        zipfileOutPath = self.filepath
+        # if 
+        with zipfile.ZipFile(zipfileOutPath, 'w',zipfile.ZIP_DEFLATED) as zipf:
+            zipf.write(New_path , arcname= os.path.basename(New_path))
+            zipf.write(New_path + ".gpu_resources",arcname= os.path.basename(New_path) + ".gpu_resources")
+            zipf.write(New_path + ".stream",arcname= os.path.basename(New_path) + ".stream")
+
+        bpy.context.scene.Hd2ToolPanelSettings.IsZipPatch = True
+        self.report({'INFO'}, f"patch打包完成,文件保存在{self.filepath}")
+        return {'FINISHED'}
+    def invoke(self, context, event):
+        # self.filepath = ""
+        context.window_manager.fileselect_add(self)
+        return {"RUNNING_MODAL"}
 
 #endregion
 
@@ -3631,7 +3766,10 @@ class Hd2ToolPanelSettings(PropertyGroup):
     
     # add
     IsRenamePatch : BoolProperty(name="RenamePatch",default = False,description = "重命名patch")
+    IsChangeOutPath : BoolProperty(name="ChangeOutPath",default = False,description = "修改输出路径")
     NewPatchName : StringProperty(name="NewPatchName",default = "")
+    NewPatchOutPath : StringProperty(name="NewOutPath",default = "",subtype='DIR_PATH')
+    IsZipPatch : BoolProperty(name="ZipPatch",default = False,description = "压缩patch")
 
 class HellDivers2ToolsPanel(Panel):
     bl_label = f"Helldivers 2 AQ Modified{bl_info['version']}"
@@ -3723,7 +3861,7 @@ class HellDivers2ToolsPanel(Panel):
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
+        scene = bpy.context.scene
         addon_prefs = AQ_PublicClass.get_addon_prefs()
         # Draw Settings, Documentation and Spreadsheet
         row = layout.row()
@@ -3733,11 +3871,12 @@ class HellDivers2ToolsPanel(Panel):
         # row.operator("helldiver2.help", icon='HELP', text="")
         row.operator("helldiver2.archive_spreadsheet", icon='INFO', text="")
         if scene.Hd2ToolPanelSettings.MenuExpanded:
-            row = layout.row(); row.separator(); row.label(text="Display Types"); box = row.box(); row = box.grid_flow(columns=1)
+            row = layout.row(); row.separator(); row.label(text="显示设置"); box = row.box(); row = box.grid_flow(columns=1)
             row.prop(scene.Hd2ToolPanelSettings, "ShowMeshes")
             row.prop(scene.Hd2ToolPanelSettings, "ShowTextures")
             row.prop(scene.Hd2ToolPanelSettings, "ShowMaterials")
             row.prop(scene.Hd2ToolPanelSettings, "ShowOthers")
+            row.prop(addon_prefs, "ShowArchivePatchPath",text="实时显示Archive和Patch路径")
             row = layout.row(); row.separator(); row.label(text="导入设置"); box = row.box(); row = box.grid_flow(columns=1)
             row.prop(scene.Hd2ToolPanelSettings, "ImportMaterials",text="导入材质")
             row.prop(scene.Hd2ToolPanelSettings, "ImportLods",text="导入Lods")
@@ -3752,6 +3891,7 @@ class HellDivers2ToolsPanel(Panel):
             row.prop(scene.Hd2ToolPanelSettings, "Force2UVs")
             row.prop(scene.Hd2ToolPanelSettings, "Force1Group")
             row.prop(scene.Hd2ToolPanelSettings, "AutoLods")
+            row.prop(addon_prefs,"ShowZipPatchButton",text="显示打包Patch为Zip功能")
             
             row = layout.row()
             row.separator()
@@ -3766,7 +3906,6 @@ class HellDivers2ToolsPanel(Panel):
         row = layout.row()
         row.prop(scene.Hd2ToolPanelSettings, "LoadedArchives", text="Archives")
         row.operator("helldiver2.search_archives", icon= 'VIEWZOOM', text="")
-        row = layout.row()
         if len(Global_TocManager.LoadedArchives) > 0:
             Global_TocManager.SetActiveByName(scene.Hd2ToolPanelSettings.LoadedArchives)
 
@@ -3774,20 +3913,67 @@ class HellDivers2ToolsPanel(Panel):
         row = layout.row(); row = layout.row()
         row.operator("helldiver2.archive_createpatch", icon= 'COLLECTION_NEW', text="新建Patch")
         row.operator("helldiver2.archive_export", icon= 'DISC', text="写入Patch")
+        if addon_prefs.ShowZipPatchButton:
+            row.operator("helldiver2.archive_zippatch_export",icon="EXPORT",text="导出为Zip")
         row = layout.row()
         row.prop(scene.Hd2ToolPanelSettings, "Patches", text="Patches")
         if len(Global_TocManager.Patches) > 0:
             Global_TocManager.SetActivePatchByName(scene.Hd2ToolPanelSettings.Patches)
         row.prop(scene.Hd2ToolPanelSettings,"IsRenamePatch",icon = "GREASEPENCIL",text="")
+        row.prop(scene.Hd2ToolPanelSettings,"IsChangeOutPath",icon = "FOLDER_REDIRECT",text="")
         row.operator("helldiver2.archive_import", icon= 'IMPORT', text="").is_patch = True
         #-------------add------------
         #---------------------------
+        # Get Display Data
+        DisplayData = GetDisplayData()
+        DisplayTocEntries = DisplayData[0]
+        DisplayTocTypes   = DisplayData[1]
+        DisplayTocArchivePath = DisplayData[2]
+        DisplayTocPatchPath = DisplayData[3]
+        
+        DisplayTocPatchPath_add = DisplayData[4]
+        
         if scene.Hd2ToolPanelSettings.IsRenamePatch:
             row = layout.row()
             row.label(text="重命名已经打开",icon="ERROR")
             row = layout.row()
+            row.operator("helldiver2.button_auto_rename_patch",text="自动重命名为基础资产的patch",icon="OUTLINER_DATA_GP_LAYER")
+            row = layout.row()
             row.prop(scene.Hd2ToolPanelSettings, "NewPatchName", text="修改为 ")
-        
+        if scene.Hd2ToolPanelSettings.IsChangeOutPath:
+            # PathSign = "\\" 
+            row = layout.row()
+            row.label(text="修改Patch写入路径已经打开",icon="ERROR")
+            row = layout.row()
+            row.prop(scene.Hd2ToolPanelSettings, "NewPatchOutPath", text="修改路径 ")
+            
+        if DisplayTocPatchPath_add != "": #首先判断是否载入patch
+            box = layout.box()
+            row = box.row()
+            if scene.Hd2ToolPanelSettings.IsChangeOutPath: #判断是否打开自定义输出
+                if scene.Hd2ToolPanelSettings.NewPatchOutPath != "": #判断是否有自定义路径输入，如果有
+                    if scene.Hd2ToolPanelSettings.NewPatchName != "" and scene.Hd2ToolPanelSettings.IsRenamePatch: #判断是否打开重命名，如果打开
+                        row.label(text=f"写入路径预览: {scene.Hd2ToolPanelSettings.NewPatchOutPath + scene.Hd2ToolPanelSettings.NewPatchName}",icon="INFO")
+                    else: #没打开或者为空就使用原名称
+                        row.label(text=f"写入路径预览: {scene.Hd2ToolPanelSettings.NewPatchOutPath + Global_TocManager.ActivePatch.Name}",icon="INFO")
+                elif scene.Hd2ToolPanelSettings.NewPatchOutPath == "": #如果没有
+                    if scene.Hd2ToolPanelSettings.NewPatchName != "" and scene.Hd2ToolPanelSettings.IsRenamePatch: #判断是否打开重命名，如果打开
+                        row.label(text=f"写入路径预览: {os.path.join(os.path.dirname(DisplayTocPatchPath_add),scene.Hd2ToolPanelSettings.NewPatchName)}",icon="INFO")
+                    else: #没自定义路径输入和没有重命名就使用原路径加原名称
+                        row.label(text=f"写入路径预览: {DisplayTocPatchPath_add}",icon="INFO")
+            else: #没打开自定义输出再判断是否使用重命名
+                if scene.Hd2ToolPanelSettings.NewPatchName != "" and scene.Hd2ToolPanelSettings.IsRenamePatch:
+                    row.label(text=f"写入路径预览: {os.path.join(os.path.dirname(DisplayTocPatchPath_add),scene.Hd2ToolPanelSettings.NewPatchName)}",icon="INFO")
+                else:
+                    row.label(text=f"写入路径预览: {DisplayTocPatchPath_add}",icon="INFO")
+            if os.path.exists(Global_PatchBasePath) and not scene.Hd2ToolPanelSettings.IsZipPatch:
+                box = layout.box()
+                box.operator("helldiver2.open_patch_out_directory",text="打开Patch保存文件夹")
+        else:
+            pass
+            # row = layout.row()
+            # row.label(text="无Patch载入，无法预览写入路径",icon="ERROR")
+                
         # Draw Archive Contents
         row = layout.row()
         row.prop(scene.Hd2ToolPanelSettings, "ContentsExpanded",
@@ -3795,10 +3981,6 @@ class HellDivers2ToolsPanel(Panel):
             icon_only=True, emboss=False, text="Archive Contents")
         row.prop(scene.Hd2ToolPanelSettings, "PatchOnly", text="")
 
-        # Get Display Data
-        DisplayData = GetDisplayData()
-        DisplayTocEntries = DisplayData[0]
-        DisplayTocTypes   = DisplayData[1]
 
         # Draw Contents
         NewFriendlyNames = []
@@ -3806,6 +3988,18 @@ class HellDivers2ToolsPanel(Panel):
         if scene.Hd2ToolPanelSettings.ContentsExpanded:
             if len(DisplayTocEntries) == 0: return
 
+            # Draw Toc Archive or Patch Path
+            if addon_prefs.ShowArchivePatchPath:
+                if scene.Hd2ToolPanelSettings.PatchOnly:
+                    row = layout.row()
+                    row.label(text=f"Patch路径：{DisplayTocPatchPath}",icon="INFO")
+                else:
+                    col = layout.column()
+                    col.label(text=f"Archive路径：{DisplayTocArchivePath}")
+                    if DisplayTocPatchPath != "":
+                        col.label(text=f"Patch路径：{DisplayTocPatchPath}",icon="INFO")
+                    else:
+                        col.label(text="No Patch",icon="INFO")
             # Draw Search Bar
             row = layout.row(); row = layout.row()
             row.prop(scene.Hd2ToolPanelSettings, "SearchField", icon='VIEWZOOM', text="")
@@ -4053,6 +4247,9 @@ classes = (
     MaterialShaderVariableEntryOperator,
     MaterialShaderVariableColorEntryOperator,
     ButtonOpenCacheDirectory,
+    ButtonAutoRenamePatch,
+    ButtonOpenPatchOutDirectory,
+    ZipPatchArchiveOperator,
     
 )
 
