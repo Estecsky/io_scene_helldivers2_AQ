@@ -1187,7 +1187,7 @@ class TocManager():
         if SetActive and not IsPatch:
             self.LoadedArchives.append(toc)
             self.ActiveArchive = toc
-            bpy.context.scene.Hd2ToolPanelSettings.LoadedArchives = archiveID 
+            # bpy.context.scene.Hd2ToolPanelSettings.LoadedArchives = archiveID 
         elif SetActive and IsPatch:
             self.Patches.append(toc)
             self.ActivePatch = toc
