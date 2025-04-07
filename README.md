@@ -1,24 +1,19 @@
 # 个人魔改版
-- 添加新材质
-- 顶部信息按钮现在将会跳转到Archive ID 中文收集表
-- 添加patch重命名功能与新建patch时调整序号功能，支持自动填充为基础资产的重命名
+- 添加新材质(泛光，advanced，玻璃等)
+- 顶部信息按钮会跳转到[Archive ID 中文收集表](https://www.kdocs.cn/l/csRnAs7QlZvQ)
+- 添加Patch重命名功能与新建Patch时调整序号功能，支持自动填充为基础资产的重命名
 - 添加社区版的材质参数功能
 - 优化老版本的模型导入残缺问题
-- 添加导入TGA纹理的功能，将会在保存时自动转换为DDS
-- 添加自定义Patch导出目录和导出文件目录预览功能，写入patch后会显示打开输出目录的按钮
+- 添加导入TGA和PNG纹理的功能，将会在保存时自动转换为DDS
+- 添加自定义Patch导出目录和导出文件目录预览功能，写入Patch后会显示打开输出目录的按钮
 - 可将Patch导出为Zip文件功能
+- 设置游戏data目录后，可从插件中搜索[Archive ID 中文收集表](https://www.kdocs.cn/l/csRnAs7QlZvQ)存在的备注条目并选择载入
+- 添加手动更新本地搜索Archive ID 中文条目功能
+- 其他UI优化（可自由切换新旧布局，Archive条目种类可折叠，更便捷载入基础资产）
 
-
-## io_scene_helldivers2
+## io_scene_helldivers2_AQ
 A Blender addon facilitating the modding of textures, meshes and materials contained within Helldivers 2 archives.
 
-### DISCLAIMER
-Helldivers 2 is a multiplayer game with anti-cheat measures. While the client-side cosmetic mods that this tool is capable of producing are unlikely to trigger those measures (and has yet to do so in 40 小时之前 of personal testing), modding of any sort is done entirely at the risk of the end-user 和 neither ToastedShoes, Kboy, Irastris, GitHub, Nexus Mods, or any other entity can be held responsible for damages that may result from utilizing this tool and/or mods produced with it. **You have been warned!**
-
 ### Installation
-[Download the latest release build](https://github.com/kboykboy2/io_scene_helldivers2/releases/download/latest/io_scene_helldivers2.zip) and install it into Blender 4.0. Windows is the only supported operating system at this time, 和 Blender 4.1 is not supported at this time due to API changes.
+[Download the latest release build](https://github.com/Estecsky/io_scene_helldivers2_AQ/archive/refs/heads/main.zip) and install it into Blender 3.x-4.0. And Blender 4.1 is not supported at this time due to API changes.
 
-### Usage
-We've taken the time to write a tutorial focused on armor modding which should assist those already moderately familiar with mesh modding and Blender in general. Unfortunately we do not have the means to provide constant support to anyone new to either, but in the event anyone should write a more in-depth tutorial, create a video tutorial, etc, we would be happy to feature it here if it's brought to our attention.
-
-View the tutorial here: [Helldivers 2 Armor Modding Tutorial](https://docs.google.com/document/d/1SF7iEekmxoDdf0EsJu1ww9u2Cr8vzHyn2ycZS7JlWl0)

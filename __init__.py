@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 5, 0),
+    "version": (1, 6, 0),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -29,32 +29,46 @@ from .math import MakeTenBitUnsigned, TenBitUnsigned
 from .memoryStream import MemoryStream
 from .AQ_Prefs_HD2 import AQ_PublicClass
 
+import zipfile
+import configparser
 from . import addon_updater_ops
 from . import addonPreferences
-import zipfile
+from . import get_update_archivelistCN
 #endregion
 
 #region Global Variables
 
 AddonPath = os.path.dirname(__file__)
+BlenderAddonsPath = os.path.dirname(AddonPath)
 
-Global_dllpath           = f"{AddonPath}\\deps\\HDTool_Helper.dll"
-Global_texconvpath       = f"{AddonPath}\\deps\\texconv.exe"
-Global_palettepath       = f"{AddonPath}\\deps\\NormalPalette.dat"
-Global_materialpath      = f"{AddonPath}\\materials"
-Global_typehashpath      = f"{AddonPath}\\hashlists\\typehash.txt"
-Global_filehashpath      = f"{AddonPath}\\hashlists\\filehash.txt"
-Global_friendlynamespath = f"{AddonPath}\\hashlists\\friendlynames.txt"
-Global_variablespath     = f"{AddonPath}\\hashlists\\shadervariables.txt"
-Global_variablesCNpath   = f"{AddonPath}\\hashlists\\shadervariables_combine_CN.txt"
+Global_dllpath             = f"{AddonPath}\\deps\\HDTool_Helper.dll"
+Global_texconvpath         = f"{AddonPath}\\deps\\texconv.exe"
+Global_palettepath         = f"{AddonPath}\\deps\\NormalPalette.dat"
+Global_materialpath        = f"{AddonPath}\\materials"
+Global_typehashpath        = f"{AddonPath}\\hashlists\\typehash.txt"
+Global_filehashpath        = f"{AddonPath}\\hashlists\\filehash.txt"
+Global_friendlynamespath   = f"{AddonPath}\\hashlists\\friendlynames.txt"
+Global_variablespath       = f"{AddonPath}\\hashlists\\shadervariables.txt"
+
+Global_variablesCNpath     = f"{AddonPath}\\hashlists\\shadervariables_combine_CN.txt"
+Global_updatearchivelistCNpath = f"{AddonPath}\\hashlists\\update_archive_listCN.txt"
+
+Global_configpath          = f"{BlenderAddonsPath}\\io_scene_helldivers2_AQ.ini"
+Global_defaultgamepath     = "C:\Program Files (x86)\Steam\steamapps\common\Helldivers 2\data\ "
+Global_defaultgamepath     = Global_defaultgamepath[:len(Global_defaultgamepath) - 1]
+Global_gamepath            = ""
+
+
+
 
 Global_CPPHelper = ctypes.cdll.LoadLibrary(Global_dllpath) if os.path.isfile(Global_dllpath) else None
 
 Global_ShaderVariables = {}
 Global_ShaderVariables_CN = {}
+Global_updatearchivelistCN_list = []
 Global_PatchBasePath = ""
+Global_Foldouts = []
 #endregion
-
 #region Common Hashes & Lookups
 
 CompositeMeshID = 14191111524867688662
@@ -710,6 +724,14 @@ def GetFriendlyNameFromID(ID):
                 return hash_info[1]
     return str(ID)
 
+def GetArchiveNameFromID(EntryID):
+    global Global_updatearchivelistCN_list
+    for hash in Global_updatearchivelistCN_list:
+        if hash["ArchiveID"].find(EntryID) != -1:
+            ArchiveNameCN = str(hash["Classify"]).replace("'", "").replace("\n", "") + " - " + hash["Description"]
+            return ArchiveNameCN
+    return ""
+
 def HasFriendlyName(ID):
     for hash_info in Global_NameHashes:
         if int(ID) == hash_info[0]:
@@ -802,8 +824,44 @@ def LoadShaderVariables_CN():
     with open(Global_variablesCNpath, 'r', encoding='utf-8') as f:
         for line in f.readlines():
             Global_ShaderVariables_CN[line.split()[1]] = line.split()[0]
+# 载入Archive收集表条目
+def LoadUpdateArchiveList_CN():
+    global Global_updatearchivelistCN_list
+    Global_updatearchivelistCN_list = []
+    with open(Global_updatearchivelistCNpath, 'r', encoding='utf-8') as f:
+        for line in f.readlines():
+            if "本地更新时间" in line or line.find("None#None#None") != -1 or "以下是2025.3.18更新后" in line:
+                continue
+            Global_updatearchivelistCN_list.append({"ArchiveID": str(line.split("#")[0]),
+                                                    "Classify": line.split("#")[1].split(","),
+                                                    "Description": line.split("#")[2] })
+#endregion
 
+#region Configuration
 
+def InitializeConfig():
+    global Global_gamepath, Global_configpath
+    if os.path.exists(Global_configpath):
+        config = configparser.ConfigParser()
+        config.read(Global_configpath, encoding='utf-8')
+        try:
+            Global_gamepath = config['DEFAULT']['filepath']
+        except:
+            UpdateConfig()
+        PrettyPrint(f"Loaded Data Folder: {Global_gamepath}")
+
+    else:
+        UpdateConfig()
+
+def UpdateConfig():
+    global Global_gamepath, Global_defaultgamepath
+    if Global_gamepath == "":
+        Global_gamepath = Global_defaultgamepath
+    config = configparser.ConfigParser()
+    config['DEFAULT'] = {'filepath' : Global_gamepath}
+    with open(Global_configpath, 'w') as configfile:
+        config.write(configfile)
+    
 #endregion
 
 #region Classes and Functions: Stingray Archives
@@ -1122,11 +1180,14 @@ class TocManager():
         for Archive in self.LoadedArchives:
             if Archive.Path == path:
                 return Archive
+        archiveID = path.replace(Global_gamepath, '')
+        archiveName = GetArchiveNameFromID(archiveID)
         toc = StreamToc()
         toc.FromFile(path)
         if SetActive and not IsPatch:
             self.LoadedArchives.append(toc)
             self.ActiveArchive = toc
+            bpy.context.scene.Hd2ToolPanelSettings.LoadedArchives = archiveID 
         elif SetActive and IsPatch:
             self.Patches.append(toc)
             self.ActivePatch = toc
@@ -1239,8 +1300,7 @@ class TocManager():
         # TODO: ask for which patch index
         path = self.ActiveArchive.Path
         if path.find(".patch_") != -1:
-            num = int(path[path.find(".patch_")+len(".patch_"):]) + 1
-            path = path[:path.find(".patch_")] + ".patch_" + str(num)
+            path = path[:path.find(".patch_")] + ".patch_" + str(NewPatchIndex)
         else:
             path = path + ".patch_" + str(NewPatchIndex)
         self.ActivePatch.UpdatePath(path)
@@ -2780,9 +2840,80 @@ class ButtonAutoRenamePatch(Operator):
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
 
+class ButtonUpdateArchivelistCN(Operator):
+    bl_label = "更新已知资产列表"
+    bl_idname = "helldiver2.update_archivelist_cn"
+    bl_description = "从中文共享ID收集表更新已知资产列表"
+    
+    def execute(self, context):
+        if get_update_archivelistCN.GetAndUpdateArchivelistCN():
+            LoadUpdateArchiveList_CN()
+            self.report({'INFO'}, "更新完成")
+        else:
+            with open(get_update_archivelistCN.Global_ErrorLog, 'r', encoding='utf-8') as f:
+                self.report({'ERROR'}, f"更新失败，存在错误: {f.read()}. 错误日志见:{get_update_archivelistCN.Global_ErrorLog}")
+        return {"FINISHED"}
+#endregion
+
+#region Operators: Context Menu
+class CopyArchiveIDOperator(Operator):
+    bl_label = "Copy Archive ID"
+    bl_idname = "helldiver2.copy_archive_id"
+    bl_description = "将活跃的 Archive ID 复制到剪贴板"
+
+    def execute(self, context):
+        if ArchivesNotLoaded(self):
+            return {'CANCELLED'}
+        archiveID = str(Global_TocManager.ActiveArchive.Name)
+        bpy.context.window_manager.clipboard = archiveID
+        self.report({'INFO'}, f"复制 Archive ID: {archiveID}")
+
+        return {'FINISHED'}
+
+class EntrySectionOperator(Operator):
+    bl_label = "Collapse Section"
+    bl_idname = "helldiver2.collapse_section"
+    bl_description = "折叠该区域"
+
+    type: StringProperty(default = "")
+
+    def execute(self, context):
+        global Global_Foldouts
+        for i in range(len(Global_Foldouts)):
+            if Global_Foldouts[i][0] == str(self.type):
+                Global_Foldouts[i][1] = not Global_Foldouts[i][1]
+                # PrettyPrint(f"Folding foldout: {Global_Foldouts[i]}")
+        return {'FINISHED'}
+
 #endregion
 
 #region Operators: Archives & Patches
+def ArchivesNotLoaded(self):
+    if len(Global_TocManager.LoadedArchives) <= 0:
+        self.report({'ERROR'}, "No Archives Currently Loaded")
+        return True
+    else: 
+        return False
+
+
+class DefaultLoadArchiveOperator(Operator):
+    bl_label = "Default Archive"
+    bl_description = "载入默认基础资产"
+    bl_idname = "helldiver2.archive_import_default"
+
+    def execute(self, context):
+        path = Global_gamepath + "9ba626afa44a3aa3"
+        if not os.path.exists(path):
+            self.report({'ERROR'}, "Current Filepath is Invalid. Change this in the Settings")
+            context.scene.Hd2ToolPanelSettings.MenuExpanded = True
+            return{'CANCELLED'}
+        Global_TocManager.LoadArchive(path, True, False)
+
+        # Redraw
+        for area in context.screen.areas:
+            if area.type == "VIEW_3D": area.tag_redraw()
+        
+        return{'FINISHED'}
 
 class LoadArchiveOperator(Operator, ImportHelper):
     bl_label = "Load Archive"
@@ -2792,6 +2923,8 @@ class LoadArchiveOperator(Operator, ImportHelper):
 
     is_patch: BoolProperty(name="is_patch", default=False, options={'HIDDEN'})
 
+    def __init__(self):
+        self.filepath = bpy.path.abspath(Global_gamepath)
     def execute(self, context):
         # Sanitize path by removing any provided extension, so the correct TOC file is loaded
         path = Path(self.filepath)
@@ -2933,6 +3066,33 @@ class ZipPatchArchiveOperator(Operator,ExportHelper):
         context.window_manager.fileselect_add(self)
         return {"RUNNING_MODAL"}
 
+class ChangeFilepathOperator(Operator, ImportHelper):
+    bl_label = "Change Filepath"
+    bl_idname = "helldiver2.change_filepath"
+    bl_description = "更改游戏data目录文件夹路径"
+    #filename_ext = "."
+    use_filter_folder = True
+
+    filter_glob: StringProperty(options={'HIDDEN'}, default='')
+
+    def __init__(self):
+        global Global_gamepath
+        self.filepath = bpy.path.abspath(Global_gamepath)
+        
+    def execute(self, context):
+        global Global_gamepath
+        filepath = self.filepath
+        steamapps = "steamapps"
+        if steamapps in filepath:
+            filepath = f"{filepath.partition(steamapps)[0]}steamapps\common\Helldivers 2\data\ "[:-1]
+        else:
+            self.report({'ERROR'}, f"无法在此目录下找到steamapps文件夹: {filepath}")
+            return{'CANCELLED'}
+        Global_gamepath = filepath
+        UpdateConfig()
+        PrettyPrint(f"Changed Game File Path: {Global_gamepath}")
+        return{'FINISHED'}
+    
 #endregion
 
 #region Operators: Entries
@@ -3225,6 +3385,7 @@ class SaveStingrayMeshOperator(Operator):
 
     object_id: StringProperty()
     def execute(self, context):
+        bpy.ops.object.shade_smooth()
         Global_TocManager.Save(int(self.object_id), MeshID)
         return{'FINISHED'}
 
@@ -3234,6 +3395,9 @@ class BatchSaveStingrayMeshOperator(Operator):
 
     def execute(self, context):
         objects = bpy.context.selected_objects
+        for i in objects:
+            if i.type == "MESH":
+                i.data.shade_smooth()
         bpy.ops.object.select_all(action='DESELECT')
         IDs = []
         for object in objects:
@@ -3485,7 +3649,8 @@ class SetMaterialTexture(Operator, ImportHelper):
     def draw(self, context):
         addon_prefs = AQ_PublicClass.get_addon_prefs()
         is_tga_on = addon_prefs.tga_Tex_Import_Switch
-        if is_tga_on:
+        is_png_on = addon_prefs.png_Tex_Import_Switch
+        if is_tga_on or is_png_on:
             layout = self.layout
             layout.label(text="颜色贴图使用sRGB,法向金属糙度等使用线性",icon="INFO")
             layout.label(text="导入的纹理在保存时将会转换为下列的色彩空间",icon="INFO")
@@ -3518,17 +3683,19 @@ class SetMaterialTexture(Operator, ImportHelper):
         
         return{'FINISHED'}
     def invoke(self, context, event):
-        try:
-            addon_prefs = AQ_PublicClass.get_addon_prefs()
-            is_tga_on = addon_prefs.tga_Tex_Import_Switch
-        except AttributeError as err:
-            is_tga_on = False
-            print(err)
-            print("没有找到插件偏好设置")
-        if not is_tga_on:
+
+        addon_prefs = AQ_PublicClass.get_addon_prefs()
+        is_tga_on = addon_prefs.tga_Tex_Import_Switch
+        is_png_on = addon_prefs.png_Tex_Import_Switch
+
+        if not is_tga_on and not is_png_on:
             self.filter_glob = "*.dds"
-        else:
+        elif is_tga_on and is_png_on:
+            self.filter_glob = "*.tga;*.png"
+        elif is_tga_on and not is_png_on:
             self.filter_glob = "*.tga"
+        elif is_png_on and not is_tga_on:
+            self.filter_glob = "*.png"
             
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
@@ -3592,65 +3759,64 @@ class LoadArchivesOperator(Operator):
         for path in paths:
             if path != "" and os.path.exists(path):
                 Global_TocManager.LoadArchive(path)
+                id = self.paths_str.replace(Global_gamepath, "")
+                name = f"{GetArchiveNameFromID(id)} {id}"
+                self.report({'INFO'}, f"载入 {name}")
         self.paths = []
         return{'FINISHED'}
 
 class SearchArchivesOperator(Operator):
-    bl_label = "Search All Archives"
+    bl_label = "搜索已知Archive"
     bl_idname = "helldiver2.search_archives"
+    bl_description = "搜索已知Archive "
 
     SearchField : StringProperty(name="SearchField", default="")
+    #======不应该显示的分类资产=========
+    hide_classify = [
+        "大概环境物体",
+        "未知",
+        "无网格",
+        "已无法搜索",
+        "导入失败",
+        "None",
+        "没有导入确认",
+        "音频",
+        "视频",
+    ]
+    
+    
     def draw(self, context):
+        global Global_updatearchivelistCN_list
         layout = self.layout
         row = layout.row()
-        row.prop(self, "SearchField", icon='VIEWZOOM')
+        row.scale_y = 1.2
+        row.prop(self, "SearchField", icon='VIEWZOOM',text="搜索Archive")
         # Update displayed archives
         if self.PrevSearch != self.SearchField:
             self.PrevSearch = self.SearchField
 
             self.ArchivesToDisplay = []
-            friendlysearches = []
-            for hash_info in Global_NameHashes:
-                Found = True
-                for search in self.SearchField.split(" "):
-                    if not (hash_info[1].find(search) != -1 and str(hash_info[0]) not in friendlysearches):
-                        Found = False
-                if Found:
-                    friendlysearches.append(str(hash_info[0]))
+            for Entry in Global_updatearchivelistCN_list:
+                if Entry["Description"].lower().find(self.SearchField.lower()) != -1 or self.SearchField.lower() in Entry["Classify"]:
+                    if not set(Entry["Classify"]).issubset(set(self.hide_classify)) and self.hide_classify[3] not in Entry["Classify"] and Entry["Classify"] and Entry["Description"].find("None") == -1:
 
-            for Archive in Global_TocManager.SearchArchives:
-                NumMatches = 0
-                for Entry in Archive.TocEntries:
-                    Found = True
-                    for search in self.SearchField.split(" "):
-                        if not (str(Entry.FileID).find(search) != -1):
-                            Found = False
-                    if Found:
-                        NumMatches += 1
+                        self.ArchivesToDisplay.append([Entry["Classify"], Entry["Description"], Entry["ArchiveID"]])
+    
+        if self.SearchField != "" and len(self.ArchivesToDisplay) == 0:
+            row = layout.row(); row.label(text="没有找到匹配的Archive")
+            row = layout.row(); row.label(text="收集表中有的条目却不在这里？")
+            row = layout.row(); row.label(text="尝试手动更新本地Archive列表")
+            row = layout.row(); row.label(text="或打开Archive中文收集表链接：")
+            row = layout.row(); row.operator("helldiver2.archive_spreadsheet", icon= 'URL')
 
-                    if not Found:
-                        for friendlysearch in friendlysearches:
-                            if str(Entry.FileID).find(friendlysearch) != -1:
-                                NumMatches += 1
-                if NumMatches > 0 and [Archive, Archive.Name+": "+str(NumMatches)] not in self.ArchivesToDisplay:
-                    self.ArchivesToDisplay.append([Archive, Archive.Name+": "+str(NumMatches)])
-
-        # Draw Open All Archives Button
-        if len(self.ArchivesToDisplay) > 50:
-            row = layout.row()
-            row.label(text="Too many archives to load all")
         else:
-            paths_str = ""
             for Archive in self.ArchivesToDisplay:
-                paths_str += Archive[0].Path + ","
+                box = layout.box()
+                row = box.row()
+                row.label(text=str(Archive[0]).strip("[").strip("]")+": "+ Archive[1], icon='GROUP')
+                row.scale_x = 1.5
+                row.operator("helldiver2.archives_import", icon= 'FILE_NEW', text="").paths_str = Global_gamepath + str(Archive[2])
 
-            row = layout.row()
-            row.operator("helldiver2.archives_import", icon= 'FILE_NEW').paths_str = paths_str
-        # Draw Display Archives
-        for Archive in self.ArchivesToDisplay:
-            row = layout.row()
-            row.label(text=Archive[1], icon='FILE_ARCHIVE')
-            row.operator("helldiver2.archives_import", icon= 'FILE_NEW', text="").paths_str = Archive[0].Path
     def execute(self, context):
         return {'FINISHED'}
 
@@ -3659,7 +3825,7 @@ class SearchArchivesOperator(Operator):
         self.ArchivesToDisplay = []
 
         wm = context.window_manager
-        return wm.invoke_props_dialog(self)
+        return wm.invoke_props_dialog(self,width=400)
 
 class SelectAllOfTypeOperator(Operator):
     bl_label  = "Select All Of Type"
@@ -3715,6 +3881,15 @@ class HelpOperator(Operator):
         url = "https://docs.google.com/document/d/1SF7iEekmxoDdf0EsJu1ww9u2Cr8vzHyn2ycZS7JlWl0"
         webbrowser.open(url, new=0, autoraise=True)
         return{'FINISHED'}
+    
+class ButtonAQGitHub(bpy.types.Operator):
+    bl_idname = "helldiver2.aq_githubweb"
+    bl_label = "GitHub"
+    bl_description = "打开AQ魔改版插件的 GitHub页面"
+
+    def execute(self, context):
+        webbrowser.open("https://github.com/Estecsky/io_scene_helldivers2_AQ")
+        return {"FINISHED"}
 
 class ArchiveSpreadsheetOperator(Operator):
     bl_label  = "Archive CN Spreadsheet"
@@ -3731,10 +3906,11 @@ class ArchiveSpreadsheetOperator(Operator):
 #region Menus and Panels
 
 def LoadedArchives_callback(scene, context):
-    return [(Archive.Name, Archive.Name, "") for Archive in Global_TocManager.LoadedArchives]
+    items = [(Archive.Name,Archive.Name , "") for Archive in Global_TocManager.LoadedArchives]
+    return items
 
 def Patches_callback(scene, context):
-    return [(Archive.Name, Archive.Name, "") for Archive in Global_TocManager.Patches]
+    return [(Archive.Name, Archive.Name, Archive.Name ) for Archive in Global_TocManager.Patches]
 
 class Hd2ToolPanelSettings(PropertyGroup):
     # Patches
@@ -3868,7 +4044,8 @@ class HellDivers2ToolsPanel(Panel):
         row.prop(scene.Hd2ToolPanelSettings, "MenuExpanded",
             icon="DOWNARROW_HLT" if scene.Hd2ToolPanelSettings.MenuExpanded else "RIGHTARROW",
             icon_only=True, emboss=False, text="Settings")
-        # row.operator("helldiver2.help", icon='HELP', text="")
+        if scene.Hd2ToolPanelSettings.MenuExpanded:
+            row.operator("helldiver2.aq_githubweb", icon='URL', text="")
         row.operator("helldiver2.archive_spreadsheet", icon='INFO', text="")
         if scene.Hd2ToolPanelSettings.MenuExpanded:
             row = layout.row(); row.separator(); row.label(text="显示设置"); box = row.box(); row = box.grid_flow(columns=1)
@@ -3877,6 +4054,7 @@ class HellDivers2ToolsPanel(Panel):
             row.prop(scene.Hd2ToolPanelSettings, "ShowMaterials")
             row.prop(scene.Hd2ToolPanelSettings, "ShowOthers")
             row.prop(addon_prefs, "ShowArchivePatchPath",text="实时显示Archive和Patch路径")
+            row.prop(addon_prefs,"Layout_search_New",text="显示搜索已知Archive为主的布局")
             row = layout.row(); row.separator(); row.label(text="导入设置"); box = row.box(); row = box.grid_flow(columns=1)
             row.prop(scene.Hd2ToolPanelSettings, "ImportMaterials",text="导入材质")
             row.prop(scene.Hd2ToolPanelSettings, "ImportLods",text="导入Lods")
@@ -3887,6 +4065,7 @@ class HellDivers2ToolsPanel(Panel):
             row.prop(scene.Hd2ToolPanelSettings, "RemoveGoreMeshes",text="删除断肢网格")
             row.prop(scene.Hd2ToolPanelSettings, "ShadeSmooth",text="导入模型时平滑着色")
             row.prop(addon_prefs, "tga_Tex_Import_Switch",text="开启TGA纹理导入")
+            row.prop(addon_prefs, "png_Tex_Import_Switch",text="开启PNG纹理导入")
             row = layout.row(); row.separator(); row.label(text="Export Options"); box = row.box(); row = box.grid_flow(columns=1)
             row.prop(scene.Hd2ToolPanelSettings, "Force2UVs")
             row.prop(scene.Hd2ToolPanelSettings, "Force1Group")
@@ -3895,17 +4074,33 @@ class HellDivers2ToolsPanel(Panel):
             
             row = layout.row()
             row.separator()
+            row.label(text=Global_gamepath)
+            row = row.grid_flow(columns=1)
+            row.operator("helldiver2.change_filepath", icon='FILEBROWSER',text="更改游戏data目录")
+            row = layout.row()
+            row.separator()
             row.label(text="缓存目录")
             row = row.grid_flow(columns=1)
             row.operator("helldiver2.open_cache_directory",text="打开缓存目录",icon='FILE_FOLDER')
-
+            row = layout.row(); row.separator(); row.label(text="手动更新本地Archive列表"); box = row.box(); row = box.grid_flow(columns=1)
+            row.operator("helldiver2.update_archivelist_cn", text="更新已知资产列表", icon='FILE_REFRESH')
         # Draw Archive Import/Export Buttons
         row = layout.row(); row = layout.row()
-        row.operator("helldiver2.archive_import", icon= 'IMPORT',text="导入Archive").is_patch = False
+        row.operator("helldiver2.archive_import_default", icon= 'SOLO_ON', text="")
+        if addon_prefs.Layout_search_New:
+            row.operator("helldiver2.search_archives", icon= 'VIEWZOOM', text="搜索已知Archive")
+        else:
+            row.operator("helldiver2.archive_import", icon= 'IMPORT',text="载入Archive").is_patch = False
+            
         row.operator("helldiver2.archive_unloadall", icon= 'FILE_REFRESH', text="")
         row = layout.row()
         row.prop(scene.Hd2ToolPanelSettings, "LoadedArchives", text="Archives")
-        row.operator("helldiver2.search_archives", icon= 'VIEWZOOM', text="")
+        
+        if addon_prefs.Layout_search_New:
+            row.operator("helldiver2.archive_import", icon= 'FILE_FOLDER',text="").is_patch = False
+        else:
+            row.operator("helldiver2.search_archives", icon= 'VIEWZOOM', text="")
+            
         if len(Global_TocManager.LoadedArchives) > 0:
             Global_TocManager.SetActiveByName(scene.Hd2ToolPanelSettings.LoadedArchives)
 
@@ -3923,7 +4118,7 @@ class HellDivers2ToolsPanel(Panel):
         row.prop(scene.Hd2ToolPanelSettings,"IsChangeOutPath",icon = "FOLDER_REDIRECT",text="")
         row.operator("helldiver2.archive_import", icon= 'IMPORT', text="").is_patch = True
         #-------------add------------
-        #---------------------------
+        
         # Get Display Data
         DisplayData = GetDisplayData()
         DisplayTocEntries = DisplayData[0]
@@ -3973,12 +4168,21 @@ class HellDivers2ToolsPanel(Panel):
             pass
             # row = layout.row()
             # row.label(text="无Patch载入，无法预览写入路径",icon="ERROR")
-                
+        #---------------------------        
         # Draw Archive Contents
-        row = layout.row()
+        row = layout.row(); row = layout.row()
+        title = "无Archive载入"
+        if Global_TocManager.ActiveArchive != None:
+            ArchiveID = Global_TocManager.ActiveArchive.Name
+            name = GetArchiveNameFromID(ArchiveID)
+            title = f"{name}    ID: {ArchiveID}"
+        if Global_TocManager.ActivePatch != None and scene.Hd2ToolPanelSettings.PatchOnly:
+            name = Global_TocManager.ActivePatch.Name
+            title = f"Patch: {name}"
         row.prop(scene.Hd2ToolPanelSettings, "ContentsExpanded",
             icon="DOWNARROW_HLT" if scene.Hd2ToolPanelSettings.ContentsExpanded else "RIGHTARROW",
-            icon_only=True, emboss=False, text="Archive Contents")
+            icon_only=True, emboss=False, text= title)
+        row.operator("helldiver2.copy_archive_id", icon='COPY_ID', text="")
         row.prop(scene.Hd2ToolPanelSettings, "PatchOnly", text="")
 
 
@@ -4018,6 +4222,8 @@ class HellDivers2ToolsPanel(Panel):
 
                 # Get Type Icon
                 type_icon = 'FILE'
+                show = None
+                global Global_Foldouts
                 if Type.TypeID == MeshID:
                     type_icon = 'FILE_3D'
                     if not scene.Hd2ToolPanelSettings.ShowMeshes: continue
@@ -4029,10 +4235,27 @@ class HellDivers2ToolsPanel(Panel):
                     if not scene.Hd2ToolPanelSettings.ShowMaterials: continue
                 elif not scene.Hd2ToolPanelSettings.ShowOthers: continue
 
+                for section in Global_Foldouts:
+                    if section[0] == str(Type.TypeID):
+                        show = section[1]
+                        break
+                if show == None:
+                    fold = False
+                    if Type.TypeID == MaterialID or Type.TypeID == TexID or Type.TypeID == MeshID: fold = True
+                    foldout = [str(Type.TypeID), fold]
+                    Global_Foldouts.append(foldout)
+                    PrettyPrint(f"Adding Foldout ID: {foldout}")
+                    
+                fold_icon = "DOWNARROW_HLT" if show else "RIGHTARROW"
                 # Draw Type Header
                 box = layout.box(); row = box.row()
                 typeName = GetTypeNameFromID(Type.TypeID)
-                row.label(text=typeName+": "+str(Type.TypeID), icon=type_icon)
+                split = row.split()
+                sub = split.row(align=True)
+                sub.operator("helldiver2.collapse_section", text=f"{typeName}: {str(Type.TypeID)}", icon=fold_icon, emboss=False).type = str(Type.TypeID)
+                # Skip drawling entries if section hidden
+                if not show: continue
+                
                 row.operator("helldiver2.select_type", icon='RESTRICT_SELECT_OFF', text="").object_typeid = str(Type.TypeID)
                 # Draw Add Material Button
                 if typeName == "material": row.operator("helldiver2.material_add", icon='FILE_NEW', text="")
@@ -4250,6 +4473,12 @@ classes = (
     ButtonAutoRenamePatch,
     ButtonOpenPatchOutDirectory,
     ZipPatchArchiveOperator,
+    DefaultLoadArchiveOperator,
+    ChangeFilepathOperator,
+    ButtonUpdateArchivelistCN,
+    CopyArchiveIDOperator,
+    EntrySectionOperator,
+    ButtonAQGitHub,
     
 )
 
@@ -4262,6 +4491,8 @@ def register():
     LoadNameHashes()
     LoadShaderVariables()
     LoadShaderVariables_CN()
+    LoadUpdateArchiveList_CN()
+    InitializeConfig()
     for cls in classes:
         bpy.utils.register_class(cls)
     Scene.Hd2ToolPanelSettings = PointerProperty(type=Hd2ToolPanelSettings)
