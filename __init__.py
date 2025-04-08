@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 6, 0),
+    "version": (1, 6, 1),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -3385,7 +3385,15 @@ class SaveStingrayMeshOperator(Operator):
 
     object_id: StringProperty()
     def execute(self, context):
-        bpy.ops.object.shade_smooth()
+        addon_prefs = AQ_PublicClass.get_addon_prefs()
+        if addon_prefs.SaveUseAutoSmooth:
+            # 4.3 compatibility change
+            if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
+                bpy.ops.object.shade_auto_smooth(use_auto_smooth=True)
+                
+            else:
+                bpy.ops.object.use_auto_smooth = True
+                bpy.context.object.data.auto_smooth_angle = 3.14159
         Global_TocManager.Save(int(self.object_id), MeshID)
         return{'FINISHED'}
 
@@ -3395,9 +3403,16 @@ class BatchSaveStingrayMeshOperator(Operator):
 
     def execute(self, context):
         objects = bpy.context.selected_objects
-        for i in objects:
-            if i.type == "MESH":
-                i.data.shade_smooth()
+        addon_prefs = AQ_PublicClass.get_addon_prefs()
+        if addon_prefs.SaveUseAutoSmooth:
+            for i in objects:
+                if i.type == "MESH":
+                    # 4.3 compatibility change
+                    if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
+                        i.data.shade_auto_smooth(use_auto_smooth=True)
+                    else:
+                        i.data.use_auto_smooth = True
+                        i.data.auto_smooth_angle = 3.14159
         bpy.ops.object.select_all(action='DESELECT')
         IDs = []
         for object in objects:
@@ -3936,7 +3951,7 @@ class Hd2ToolPanelSettings(PropertyGroup):
     AutoLods         : BoolProperty(name="Auto LODs", description = "Automatically generate LOD entries based on LOD0, does not actually reduce the quality of the mesh", default = True)
     RemoveGoreMeshes : BoolProperty(name="Remove Gore Meshes", description = "Automatically delete all of the verticies with the gore material when loading a model", default = True)
     shadervariablesUI : BoolProperty(name="Shader Variables UI", description = "显示着色器变量参数UI", default = True)
-    ShadeSmooth      : BoolProperty(name="Shade Smooth", description = "导入模型时平滑着色", default = True)
+    ShadeSmooth      : BoolProperty(name="Shade Smooth", description = "导入模型时平滑着色,开启此项将关闭自动平滑", default = True)
     # Search
     SearchField : StringProperty(default = "")
     
@@ -4070,6 +4085,7 @@ class HellDivers2ToolsPanel(Panel):
             row.prop(scene.Hd2ToolPanelSettings, "Force2UVs")
             row.prop(scene.Hd2ToolPanelSettings, "Force1Group")
             row.prop(scene.Hd2ToolPanelSettings, "AutoLods")
+            row.prop(addon_prefs,"SaveUseAutoSmooth",text="保存网格时开启自动平滑")
             row.prop(addon_prefs,"ShowZipPatchButton",text="显示打包Patch为Zip功能")
             
             row = layout.row()
