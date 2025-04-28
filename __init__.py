@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 6, 1),
+    "version": (1, 6, 2),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -1530,7 +1530,7 @@ def AddMaterialToBlend(ID, StringrayMat, EmptyMatExists=False):
 
     mat.diffuse_color = (r.random(), r.random(), r.random(), 1)
     mat.use_nodes = True
-    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    # bsdf = mat.node_tree.nodes["Principled BSDF"]
     idx = 0
     for TextureID in StringrayMat.TexIDs:
         # Create Node
