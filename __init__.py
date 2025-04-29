@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 6, 2),
+    "version": (1, 6, 5),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -540,6 +540,7 @@ def NameFromMesh(mesh, id, customization_info, bone_names, use_sufix=True):
     return name
 
 def CreateModel(model, id, customization_info, bone_names):
+    addon_prefs = AQ_PublicClass.get_addon_prefs()
     if len(model) < 1: return
     # Make collection
     old_collection = bpy.context.collection
@@ -556,7 +557,7 @@ def CreateModel(model, id, customization_info, bone_names):
         # check physics
         if not bpy.context.scene.Hd2ToolPanelSettings.ImportPhysics and mesh.IsPhysicsBody():
             continue
-        if not bpy.context.scene.Hd2ToolPanelSettings.ImportStatic and mesh.IsStaticMesh():
+        if not addon_prefs.ImportStatic and mesh.IsStaticMesh():
             continue
         # do safety check
         for face in mesh.Indices:
@@ -682,10 +683,10 @@ def CreateModel(model, id, customization_info, bone_names):
         # convert bmesh to mesh
         bm.to_mesh(new_object.data)
         #平滑着色
-        if bpy.context.scene.Hd2ToolPanelSettings.ShadeSmooth:
+        addon_prefs = AQ_PublicClass.get_addon_prefs()
+        if addon_prefs.ShadeSmooth:
             # 4.3 compatibility change
             if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
-                new_mesh.shade_auto_smooth(use_auto_smooth=False)
                 new_mesh.shade_smooth()
 
             else:
@@ -1211,6 +1212,10 @@ class TocManager():
         self.ActiveArchive  = None
         self.SearchArchives = []
 
+    def UnloadPatches(self):
+        self.Patches = []
+        self.ActivePatch = None
+        
     def SetActive(self, Archive):
         if Archive != self.ActiveArchive:
             self.ActiveArchive = Archive
@@ -2946,6 +2951,15 @@ class UnloadArchivesOperator(Operator):
         Global_TocManager.UnloadArchives()
         return{'FINISHED'}
 
+class UnloadPatchesOperator(Operator):
+    bl_label = "Unload Patches"
+    bl_idname = "helldiver2.patches_unloadall"
+    bl_description = "Unloads All Current Loaded Patches"
+
+    def execute(self, context):
+        Global_TocManager.UnloadPatches()
+        return{'FINISHED'}
+
 class CreatePatchFromActiveOperator(Operator):
     bl_label = "Create Patch"
     bl_idname = "helldiver2.archive_createpatch"
@@ -3389,7 +3403,7 @@ class SaveStingrayMeshOperator(Operator):
         if addon_prefs.SaveUseAutoSmooth:
             # 4.3 compatibility change
             if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
-                bpy.ops.object.shade_auto_smooth(use_auto_smooth=True)
+                bpy.ops.object.shade_auto_smooth(angle=3.14159)
                 
             else:
                 bpy.ops.object.use_auto_smooth = True
@@ -3944,14 +3958,14 @@ class Hd2ToolPanelSettings(PropertyGroup):
     ImportLods       : BoolProperty(name="Import LODs", description = "Import LODs", default = False)
     ImportGroup0     : BoolProperty(name="Import Group 0 Only", description = "Only import the first vertex group, ignore others", default = True)
     ImportPhysics    : BoolProperty(name="Import Physics", description = "Import Physics Bodies", default = False)
-    ImportStatic     : BoolProperty(name="Import Static Meshes", description = "Import Static Meshes", default = False)
+    # ImportStatic     : BoolProperty(name="Import Static Meshes", description = "Import Static Meshes", default = False)
     MakeCollections  : BoolProperty(name="Make Collections", description = "Make new collection when importing meshes", default = True)
     Force2UVs        : BoolProperty(name="Force 2 UV Sets", description = "Force at least 2 UV sets, some materials require this", default = True)
     Force1Group      : BoolProperty(name="Force 1 Group", description = "Force mesh to only have 1 vertex group", default = True)
     AutoLods         : BoolProperty(name="Auto LODs", description = "Automatically generate LOD entries based on LOD0, does not actually reduce the quality of the mesh", default = True)
     RemoveGoreMeshes : BoolProperty(name="Remove Gore Meshes", description = "Automatically delete all of the verticies with the gore material when loading a model", default = True)
     shadervariablesUI : BoolProperty(name="Shader Variables UI", description = "显示着色器变量参数UI", default = True)
-    ShadeSmooth      : BoolProperty(name="Shade Smooth", description = "导入模型时平滑着色,开启此项将关闭自动平滑", default = True)
+    # ShadeSmooth      : BoolProperty(name="Shade Smooth", description = "导入模型时平滑着色,开启此项将关闭自动平滑", default = True)
     # Search
     SearchField : StringProperty(default = "")
     
@@ -4022,9 +4036,14 @@ class HellDivers2ToolsPanel(Panel):
                             ColorPicker.variable_index = i
 
     def draw_entry_buttons(self, box, row, Entry, PatchOnly):
+        addon_prefs = AQ_PublicClass.get_addon_prefs()
         if Entry.TypeID == MeshID:
             row.operator("helldiver2.archive_mesh_save", icon='FILE_BLEND', text="").object_id = str(Entry.FileID)
             row.operator("helldiver2.archive_mesh_import", icon='IMPORT', text="").object_id = str(Entry.FileID)
+            if Global_TocManager.IsInPatch(Entry) and addon_prefs.DisplayRenameButton:
+                props = row.operator("helldiver2.archive_entryrename", icon='TEXT', text="")
+                props.object_id     = str(Entry.FileID)
+                props.object_typeid = str(Entry.TypeID)
         elif Entry.TypeID == TexID:
             row.operator("helldiver2.texture_saveblendimage", icon='FILE_BLEND', text="").object_id = str(Entry.FileID)
             row.operator("helldiver2.texture_import", icon='IMPORT', text="").object_id = str(Entry.FileID)
@@ -4076,9 +4095,9 @@ class HellDivers2ToolsPanel(Panel):
             row.prop(scene.Hd2ToolPanelSettings, "ImportGroup0",text="只导入Group 0")
             row.prop(scene.Hd2ToolPanelSettings, "MakeCollections",text="为每个物体创建集合")
             row.prop(scene.Hd2ToolPanelSettings, "ImportPhysics",text="导入物理")
-            row.prop(scene.Hd2ToolPanelSettings, "ImportStatic",text="导入静态网格（无权重）")
+            row.prop(addon_prefs, "ImportStatic",text="导入静态网格（无权重）")
             row.prop(scene.Hd2ToolPanelSettings, "RemoveGoreMeshes",text="删除断肢网格")
-            row.prop(scene.Hd2ToolPanelSettings, "ShadeSmooth",text="导入模型时平滑着色")
+            row.prop(addon_prefs, "ShadeSmooth",text="导入模型时平滑着色")
             row.prop(addon_prefs, "tga_Tex_Import_Switch",text="开启TGA纹理导入")
             row.prop(addon_prefs, "png_Tex_Import_Switch",text="开启PNG纹理导入")
             row = layout.row(); row.separator(); row.label(text="Export Options"); box = row.box(); row = box.grid_flow(columns=1)
@@ -4087,6 +4106,7 @@ class HellDivers2ToolsPanel(Panel):
             row.prop(scene.Hd2ToolPanelSettings, "AutoLods")
             row.prop(addon_prefs,"SaveUseAutoSmooth",text="保存网格时开启自动平滑")
             row.prop(addon_prefs,"ShowZipPatchButton",text="显示打包Patch为Zip功能")
+            row.prop(addon_prefs,"DisplayRenameButton",text="显示重命名按钮")
             
             row = layout.row()
             row.separator()
@@ -4126,6 +4146,8 @@ class HellDivers2ToolsPanel(Panel):
         row.operator("helldiver2.archive_export", icon= 'DISC', text="写入Patch")
         if addon_prefs.ShowZipPatchButton:
             row.operator("helldiver2.archive_zippatch_export",icon="EXPORT",text="导出为Zip")
+        row.operator("helldiver2.patches_unloadall", icon= 'FILE_REFRESH', text="")
+        
         row = layout.row()
         row.prop(scene.Hd2ToolPanelSettings, "Patches", text="Patches")
         if len(Global_TocManager.Patches) > 0:
@@ -4495,6 +4517,7 @@ classes = (
     CopyArchiveIDOperator,
     EntrySectionOperator,
     ButtonAQGitHub,
+    UnloadPatchesOperator,
     
 )
 
