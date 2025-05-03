@@ -51,6 +51,7 @@ class HD2_AddonPreferences(bpy.types.AddonPreferences):
     SaveUseAutoSmooth : BoolProperty(name="SaveUseAutoSmooth",default = True,description = "保存网格时使用自动平滑并将平滑角度设为180度，视觉上将与平滑着色一致，关闭则不对保存网格做任何调整")
     ImportStatic : BoolProperty(name="ImportStatic",default = False,description = "导入静态网格（无权重）")
     DisplayRenameButton : BoolProperty(name="DisplayRenameButton",default = True,description = "网格条目中显示重命名按钮")
+    ShowshaderVariables_CN : BoolProperty(name="DisplayRenameButton",default = True,description = "显示着色器参数中文翻译")
     def draw(self, context):
 
         # layout = self.layout
