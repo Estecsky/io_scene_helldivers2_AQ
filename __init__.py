@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 6, 5),
+    "version": (1, 7, 0),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -14,6 +14,7 @@ bl_info = {
 import ctypes, os, tempfile, subprocess, time, webbrowser
 import random as r
 from copy import deepcopy
+import copy
 from math import ceil # type: ignore
 from pathlib import Path
 
@@ -236,6 +237,13 @@ TextureTypeLookup = {
     "",
     ""
     ),
+    "flowing": (
+        "",
+        "Normal: ",
+        "",
+        "Mask: ",
+        ""
+    )
 
     
     
@@ -1883,6 +1891,30 @@ class CustomizationInfo: # READ ONLY
             self.PieceType = ""
             pass # tehee
 
+class StreamComponentType:
+    POSITION = 0
+    NORMAL = 1
+    TANGENT = 2 # not confirmed
+    BITANGENT = 3 # not confirmed
+    UV = 4
+    COLOR = 5
+    BONE_INDEX = 6
+    BONE_WEIGHT = 7
+    UNKNOWN_TYPE = -1
+
+class StreamComponentFormat:
+    FLOAT = 0
+    VEC2_FLOAT = 1
+    VEC3_FLOAT = 2
+    RGBA_R8G8B8A8 = 4
+    VEC4_UINT32 = 20 # unconfirmed
+    VEC4_UINT8 = 24
+    VEC4_1010102 = 25
+    UNK_NORMAL = 26
+    VEC2_HALF = 29
+    VEC4_HALF = 31
+    UNKNOWN_TYPE = -1
+
 class StreamComponentInfo:
     def __init__(self, type="position", format="float"):
         self.Type   = self.TypeFromName(type)
@@ -1951,51 +1983,10 @@ class StreamComponentInfo:
         elif self.Format == 31: return 8
         raise Exception("Cannot get size of unknown vertex format: "+str(self.Format))
     def SerializeComponent(self, f, value):
-        format  = self.FormatName()
-        if format == "float":
-            return f.float32(value)
-        elif format == "vec2_float":
-            return f.vec2_float(value)
-        elif format == "vec3_float":
-            return f.vec3_float(value)
-        elif format == "rgba_r8g8b8a8":
-            if f.IsReading():
-                r = min(255, int(value[0]*255))
-                g = min(255, int(value[1]*255))
-                b = min(255, int(value[2]*255))
-                a = min(255, int(value[3]*255))
-                value = f.vec4_uint8([r,g,b,a])
-            if f.IsWriting():
-                value = f.vec4_uint8([r,g,b,a])
-                value[0] = min(1, float(value[0]/255))
-                value[1] = min(1, float(value[1]/255))
-                value[2] = min(1, float(value[2]/255))
-                value[3] = min(1, float(value[3]/255))
-            return value
-        elif format == "vec4_uint32": # unconfirmed
-            return f.vec4_uint32(value)
-        elif format == "vec4_uint8":
-            return f.vec4_uint8(value)
-        elif format == "vec4_1010102":
-            if f.IsReading():
-                value = TenBitUnsigned(f.uint32(0))
-                value[3] = 0 # seems to be needed for weights
-            else:
-                f.uint32(MakeTenBitUnsigned(value))
-            return value
-        elif format == "unk_normal":
-            if isinstance(value, int):
-                return f.uint32(value)
-            else:
-                return f.uint32(0)
-        elif format == "vec2_half":
-            return f.vec2_half(value)
-        elif format == "vec4_half":
-            if isinstance(value, float):
-                return f.vec4_half([value,value,value,value])
-            else:
-                return f.vec4_half(value)
-        else:
+        try:
+            serialize_func = FUNCTION_LUTS.SERIALIZE_COMPONENT_LUT[self.Format]
+            return serialize_func(f, value)
+        except:
             raise Exception("Cannot serialize unknown vertex format: "+str(self.Format))
 
 class BoneInfo:
@@ -2226,6 +2217,129 @@ class RawMeshClass:
         for idx in range(numBoneIndices):
             self.VertexBoneIndices.append([[0,0,0,0] for n in range(numVertices)])
 
+class SerializeFunctions:
+
+    def SerializePositionComponent(gpu, mesh, component, vidx):
+        mesh.VertexPositions[vidx] = component.SerializeComponent(gpu, mesh.VertexPositions[vidx])
+
+    def SerializeNormalComponent(gpu, mesh, component, vidx):
+        norm = component.SerializeComponent(gpu, mesh.VertexNormals[vidx])
+        if gpu.IsReading():
+            if not isinstance(norm, int):
+                norm = list(mathutils.Vector((norm[0],norm[1],norm[2])).normalized())
+                mesh.VertexNormals[vidx] = norm[:3]
+            else:
+                mesh.VertexNormals[vidx] = norm
+
+    def SerializeTangentComponent(gpu, mesh, component, vidx):
+        mesh.VertexTangents[vidx] = component.SerializeComponent(gpu, mesh.VertexTangents[vidx])
+
+    def SerializeBiTangentComponent(gpu, mesh, component, vidx):
+        mesh.VertexBiTangents[vidx] = component.SerializeComponent(gpu, mesh.VertexBiTangents[vidx])
+
+    def SerializeUVComponent(gpu, mesh, component, vidx):
+        mesh.VertexUVs[component.Index][vidx] = component.SerializeComponent(gpu, mesh.VertexUVs[component.Index][vidx])
+
+    def SerializeColorComponent(gpu, mesh, component, vidx):
+        mesh.VertexColors[vidx] = component.SerializeComponent(gpu, mesh.VertexColors[vidx])
+
+    def SerializeBoneIndexComponent(gpu, mesh, component, vidx):
+        try:
+             mesh.VertexBoneIndices[component.Index][vidx] = component.SerializeComponent(gpu, mesh.VertexBoneIndices[component.Index][vidx])
+        except:
+            raise Exception(f"Vertex bone index out of range. Component index: {component.Index} vidx: {vidx}")
+
+    def SerializeBoneWeightComponent(gpu, mesh, component, vidx):
+        if component.Index > 0: # TODO: add support for this (check archive 9102938b4b2aef9d)
+            PrettyPrint("Multiple weight indices are unsupported!", "warn")
+            gpu.seek(gpu.tell()+component.GetSize())
+        else:
+            mesh.VertexWeights[vidx] = component.SerializeComponent(gpu, mesh.VertexWeights[vidx])
+
+
+    def SerializeFloatComponent(f, value):
+        return f.float32(value)
+
+    def SerializeVec2FloatComponent(f, value):
+        return f.vec2_float(value)
+
+    def SerializeVec3FloatComponent(f, value):
+        return f.vec3_float(value)
+
+    def SerializeRGBA8888Component(f, value):
+        if f.IsReading():
+            r = min(255, int(value[0]*255))
+            g = min(255, int(value[1]*255))
+            b = min(255, int(value[2]*255))
+            a = min(255, int(value[3]*255))
+            value = f.vec4_uint8([r,g,b,a])
+        else:
+            value = f.vec4_uint8([r,g,b,a])
+            value[0] = min(1, float(value[0]/255))
+            value[1] = min(1, float(value[1]/255))
+            value[2] = min(1, float(value[2]/255))
+            value[3] = min(1, float(value[3]/255))
+        return value
+
+    def SerializeVec4Uint32Component(f, value):
+        return f.vec4_uint32(value)
+
+    def SerializeVec4Uint8Component(f, value):
+        return f.vec4_uint8(value)
+
+    def SerializeVec41010102Component(f, value):
+        if f.IsReading():
+            value = TenBitUnsigned(f.uint32(0))
+            value[3] = 0 # seems to be needed for weights
+        else:
+            f.uint32(MakeTenBitUnsigned(value))
+        return value
+
+    def SerializeUnkNormalComponent(f, value):
+        if isinstance(value, int):
+            return f.uint32(value)
+        else:
+            return f.uint32(0)
+
+    def SerializeVec2HalfComponent(f, value):
+        return f.vec2_half(value)
+
+    def SerializeVec4HalfComponent(f, value):
+        if isinstance(value, float):
+            return f.vec4_half([value,value,value,value])
+        else:
+            return f.vec4_half(value)
+
+    def SerializeUnknownComponent(f, value):
+        raise Exception("Cannot serialize unknown vertex format!")
+
+
+class FUNCTION_LUTS:
+
+    SERIALIZE_MESH_LUT = {
+        StreamComponentType.POSITION: SerializeFunctions.SerializePositionComponent,
+        StreamComponentType.NORMAL: SerializeFunctions.SerializeNormalComponent,
+        StreamComponentType.TANGENT: SerializeFunctions.SerializeTangentComponent,
+        StreamComponentType.BITANGENT: SerializeFunctions.SerializeBiTangentComponent,
+        StreamComponentType.UV: SerializeFunctions.SerializeUVComponent,
+        StreamComponentType.COLOR: SerializeFunctions.SerializeColorComponent,
+        StreamComponentType.BONE_INDEX: SerializeFunctions.SerializeBoneIndexComponent,
+        StreamComponentType.BONE_WEIGHT: SerializeFunctions.SerializeBoneWeightComponent
+    }
+
+    SERIALIZE_COMPONENT_LUT = {
+        StreamComponentFormat.FLOAT: SerializeFunctions.SerializeFloatComponent,
+        StreamComponentFormat.VEC2_FLOAT: SerializeFunctions.SerializeVec2FloatComponent,
+        StreamComponentFormat.VEC3_FLOAT: SerializeFunctions.SerializeVec3FloatComponent,
+        StreamComponentFormat.RGBA_R8G8B8A8: SerializeFunctions.SerializeRGBA8888Component,
+        StreamComponentFormat.VEC4_UINT32: SerializeFunctions.SerializeVec4Uint32Component,
+        StreamComponentFormat.VEC4_UINT8: SerializeFunctions.SerializeVec4Uint8Component,
+        StreamComponentFormat.VEC4_1010102: SerializeFunctions.SerializeVec41010102Component,
+        StreamComponentFormat.UNK_NORMAL: SerializeFunctions.SerializeUnkNormalComponent,
+        StreamComponentFormat.VEC2_HALF: SerializeFunctions.SerializeVec2HalfComponent,
+        StreamComponentFormat.VEC4_HALF: SerializeFunctions.SerializeVec4HalfComponent
+    }
+
 class StingrayMeshFile:
     def __init__(self):
         self.HeaderData1        = bytearray(28);  self.HeaderData2        = bytearray(20); self.UnReversedData1  = bytearray(); self.UnReversedData2    = bytearray()
@@ -2355,9 +2469,9 @@ class StingrayMeshFile:
         else            : self.BoneInfoOffset = f.tell()
         self.NumBoneInfo = f.uint32(len(self.BoneInfoArray))
         if f.IsWriting() and not redo_offsets:
-            self.BoneInfoOffsets = [0 for n in range(self.NumBoneInfo)]
+            self.BoneInfoOffsets = [0]*self.NumBoneInfo
         if f.IsReading():
-            self.BoneInfoOffsets = [0 for n in range(self.NumBoneInfo)]
+            self.BoneInfoOffsets = [0]*self.NumBoneInfo
             self.BoneInfoArray   = [BoneInfo() for n in range(self.NumBoneInfo)]
         self.BoneInfoOffsets    = [f.uint32(Offset) for Offset in self.BoneInfoOffsets]
         for boneinfo_idx in range(self.NumBoneInfo):
@@ -2381,11 +2495,11 @@ class StingrayMeshFile:
                 f.seek(ceil(float(f.tell())/16)*16); self.StreamInfoOffset = f.tell()
             self.NumStreams = f.uint32(len(self.StreamInfoArray))
             if f.IsWriting():
-                if not redo_offsets: self.StreamInfoOffsets = [0 for n in range(self.NumStreams)]
+                if not redo_offsets: self.StreamInfoOffsets = [0]*self.NumStreams
                 self.StreamInfoUnk = [mesh_info.MeshID for mesh_info in self.MeshInfoArray[:self.NumStreams]]
             if f.IsReading():
-                self.StreamInfoOffsets = [0 for n in range(self.NumStreams)]
-                self.StreamInfoUnk     = [0 for n in range(self.NumStreams)]
+                self.StreamInfoOffsets = [0]*self.NumStreams
+                self.StreamInfoUnk     = [0]*self.NumStreams
                 self.StreamInfoArray   = [StreamInfo() for n in range(self.NumStreams)]
 
             self.StreamInfoOffsets  = [f.uint32(Offset) for Offset in self.StreamInfoOffsets]
@@ -2402,11 +2516,11 @@ class StingrayMeshFile:
         self.NumMeshes = f.uint32(len(self.MeshInfoArray))
 
         if f.IsWriting():
-            if not redo_offsets: self.MeshInfoOffsets = [0 for n in range(self.NumMeshes)]
+            if not redo_offsets: self.MeshInfoOffsets = [0]*self.NumMeshes
             self.MeshInfoUnk = [mesh_info.MeshID for mesh_info in self.MeshInfoArray]
         if f.IsReading():
-            self.MeshInfoOffsets = [0 for n in range(self.NumMeshes)]
-            self.MeshInfoUnk     = [0 for n in range(self.NumMeshes)]
+            self.MeshInfoOffsets = [0]*self.NumMeshes
+            self.MeshInfoUnk     = [0]*self.NumMeshes
             self.MeshInfoArray   = [MeshInfo() for n in range(self.NumMeshes)]
             self.DEV_MeshInfoMap = [n for n in range(len(self.MeshInfoArray))]
 
@@ -2422,8 +2536,8 @@ class StingrayMeshFile:
         else            : self.MaterialsOffset = f.tell()
         self.NumMaterials = f.uint32(len(self.MaterialIDs))
         if f.IsReading():
-            self.SectionsIDs = [0 for n in range(self.NumMaterials)]
-            self.MaterialIDs = [0 for n in range(self.NumMaterials)]
+            self.SectionsIDs = [0]*self.NumMaterials
+            self.MaterialIDs = [0]*self.NumMaterials
         self.SectionsIDs = [f.uint32(ID) for ID in self.SectionsIDs]
         self.MaterialIDs = [f.uint64(ID) for ID in self.MaterialIDs]
 
@@ -2567,53 +2681,9 @@ class StingrayMeshFile:
                 vstart = gpu.tell()
 
                 for Component in Stream_Info.Components:
-                    type = Component.TypeName()
-                    # Get Vertex Position
-                    if type == "position":
-                        pos = Component.SerializeComponent(gpu, mesh.VertexPositions[vidx])
-                        mesh.VertexPositions[vidx] = pos[:3]
-
-                    # Get Vertex Normal
-                    elif type == "normal":
-                        norm = Component.SerializeComponent(gpu, mesh.VertexNormals[vidx])
-                        if not isinstance(norm, int) and gpu.IsReading():
-                            norm = list(mathutils.Vector((norm[0],norm[1],norm[2])).normalized())
-                            mesh.VertexNormals[vidx] = norm[:3]
-                        elif isinstance(norm, int):
-                            mesh.VertexNormals[vidx] = norm
-
-                    # Tangents
-                    elif type == "tangent":
-                        tangent = Component.SerializeComponent(gpu, mesh.VertexTangents[vidx])
-                        if tangent != None: mesh.VertexTangents[vidx] = tangent[:3]
-
-                    # BiTangents
-                    elif type == "bitangent":
-                        bitangent = Component.SerializeComponent(gpu, mesh.VertexBiTangents[vidx])
-                        if bitangent != None: mesh.VertexBiTangents[vidx] = bitangent[:3]
-
-                    # Get Vertex UVs
-                    elif type == "uv":
-                        uv = Component.SerializeComponent(gpu, mesh.VertexUVs[Component.Index][vidx])
-                        mesh.VertexUVs[Component.Index][vidx] = uv[:2]
-
-                    # Get Vertex Color
-                    elif type == "color":
-                        color = Component.SerializeComponent(gpu, mesh.VertexColors[vidx])
-                        if color != None: mesh.VertexColors[vidx] = color[:4]
-
-                    # Get Bone Indices
-                    elif type == "bone_index":
-                        mesh.VertexBoneIndices[Component.Index][vidx] = Component.SerializeComponent(gpu, mesh.VertexBoneIndices[Component.Index][vidx])
-
-                    # Get Weights
-                    elif type == "bone_weight":
-                        if Component.Index > 0: # TODO: add support for this (check archive 9102938b4b2aef9d)
-                            PrettyPrint("Multiple weight indices are unsupported!", "warn")
-                            gpu.seek(gpu.tell()+Component.GetSize())
-                        else:
-                            mesh.VertexWeights[vidx] = Component.SerializeComponent(gpu, mesh.VertexWeights[vidx])
-
+                    serialize_func = FUNCTION_LUTS.SERIALIZE_MESH_LUT[Component.Type]
+                    serialize_func(gpu, mesh, Component, vidx)
+                    
                 gpu.seek(vstart + Stream_Info.VertexStride)
             VertexOffset += len(mesh.VertexPositions)
         # update stream info
@@ -2780,7 +2850,7 @@ def SaveStingrayMesh(ID, TocData, GpuData, StreamData, StingrayMesh):
         if lod0 != None:
             for n in range(len(FinalMeshes)):
                 if FinalMeshes[n].IsLod():
-                    newmesh = deepcopy(lod0)
+                    newmesh = copy.copy(lod0)
                     newmesh.MeshInfoIndex = FinalMeshes[n].MeshInfoIndex
                     FinalMeshes[n] = newmesh
     StingrayMesh.RawMeshes = FinalMeshes
@@ -3608,6 +3678,7 @@ class AddMaterialOperator(Operator):
         ("advanced_blue-green", "Advanced 蓝绿光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
         ("advanced_green", "Advanced 绿光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
 
+        ("flowing","流光","光能电塔的流光材质"),
         ("glass", "透明玻璃", "透明玻璃，不知道能干嘛，自己猜()"),
         ("basic+", "Basic+", "A basic material with a color, normal, and PBR map which renders in the UI, Sourced from the super credits prop"),
         ("basic", "Basic", "A basic material with a color, normal, and PBR map. Sourced from a trash bag prop."),
@@ -3984,6 +4055,7 @@ class HellDivers2ToolsPanel(Panel):
     bl_category = "Modding"
 
     def draw_material_editor(self, Entry, layout, row):
+        addon_prefs = AQ_PublicClass.get_addon_prefs()
         scene = bpy.context.scene
         filepath = ""
         if Entry.IsLoaded:
@@ -4005,6 +4077,8 @@ class HellDivers2ToolsPanel(Panel):
                 row.prop(scene.Hd2ToolPanelSettings, "shadervariablesUI",
                 icon="DOWNARROW_HLT" if scene.Hd2ToolPanelSettings.shadervariablesUI else "RIGHTARROW",
                 icon_only=True, emboss=False, text="着色器变量参数栏")
+                if scene.Hd2ToolPanelSettings.shadervariablesUI:
+                    row.prop(addon_prefs, "ShowshaderVariables_CN",text="")
                 #=====
                 if scene.Hd2ToolPanelSettings.shadervariablesUI:
                     for i, variable in enumerate(mat.ShaderVariables):
@@ -4016,8 +4090,9 @@ class HellDivers2ToolsPanel(Panel):
                         if variable.name != "":
                             global Global_ShaderVariables_CN
                             name = variable.name
-                            if Global_ShaderVariables_CN[name]:
-                                name = Global_ShaderVariables_CN[name]
+                            if addon_prefs.ShowshaderVariables_CN:
+                                if Global_ShaderVariables_CN[name]:
+                                    name = Global_ShaderVariables_CN[name]
                         row.label(text=f"{variable.klassName}: {name}", icon='OPTIONS')
                         row = split.column()
                         row.alignment = 'LEFT'
