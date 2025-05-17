@@ -11,6 +11,10 @@
 - 添加手动更新本地搜索Archive ID 中文条目功能
 - 其他UI优化（可自由切换新旧布局，Archive条目种类可折叠，更便捷载入基础资产）
 
+# 下载与更新
+### 下载最新版本[io_scene_helldivers2_AQ](https://github.com/Estecsky/io_scene_helldivers2_AQ/archive/refs/heads/main.zip)
+### 可在插件偏好属性中检查并更新，需要有能访问GitHub的代理网络
+
 ## io_scene_helldivers2_AQ
 A Blender addon facilitating the modding of textures, meshes and materials contained within Helldivers 2 archives.
 
