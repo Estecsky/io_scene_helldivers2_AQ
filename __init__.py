@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 7, 0),
+    "version": (1, 7, 1),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -81,6 +81,11 @@ TextureTypeLookup = {
     "original": ("pbr: ", "", "", "", "", "normal: ", "", "sss color: ", "", "color: ", "", "", ""),
     "basic": ("pbr: ", "color: ", "normal: "),
     "basic+": (
+        "PBR: ",
+        "Base Color: ",
+        "Normal: "
+    ),
+    "basic+Fixed": (
         "PBR: ",
         "Base Color: ",
         "Normal: "
@@ -3680,7 +3685,7 @@ class AddMaterialOperator(Operator):
 
         ("flowing","流光","光能电塔的流光材质"),
         ("glass", "透明玻璃", "透明玻璃，不知道能干嘛，自己猜()"),
-        ("basic+", "Basic+", "A basic material with a color, normal, and PBR map which renders in the UI, Sourced from the super credits prop"),
+        ("basic+Fixed", "Basic+", "A basic material with a color, normal, and PBR map which renders in the UI, Sourced from a SEAF NPC"),
         ("basic", "Basic", "A basic material with a color, normal, and PBR map. Sourced from a trash bag prop."),
         ("emissive", "Emissive", "A basic material with a color, normal, and emission map. Sourced from a vending machine."),
     )
