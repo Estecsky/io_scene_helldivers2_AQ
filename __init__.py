@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 7, 1),
+    "version": (1, 7, 2),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -248,7 +248,12 @@ TextureTypeLookup = {
         "",
         "Mask: ",
         ""
-    )
+    ),
+    "alphaclip": (
+        "Normal/AO/Roughness: ",
+        "Alpha Mask: ",
+        "Base Color/Metallic: "
+    ),
 
     
     
@@ -3688,6 +3693,7 @@ class AddMaterialOperator(Operator):
         ("basic+Fixed", "Basic+", "A basic material with a color, normal, and PBR map which renders in the UI, Sourced from a SEAF NPC"),
         ("basic", "Basic", "A basic material with a color, normal, and PBR map. Sourced from a trash bag prop."),
         ("emissive", "Emissive", "A basic material with a color, normal, and emission map. Sourced from a vending machine."),
+        ("alphaclip", "Alpha Clip", "金属度在颜色贴图的alpha通道，A material that supports an alpha mask which does not render in the UI. Sourced from a skeleton pile")
     )
 
     selected_material: EnumProperty(items=materials, name="Template", default=1)
