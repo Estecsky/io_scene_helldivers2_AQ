@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 7, 2),
+    "version": (1, 7, 5),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -32,6 +32,8 @@ from .AQ_Prefs_HD2 import AQ_PublicClass
 
 import zipfile
 import configparser
+import struct
+import concurrent.futures
 from . import addon_updater_ops
 from . import addonPreferences
 from . import get_update_archivelistCN
@@ -980,31 +982,31 @@ class TocEntry:
             self.LoadedData = callback(self.FileID, self.TocData, self.GpuData, self.StreamData, Reload, MakeBlendObject)
             if self.LoadedData == None: raise Exception("Archive Entry Load Failed")
             self.IsLoaded   = True
-            if self.TypeID == MeshID and not self.IsModified:
-                for object in bpy.data.objects:
-                    try:
-                        objectID = object["Z_ObjectID"]
-                        infoIndex = object["MeshInfoIndex"]
-                        if objectID == str(self.FileID):
-                            PrettyPrint(f"Writing Vertex Groups for {object.name}")
-                            vertexNames = []
-                            for group in object.vertex_groups:
-                                vertexNames.append(group.name)
-                            newGroups = [objectID, infoIndex, vertexNames]
-                            if newGroups not in self.VertexGroups:
-                                self.VertexGroups.append(newGroups)
-                            PrettyPrint(self.VertexGroups)
-                            PrettyPrint(f"Writing Transforms for {object.name}")
-                            transforms = []
-                            transforms.append(object.location)
-                            transforms.append(object.rotation_euler)
-                            transforms.append(object.scale)
-                            objectTransforms = [objectID, infoIndex, transforms]
-                            if objectTransforms not in self.Transforms:
-                                self.Transforms.append(objectTransforms)
-                            PrettyPrint(self.Transforms)
-                    except:
-                        PrettyPrint(f"Object: {object.name} has No HD2 Properties")
+            # if self.TypeID == MeshID and not self.IsModified:
+            #     for object in bpy.data.objects:
+            #         try:
+            #             objectID = object["Z_ObjectID"]
+            #             infoIndex = object["MeshInfoIndex"]
+            #             if objectID == str(self.FileID):
+            #                 PrettyPrint(f"Writing Vertex Groups for {object.name}")
+            #                 vertexNames = []
+            #                 for group in object.vertex_groups:
+            #                     vertexNames.append(group.name)
+            #                 newGroups = [objectID, infoIndex, vertexNames]
+            #                 if newGroups not in self.VertexGroups:
+            #                     self.VertexGroups.append(newGroups)
+            #                 PrettyPrint(self.VertexGroups)
+            #                 PrettyPrint(f"Writing Transforms for {object.name}")
+            #                 transforms = []
+            #                 transforms.append(object.location)
+            #                 transforms.append(object.rotation_euler)
+            #                 transforms.append(object.scale)
+            #                 objectTransforms = [objectID, infoIndex, transforms]
+            #                 if objectTransforms not in self.Transforms:
+            #                     self.Transforms.append(objectTransforms)
+            #                 PrettyPrint(self.Transforms)
+            #         except:
+            #             PrettyPrint(f"Object: {object.name} has No HD2 Properties")
     # -- Write Data -- #
     def Save(self):
         if not self.IsLoaded: self.Load(True, False)
@@ -1031,6 +1033,44 @@ class TocFileType:
         self.unk2     = TocFile.uint32(self.unk2)
         self.unk3     = TocFile.uint32(self.unk3)
         return self
+
+class SearchToc:
+    def __init__(self):
+        self.TocEntries = {}
+        self.Path = ""
+        self.Name = ""
+
+    def HasEntry(self, file_id, type_id):
+        try:
+            return file_id in self.TocEntries[type_id]
+        except KeyError:
+            return False
+
+    def FromFile(self, path):
+        self.UpdatePath(path)
+        bin_data = b""
+        file = open(path, 'r+b')
+        bin_data = file.read(12)
+        magic, numTypes, numFiles = struct.unpack("<III", bin_data)
+        if magic != 4026531857:
+            file.close()
+            return False
+
+        offset = 60 + (numTypes << 5)
+        bin_data = file.read(offset + 80 * numFiles)
+        file.close()
+        for _ in range(numFiles):
+            file_id, type_id = struct.unpack_from("<QQ", bin_data, offset=offset)
+            try:
+                self.TocEntries[type_id].append(file_id)
+            except KeyError:
+                self.TocEntries[type_id] = [file_id]
+            offset += 80
+        return True
+
+    def UpdatePath(self, path):
+        self.Path = path
+        self.Name = Path(path).name
 
 class StreamToc:
     def __init__(self):
@@ -1213,13 +1253,27 @@ class TocManager():
 
         # Get search archives
         if len(self.SearchArchives) == 0:
+            # for root, dirs, files in os.walk(Path(path).parent):
+            #     for name in files:
+            #         if Path(name).suffix == "":
+            #             search_toc = StreamToc()
+            #             success = search_toc.FromFile(os.path.join(root, name), False)
+            #             if success:
+            #                 self.SearchArchives.append(search_toc)
+            futures = []
+            tocs = []
+            executor = concurrent.futures.ThreadPoolExecutor()
             for root, dirs, files in os.walk(Path(path).parent):
                 for name in files:
                     if Path(name).suffix == "":
-                        search_toc = StreamToc()
-                        success = search_toc.FromFile(os.path.join(root, name), False)
-                        if success:
-                            self.SearchArchives.append(search_toc)
+                        search_toc = SearchToc()
+                        tocs.append(search_toc)
+                        futures.append(executor.submit(search_toc.FromFile, os.path.join(root, name)))
+            for index, future in enumerate(futures):
+                if future.result():
+                    self.SearchArchives.append(tocs[index])
+            executor.shutdown()
+
 
         return toc
 
@@ -1265,8 +1319,7 @@ class TocManager():
         # Check All Search Archives
         if SearchAll:
             for Archive in self.SearchArchives:
-                Entry = Archive.GetEntry(FileID, TypeID)
-                if Entry != None:
+                if Archive.HasEntry(FileID, TypeID):
                     return self.LoadArchive(Archive.Path, False).GetEntry(FileID, TypeID)
         return None
 
