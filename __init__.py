@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 7, 5),
+    "version": (1, 7, 6),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -610,6 +610,7 @@ def CreateModel(model, id, customization_info, bone_names):
         new_object["MeshInfoIndex"] = mesh.MeshInfoIndex
         new_object["BoneInfoIndex"] = mesh.LodIndex
         new_object["Z_ObjectID"]      = str(id)
+        new_object["Z_SwapID"] = ""
         if customization_info.BodyType != "":
             new_object["Z_CustomizationBodyType"] = customization_info.BodyType
             new_object["Z_CustomizationSlot"]     = customization_info.Slot
@@ -1276,6 +1277,9 @@ class TocManager():
 
 
         return toc
+
+    # def GetEntryByPatch(self, FileID: int, TypeID: int):
+    #     return self.GetEntry(FileID, TypeID)
 
     def UnloadArchives(self):
         # TODO: Make sure all data gets unloaded...
@@ -3240,6 +3244,55 @@ class ChangeFilepathOperator(Operator, ImportHelper):
         PrettyPrint(f"Changed Game File Path: {Global_gamepath}")
         return{'FINISHED'}
     
+class AddSwapsID_property(Operator):
+    bl_label =  "Add_Swaps_ID"
+    bl_idname = "helldiver2.add_swaps_id_prop"
+    bl_description = "一键添加转移自定义ID属性(可多选物体), 只有先前存在HD2自定义属性的物体才会被添加"
+    
+    
+    @classmethod
+    def poll(cls, context):
+        active_obj = context.active_object
+        if active_obj:
+            return active_obj.type == "MESH"
+        return False
+
+    def execute(self, context):
+        active_obj = context.active_object
+        if active_obj == None: 
+            self.report({'ERROR'}, "请至少选择一个物体")
+            return{'CANCELLED'}
+        select_objs = context.selected_objects
+        add_count = 0
+        for obj in select_objs:
+            if obj.type != "MESH":
+                
+                continue
+            try:
+                ObjectID = obj["Z_ObjectID"]
+            except:
+                continue
+            try:
+                obj["Z_SwapID"]
+            except:
+                pass
+            else:
+                continue
+            
+            if ObjectID  !=  None:
+                obj["Z_SwapID"] = ""
+                add_count += 1
+                
+        self.report({'INFO'}, f"总共为选择的物体添加{add_count}个空交换ID属性")        
+        
+        return {'FINISHED'}
+    
+    
+    
+    
+    
+
+    
 #endregion
 
 #region Operators: Entries
@@ -3529,10 +3582,12 @@ class ImportStingrayMeshOperator(Operator):
 class SaveStingrayMeshOperator(Operator):
     bl_label  = "Save Mesh"
     bl_idname = "helldiver2.archive_mesh_save"
+    bl_options = {'REGISTER', 'UNDO'} 
 
     object_id: StringProperty()
     def execute(self, context):
         addon_prefs = AQ_PublicClass.get_addon_prefs()
+        object = bpy.context.active_object
         if addon_prefs.SaveUseAutoSmooth:
             # 4.3 compatibility change
             if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
@@ -3541,7 +3596,32 @@ class SaveStingrayMeshOperator(Operator):
             else:
                 bpy.ops.object.use_auto_smooth = True
                 bpy.context.object.data.auto_smooth_angle = 3.14159
+        if object == None:
+            self.report({"ERROR"}, "没有物体被选中，必须先选择一个物体再点击保存")
+            return {'CANCELLED'}
+        try:
+            ID = object["Z_ObjectID"]
+        except:
+            self.report({'ERROR'}, f"{object.name} 没有HD2自定义属性")
+            return{'CANCELLED'}
+        
+        SwapID = ""
+        try:
+            SwapID = object["Z_SwapID"]
+            if SwapID != "" and not SwapID.isnumeric():
+                self.report({"ERROR"}, f"Object: {object.name} 的转换ID: {SwapID} 不是纯数字.")
+                return {'CANCELLED'}
+        except:
+            pass
+            # self.report({'INFO'}, f"{obj.name} has no HD2 Swap ID. Skipping Swap.")
         Global_TocManager.Save(int(self.object_id), MeshID)
+        
+        if SwapID != "" and SwapID.isnumeric():
+            Entry = Global_TocManager.GetPatchEntry_B(int(ID), MeshID)
+            self.report({'INFO'}, f"转移 Entry ID: {Entry.FileID} to: {SwapID}")
+            Global_TocManager.RemoveEntryFromPatch(int(SwapID), MeshID)
+            Entry.FileID = int(SwapID)
+        
         return{'FINISHED'}
 
 class BatchSaveStingrayMeshOperator(Operator):
@@ -3561,15 +3641,30 @@ class BatchSaveStingrayMeshOperator(Operator):
                         i.data.use_auto_smooth = True
                         i.data.auto_smooth_angle = 3.14159
         bpy.ops.object.select_all(action='DESELECT')
+        
         IDs = []
         for object in objects:
+            SwapID = ""
             try:
                 ID = object["Z_ObjectID"]
-                if ID not in IDs:
-                    IDs.append(ID)
+                try:
+                    SwapID = object["Z_SwapID"]
+                    PrettyPrint(f"Found Swap of ID: {ID} Swap: {SwapID}")
+                    if SwapID != "" and not SwapID.isnumeric():
+                        self.report({"ERROR"}, f"Object: {object.name} 的转换ID: {SwapID} 不是纯数字.")
+                        return {'CANCELLED'}
+                    
+                except:
+                    pass
+                IDitem = [ID, SwapID]
+                if IDitem not in IDs:
+                    IDs.append(IDitem)
+                    
             except:
                 pass
-        for ID in IDs:
+        for IDitem in IDs:
+            ID = IDitem[0]
+            SwapID = IDitem[1]
             for object in objects:
                 try:
                     if object["Z_ObjectID"] == ID:
@@ -3577,6 +3672,13 @@ class BatchSaveStingrayMeshOperator(Operator):
                 except: pass
 
             Global_TocManager.Save(int(ID), MeshID)
+            
+            if SwapID != "" :
+                Entry = Global_TocManager.GetPatchEntry_B(int(ID), MeshID)
+                self.report({'INFO'}, f"转移 Entry ID: {Entry.FileID} to: {SwapID}")
+                Global_TocManager.RemoveEntryFromPatch(int(SwapID), MeshID)
+                Entry.FileID = int(SwapID)
+                
         return{'FINISHED'}
 
 #endregion
@@ -4259,6 +4361,8 @@ class HellDivers2ToolsPanel(Panel):
             row.operator("helldiver2.open_cache_directory",text="打开缓存目录",icon='FILE_FOLDER')
             row = layout.row(); row.separator(); row.label(text="手动更新本地Archive列表"); box = row.box(); row = box.grid_flow(columns=1)
             row.operator("helldiver2.update_archivelist_cn", text="更新已知资产列表", icon='FILE_REFRESH')
+            row = layout.row(); row.separator(); row.label(text="一键添加转移ID属性"); row = row.grid_flow(columns=1)
+            row.operator("helldiver2.add_swaps_id_prop", text="添加转移自定义ID属性", icon='ADD')
         # Draw Archive Import/Export Buttons
         row = layout.row(); row = layout.row()
         row.operator("helldiver2.archive_import_default", icon= 'SOLO_ON', text="")
@@ -4657,6 +4761,7 @@ classes = (
     EntrySectionOperator,
     ButtonAQGitHub,
     UnloadPatchesOperator,
+    AddSwapsID_property,
     
 )
 
