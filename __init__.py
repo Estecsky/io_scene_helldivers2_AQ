@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 7, 6),
+    "version": (1, 7, 7),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -80,7 +80,19 @@ TexID  = 14790446551990181426
 MaterialID  = 16915718763308572383
 
 TextureTypeLookup = {
-    "original": ("pbr: ", "", "", "", "", "normal: ", "", "sss color: ", "", "color: ", "", "", ""),
+    "original": ("pbr: ", 
+                 "",
+                 "", 
+                 "alpha mask: ",
+                 "",
+                 "normal: ",
+                 "",
+                 "sss color: ",
+                 "", 
+                 "color: ",
+                 "", 
+                 "", 
+                 ""),
     "basic": ("pbr: ", "color: ", "normal: "),
     "basic+": (
         "PBR: ",
