@@ -93,7 +93,6 @@ class MemoryStream:
         return self.serialize(value, '<d', 8)
 
     def __resize_vec(self, value, length):
-        assert len(value) == length, "MISMATCHED LENGTH"
         value = list(value)
         if len(value) < length:
             dif = length - len(value)
@@ -101,29 +100,45 @@ class MemoryStream:
         if len(value) > length:
             value = value[:length]
         return value
-    
+
     def vec2_float(self, value):
+        if len(value) != 2:
+            value = self.__resize_vec(value, 2)
         return [self.float32(value[0]), self.float32(value[1])]
 
     def vec3_float(self, value):
+        if len(value) != 3:
+            value = self.__resize_vec(value, 3)
         return [self.float32(value[0]), self.float32(value[1]), self.float32(value[2])]
 
     def vec2_half(self, value):
+        if len(value) != 2:
+            value = self.__resize_vec(value, 2)
         return [self.float16(value[0]), self.float16(value[1])]
 
     def vec3_half(self, value):
+        if len(value) != 3:
+            value = self.__resize_vec(value, 3)
         return [self.float16(value[0]), self.float16(value[1]), self.float16(value[2])]
 
     def vec4_half(self, value):
+        if len(value) != 4:
+            value = self.__resize_vec(value, 4)
         return [self.float16(value[0]), self.float16(value[1]), self.float16(value[2]), self.float16(value[3])]
 
     def vec4_uint8(self, value):
+        if len(value) != 4:
+            value = self.__resize_vec(value, 4)
         return [self.uint8(value[0]), self.uint8(value[1]), self.uint8(value[2]), self.uint8(value[3])]
 
     def vec4_uint16(self, value):
+        if len(value) != 4:
+            value = self.__resize_vec(value, 4)
         return [self.uint16(value[0]), self.uint16(value[1]), self.uint16(value[2]), self.uint16(value[3])]
 
     def vec4_uint32(self, value):
+        if len(value) != 4:
+            value = self.__resize_vec(value, 4)
         return [self.uint32(value[0]), self.uint32(value[1]), self.uint32(value[2]), self.uint32(value[3])]
 
     def array(self, type, value, size = -1):
