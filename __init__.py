@@ -3072,15 +3072,19 @@ class DefaultLoadArchiveOperator(Operator):
 class LoadArchiveOperator(Operator, ImportHelper):
     bl_label = "Load Archive"
     bl_idname = "helldiver2.archive_import"
-
+    
     filter_glob: StringProperty(default='*', options={'HIDDEN'})
 
     is_patch: BoolProperty(name="is_patch", default=False, options={'HIDDEN'})
-
-    def __init__(self):
-        self.filepath = bpy.path.abspath(Global_gamepath)
+    
+    filepath: StringProperty(name="File Path", subtype='FILE_PATH', default="")
+    
     def execute(self, context):
         # Sanitize path by removing any provided extension, so the correct TOC file is loaded
+        if not self.filepath:
+            self.report({'ERROR'}, "文件路径不能为空。")
+            return {'CANCELLED'}
+            
         path = Path(self.filepath)
         if not path.suffix.startswith(".patch_"): path = path.with_suffix("")
 
@@ -3089,8 +3093,19 @@ class LoadArchiveOperator(Operator, ImportHelper):
         # Redraw
         for area in context.screen.areas:
             if area.type == "VIEW_3D": area.tag_redraw()
-        
+            
+        self.filepath = ""
         return{'FINISHED'}
+        
+    def invoke(self, context, event):
+        wm = context.window_manager
+
+        if self.filepath:
+            return {'FINISHED'}
+        else:
+            self.filepath = bpy.path.abspath(Global_gamepath)
+            wm.fileselect_add(self)
+            return {'RUNNING_MODAL'} 
 
 class UnloadArchivesOperator(Operator):
     bl_label = "Unload Archives"
@@ -3118,6 +3133,21 @@ class CreatePatchFromActiveOperator(Operator):
         layout = self.layout; row = layout.row()
         row.prop(self, "NewPatchIndex", icon='COPY_ID')
         # print("NewPatchIndex:", self.NewPatchIndex)
+    
+    def execute(self, context):
+        Global_TocManager.CreatePatchFromActive(NewPatchIndex = self.NewPatchIndex)
+
+        # Redraw
+        for area in context.screen.areas:
+            if area.type == "VIEW_3D": area.tag_redraw()
+        return{'FINISHED'}
+        
+    def invoke(self, context, event):
+        wm = context.window_manager
+        if self.NewPatchIndex == 0:
+            return wm.invoke_props_dialog(self)
+        else:
+            return {'FINISHED'}
     
     def execute(self, context):
         Global_TocManager.CreatePatchFromActive(NewPatchIndex = self.NewPatchIndex)
