@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 7, 7),
+    "version": (1, 8, 0),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -622,7 +622,11 @@ def CreateModel(model, id, customization_info, bone_names):
         new_object["MeshInfoIndex"] = mesh.MeshInfoIndex
         new_object["BoneInfoIndex"] = mesh.LodIndex
         new_object["Z_ObjectID"]      = str(id)
-        new_object["Z_SwapID"] = ""
+        new_object["Z_SwapID_0"] = ""
+        # new_object["Z_SwapID_1"] = ""
+        # new_object["Z_SwapID_2"] = ""
+        # new_object["Z_SwapID_3"] = ""
+        # new_object["Z_SwapID_4"] = ""
         if customization_info.BodyType != "":
             new_object["Z_CustomizationBodyType"] = customization_info.BodyType
             new_object["Z_CustomizationSlot"]     = customization_info.Slot
@@ -692,8 +696,18 @@ def CreateModel(model, id, customization_info, bone_names):
                 goreIndex = matNum
                 PrettyPrint(f"Found gore material at index: {matNum}")
             # append material to slot
-            try: new_object.data.materials.append(bpy.data.materials[material.MatID])
-            except: raise Exception(f"Tool was unable to find material that this mesh uses, ID: {material.MatID}")
+            try: 
+                new_object.data.materials.append(bpy.data.materials[material.MatID])
+            except Exception: 
+                # raise Exception(f"Tool was unable to find material that this mesh uses, ID: {material.MatID}")
+                PrettyPrint(f"Tool was unable to find material that this mesh uses, ID: {material.MatID}")
+                # 未找到材质直接新建
+                bpy.data.materials.new(material.MatID)
+                # 再次添加
+                try:
+                    new_object.data.materials.append(bpy.data.materials[material.MatID])
+                except Exception: 
+                    PrettyPrint(f"Tool was unable to find material that this mesh uses, ID: {material.MatID}")
             # assign material to faces
             numTris    = int(material.NumIndices/3)
             StartIndex = int(material.StartIndex/3)
@@ -2541,7 +2555,10 @@ class StingrayMeshFile:
             elif self.StreamInfoOffset > 0:
                 UnreversedData1Size = self.StreamInfoOffset-f.tell()
         else: UnreversedData1Size = len(self.UnReversedData1)
-        self.UnReversedData1    = f.bytes(self.UnReversedData1, UnreversedData1Size)
+        try:
+            self.UnReversedData1    = f.bytes(self.UnReversedData1, UnreversedData1Size)
+        except:
+            PrettyPrint(f"Could not set UnReversedData1", "ERROR")
 
         # Bone Info
         if f.IsReading(): f.seek(self.BoneInfoOffset)
@@ -2638,7 +2655,7 @@ class StingrayMeshFile:
             self.Serialize(f, gpu, True)
         return self
 
-    def SerializeGpuData(self, gpu):
+    def SerializeGpuData(self, gpu: MemoryStream):
         PrettyPrint("SerializeGpuData")
         # Init Raw Meshes If Reading
         if gpu.IsReading():
@@ -2659,7 +2676,7 @@ class StingrayMeshFile:
                 self.SerializeVertexBuffer(gpu, Stream_Info, stream_idx, OrderedMeshes)
                 self.SerializeIndexBuffer(gpu, Stream_Info, stream_idx, OrderedMeshes)
 
-    def SerializeIndexBuffer(self, gpu, Stream_Info, stream_idx, OrderedMeshes):
+    def SerializeIndexBuffer(self, gpu: MemoryStream, Stream_Info, stream_idx, OrderedMeshes):
         # get indices
         IndexOffset  = 0
         if gpu.IsWriting():Stream_Info.IndexBufferOffset = gpu.tell()
@@ -2715,10 +2732,6 @@ class StingrayMeshFile:
                             value = min(max(0, value), 0xffffffff)
                         indices[i] = IndexInt(value)
                     mesh.Indices[TotalIndex] = indices
-                    # v1 = IndexInt(mesh.Indices[TotalIndex][0])
-                    # v2 = IndexInt(mesh.Indices[TotalIndex][1])
-                    # v3 = IndexInt(mesh.Indices[TotalIndex][2])
-                    # mesh.Indices[TotalIndex] = [v1, v2, v3]
                     TotalIndex += 1
                 IndexOffset  += Section.NumIndices
         # update stream info
@@ -2773,36 +2786,19 @@ class StingrayMeshFile:
 
     def CreateOrderedMeshList(self):
         # re-order the meshes to match the vertex order (this is mainly for writing)
-        # man this code is ass, there has to be a better way to do this, but i am stupid af frfr no cap
-        OrderedMeshes = [ [[], []] for n in range(len(self.StreamInfoArray))]
-        VertOrderedMeshes_flat = []
-        IndexOrderedMeshes_flat = []
-        while len(VertOrderedMeshes_flat) != len(self.RawMeshes):
-            smallest_vert_mesh = None
-            smallest_index_mesh = None
-            for mesh in self.RawMeshes:
-                mesh_info   = self.MeshInfoArray[self.DEV_MeshInfoMap[mesh.MeshInfoIndex]]
-                if mesh not in VertOrderedMeshes_flat:
-                    if smallest_vert_mesh == None:
-                        smallest_vert_mesh = mesh
-                    else:
-                        smallest_mesh_info   = self.MeshInfoArray[self.DEV_MeshInfoMap[smallest_vert_mesh.MeshInfoIndex]]
-                        if mesh_info.Sections[0].VertexOffset < smallest_mesh_info.Sections[0].VertexOffset:
-                            smallest_vert_mesh = mesh
-
-                if mesh not in IndexOrderedMeshes_flat:
-                    if smallest_index_mesh == None:
-                        smallest_index_mesh = mesh
-                    else:
-                        smallest_mesh_info   = self.MeshInfoArray[self.DEV_MeshInfoMap[smallest_index_mesh.MeshInfoIndex]]
-                        if mesh_info.Sections[0].IndexOffset < smallest_mesh_info.Sections[0].IndexOffset:
-                            smallest_index_mesh = mesh
-            mesh_info   = self.MeshInfoArray[self.DEV_MeshInfoMap[smallest_vert_mesh.MeshInfoIndex]]
-            OrderedMeshes[mesh_info.StreamIndex][0].append(smallest_vert_mesh)
-            mesh_info   = self.MeshInfoArray[self.DEV_MeshInfoMap[smallest_index_mesh.MeshInfoIndex]]
-            OrderedMeshes[mesh_info.StreamIndex][1].append(smallest_index_mesh)
-            VertOrderedMeshes_flat.append(smallest_vert_mesh)
-            IndexOrderedMeshes_flat.append(smallest_index_mesh)
+        meshes_ordered_by_vert = [
+            sorted(
+                [mesh for mesh in self.RawMeshes if self.MeshInfoArray[self.DEV_MeshInfoMap[mesh.MeshInfoIndex]].StreamIndex == index],
+                key=lambda mesh: self.MeshInfoArray[self.DEV_MeshInfoMap[mesh.MeshInfoIndex]].Sections[0].VertexOffset
+            ) for index in range(len(self.StreamInfoArray))
+        ]
+        meshes_ordered_by_index = [
+            sorted(
+                [mesh for mesh in self.RawMeshes if self.MeshInfoArray[self.DEV_MeshInfoMap[mesh.MeshInfoIndex]].StreamIndex == index],
+                key=lambda mesh: self.MeshInfoArray[self.DEV_MeshInfoMap[mesh.MeshInfoIndex]].Sections[0].IndexOffset
+            ) for index in range(len(self.StreamInfoArray))
+        ]
+        OrderedMeshes = [list(a) for a in zip(meshes_ordered_by_vert, meshes_ordered_by_index)]
 
         # set 32 bit face indices if needed
         for stream_idx in range(len(OrderedMeshes)):
@@ -2925,6 +2921,7 @@ def SaveStingrayMesh(ID, TocData, GpuData, StreamData, StingrayMesh):
         for mesh in FinalMeshes:
             if mesh.LodIndex == 0:
                 lod0 = mesh
+                break
         # print(lod0)
         if lod0 != None:
             for n in range(len(FinalMeshes)):
@@ -3262,6 +3259,18 @@ class AddSwapsID_property(Operator):
     bl_description = "一键添加转移自定义ID属性(可多选物体), 只有先前存在HD2自定义属性的物体才会被添加"
     
     
+    SwapsID_amount : IntProperty(
+        name="需要添加的转移ID数量",
+        description="需要添加的转移ID数量，不推荐过多添加",
+        default=1,
+        min=1,
+        max=200,
+    )
+    
+    def draw(self, context):
+        layout = self.layout; row = layout.row()
+        row.prop(self, "SwapsID_amount", icon='COPY_ID')
+    
     @classmethod
     def poll(cls, context):
         active_obj = context.active_object
@@ -3276,30 +3285,60 @@ class AddSwapsID_property(Operator):
             return{'CANCELLED'}
         select_objs = context.selected_objects
         add_count = 0
+        
         for obj in select_objs:
-            if obj.type != "MESH":
-                
-                continue
-            try:
-                ObjectID = obj["Z_ObjectID"]
-            except:
-                continue
+            has_swap_id = False
+            ori_swap = ""
+            if obj.type != "MESH":continue
+            try:ObjectID = obj["Z_ObjectID"]
+            except:continue
+            
+            SwapID_keys_id = [int(key.split("_")[-1]) for key in obj.keys() if key.startswith("Z_SwapID_")]
+            
+            
+            
             try:
                 obj["Z_SwapID"]
             except:
                 pass
             else:
-                continue
+                if obj["Z_SwapID"] != "":
+                    has_swap_id = True
+                    ori_swap = obj["Z_SwapID"]
+                    
+                    del obj["Z_SwapID"]
+                else:
+                    del obj["Z_SwapID"]
+                    obj["Z_SwapID_0"] = ""
             
             if ObjectID  !=  None:
-                obj["Z_SwapID"] = ""
+                if len(SwapID_keys_id) != 0:
+                    SwapID_keys_id.sort()
+                    new_id = SwapID_keys_id[-1] + 1
+                    for i in range(self.SwapsID_amount):
+                        obj[f"Z_SwapID_{new_id + i}"] = ""
+                else:
+                    try:
+                        obj["Z_SwapID_0"]
+                    except:
+                        for i in range(self.SwapsID_amount):
+                            obj[f"Z_SwapID_{i}"] = ""
+                    else:
+                        for i in range(self.SwapsID_amount):
+                            obj[f"Z_SwapID_{i + 1}"] = ""
+                if has_swap_id:
+                    obj["Z_SwapID_0"] = ori_swap
+                
                 add_count += 1
                 
-        self.report({'INFO'}, f"总共为选择的物体添加{add_count}个空交换ID属性")        
+        self.report({'INFO'}, f"总共为选择的物体添加{add_count * self.SwapsID_amount}个空交换ID属性")        
         
         return {'FINISHED'}
     
-    
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
     
     
     
@@ -3617,22 +3656,44 @@ class SaveStingrayMeshOperator(Operator):
             self.report({'ERROR'}, f"{object.name} 没有HD2自定义属性")
             return{'CANCELLED'}
         
-        SwapID = ""
+        # SwapID = ""
+        SwapID_list = []
         try:
-            SwapID = object["Z_SwapID"]
-            if SwapID != "" and not SwapID.isnumeric():
-                self.report({"ERROR"}, f"Object: {object.name} 的转换ID: {SwapID} 不是纯数字.")
-                return {'CANCELLED'}
+            object["Z_SwapID"]
         except:
             pass
-            # self.report({'INFO'}, f"{obj.name} has no HD2 Swap ID. Skipping Swap.")
-        Global_TocManager.Save(int(self.object_id), MeshID)
+        else:
+            if object["Z_SwapID"] != "":
+                object["Z_SwapID_0"] = object["Z_SwapID"]
         
-        if SwapID != "" and SwapID.isnumeric():
-            Entry = Global_TocManager.GetPatchEntry_B(int(ID), MeshID)
-            self.report({'INFO'}, f"转移 Entry ID: {Entry.FileID} to: {SwapID}")
-            Global_TocManager.RemoveEntryFromPatch(int(SwapID), MeshID)
-            Entry.FileID = int(SwapID)
+        SwapID_keys = [key for key in object.keys() if key.startswith("Z_SwapID_")]
+        
+        if SwapID_keys:
+            for key in SwapID_keys:
+                if object[key] != "" :
+                    if object[key].isnumeric():
+                        SwapID_list.append(object[key])
+                    else:
+                        self.report({"ERROR"}, f"Object: {object.name} 的转换ID: {object[key]} 不是纯数字.")
+                        return {'CANCELLED'}
+        
+        
+ 
+        if SwapID_list:
+            for SwapID in SwapID_list:
+                Global_TocManager.Save(int(ID), MeshID)
+                Entry = Global_TocManager.GetPatchEntry_B(int(ID), MeshID)
+                self.report({'INFO'}, f"转移 Entry ID: {Entry.FileID} to: {SwapID}")
+                Global_TocManager.RemoveEntryFromPatch(int(SwapID), MeshID)
+                Entry.FileID = int(SwapID)
+        
+        else:
+            Global_TocManager.Save(int(self.object_id), MeshID)
+        
+        # if SwapID != "" and SwapID.isnumeric():
+        #     self.report({'INFO'}, f"转移 Entry ID: {Entry.FileID} to: {SwapID}")
+        #     Global_TocManager.RemoveEntryFromPatch(int(SwapID), MeshID)
+        #     Entry.FileID = int(SwapID)
         
         return{'FINISHED'}
 
@@ -3656,40 +3717,57 @@ class BatchSaveStingrayMeshOperator(Operator):
         
         IDs = []
         for object in objects:
-            SwapID = ""
+            try:
+                object["Z_SwapID"]
+            except:
+                pass
+            else:
+                if object["Z_SwapID"] != "":
+                    object["Z_SwapID_0"] = object["Z_SwapID"]
+            SwapID_list = []
+            SwapID_keys = [key for key in object.keys() if key.startswith("Z_SwapID_")]
             try:
                 ID = object["Z_ObjectID"]
-                try:
-                    SwapID = object["Z_SwapID"]
-                    PrettyPrint(f"Found Swap of ID: {ID} Swap: {SwapID}")
-                    if SwapID != "" and not SwapID.isnumeric():
-                        self.report({"ERROR"}, f"Object: {object.name} 的转换ID: {SwapID} 不是纯数字.")
-                        return {'CANCELLED'}
-                    
-                except:
-                    pass
-                IDitem = [ID, SwapID]
+                
+                if SwapID_keys:
+                    for key in SwapID_keys:
+                        if object[key] != "" :
+                            if object[key].isnumeric():
+                                SwapID_list.append(object[key])
+                            else:
+                                self.report({"ERROR"}, f"Object: {object.name} 的转换ID: {object[key]} 不是纯数字.")
+                                return {'CANCELLED'}
+                
+
+                IDitem = [ID, SwapID_list]
                 if IDitem not in IDs:
                     IDs.append(IDitem)
                     
             except:
                 pass
+
         for IDitem in IDs:
             ID = IDitem[0]
-            SwapID = IDitem[1]
-            for object in objects:
-                try:
-                    if object["Z_ObjectID"] == ID:
-                       object.select_set(True)
-                except: pass
+            SwapID_list = IDitem[1]
+            # for object in objects:
+            #     try:
+            #         if object["Z_ObjectID"] == ID:
+            #            object.select_set(True)
+            #     except: pass
 
-            Global_TocManager.Save(int(ID), MeshID)
+            # Global_TocManager.Save(int(ID), MeshID)
             
-            if SwapID != "" :
-                Entry = Global_TocManager.GetPatchEntry_B(int(ID), MeshID)
-                self.report({'INFO'}, f"转移 Entry ID: {Entry.FileID} to: {SwapID}")
-                Global_TocManager.RemoveEntryFromPatch(int(SwapID), MeshID)
-                Entry.FileID = int(SwapID)
+            if SwapID_list:
+                for SwapID in SwapID_list:
+                    
+                    Global_TocManager.Save(int(ID), MeshID)
+                    Entry = Global_TocManager.GetPatchEntry_B(int(ID), MeshID)
+                    
+                    Global_TocManager.RemoveEntryFromPatch(int(SwapID), MeshID)
+                    Entry.FileID = int(SwapID)
+            
+            else:
+                Global_TocManager.Save(int(ID), MeshID)
                 
         return{'FINISHED'}
 
