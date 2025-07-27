@@ -1,5 +1,9 @@
+## 不要下release版本！！！！直接下main分支文件
+## 不要下release版本！！！！直接下main分支文件
+## 点击下载：[io_scene_helldivers2_AQ](https://github.com/Estecsky/io_scene_helldivers2_AQ/archive/refs/heads/main.zip)
+
 # 个人魔改版
-- 添加新材质(泛光，advanced，玻璃等)
+- 添加新材质(泛光，流光，advanced，alpha clip，玻璃等)
 - 顶部信息按钮会跳转到[Archive ID 中文收集表](https://www.kdocs.cn/l/csRnAs7QlZvQ)
 - 添加Patch重命名功能与新建Patch时调整序号功能，支持自动填充为基础资产的重命名
 - 添加社区版的材质参数功能
@@ -10,14 +14,16 @@
 - 设置游戏data目录后，可从插件中搜索[Archive ID 中文收集表](https://www.kdocs.cn/l/csRnAs7QlZvQ)存在的备注条目并选择载入
 - 添加手动更新本地搜索Archive ID 中文条目功能
 - 其他UI优化（可自由切换新旧布局，Archive条目种类可折叠，更便捷载入基础资产）
+- 添加快捷转移功能与转移标记属性按钮
+- 首次加载archive提速
 
 # 下载与更新
 ### 下载最新版本[io_scene_helldivers2_AQ](https://github.com/Estecsky/io_scene_helldivers2_AQ/archive/refs/heads/main.zip)
 ### 可在插件偏好属性中检查并更新，需要有能访问GitHub的代理网络
 
-## io_scene_helldivers2_AQ
+<!-- ## io_scene_helldivers2_AQ
 A Blender addon facilitating the modding of textures, meshes and materials contained within Helldivers 2 archives.
 
 ### Installation
-[Download the latest release build](https://github.com/Estecsky/io_scene_helldivers2_AQ/archive/refs/heads/main.zip) and install it into Blender 3.x-4.0. And Blender 4.1 is not supported at this time due to API changes.
+[Download the latest release build](https://github.com/Estecsky/io_scene_helldivers2_AQ/archive/refs/heads/main.zip) and install it into Blender 3.x-4.0. And Blender 4.1 is not supported at this time due to API changes. -->
 
