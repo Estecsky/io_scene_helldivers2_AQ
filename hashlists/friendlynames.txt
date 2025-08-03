@@ -4832,6 +4832,7 @@
 10216731484117571310 content/fac_helldivers/equipment/primary_weapons/jet_rifle_phoenix/jet_rifle_phoenix
 421324886246020354 content/fac_helldivers/equipment/primary_weapons/pump_shotgun_plasma/pump_shotgun_plasma
 6047980762772154079 content/fac_helldivers/equipment/primary_weapons/pump_shotgun_slug/pump_shotgun_slug
+13361269385325929572 content/fac_helldivers/equipment/sidearm_weapons/revolver_pistol/revolver_speedloader
 685817687590585291 roof_solar_panel_5x5_01
 2905571548111627985 abs_ventilation_roof_05
 3230743807044598365 abs_ventilation_roof_06
@@ -5863,7 +5864,6 @@
 16653674489725268507 r_male/cha_fighting_worker_male
 5641428405267160100 personal_defense_weapon
 13093153068183744956 asings/pistol_12mm_long
-13361269385325929572 ol/revolver_speedloader
 14133186296882294161 l_defense_weapon_pepper
 18044816879460781764 xtended_magazine_pepper
 5690760409550920280 _backpack/ammo_backpack
@@ -7157,3 +7157,6 @@
 3580554067389676115 r_medium_stalkerlair_01
 410538129773584665 CyborgEyeGlow???
 10035997378415074895 CyborgEyeGlow2???
+4945697432933156965 4倍瞄准镜
+16634382492500136054 鹰眼
+18319281757224320923 电弧榴弹发射器(GL-52 缓和使者)
