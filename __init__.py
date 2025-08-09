@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 8, 0),
+    "version": (1, 8, 2),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -375,6 +375,33 @@ def GetDisplayData():
 
 #region Functions: Blender
 
+# 检查材质名称是否以'.001'结尾
+def CheckValidMaterial(obj, slot_index):
+    material = obj.material_slots[slot_index].material
+    if material.name.find(".0") != -1:
+        original_material_name = material.name[:-4]
+        
+        target_material = bpy.data.materials.get(original_material_name)
+        
+        if target_material:
+            obj.material_slots[slot_index].material = target_material
+            
+            material_users = material.users
+            if material_users <= 0:
+                bpy.data.materials.remove(material)
+        else:
+            PrettyPrint("尝试替换为正确的材质名: " + material.name + "该材质不存在，正在新建")
+            AddMaterialToBlend_EMPTY(original_material_name)
+            new_material = bpy.data.materials.get(original_material_name)
+            obj.material_slots[slot_index].material = new_material
+            
+            material_users = material.users
+            if material_users <= 0:
+                bpy.data.materials.remove(material)
+                
+        PrettyPrint("材质清理完成")
+
+
 def duplicate(obj, data=True, actions=True, collection=None):
     obj_copy = obj.copy()
     if data:
@@ -623,10 +650,10 @@ def CreateModel(model, id, customization_info, bone_names):
         new_object["BoneInfoIndex"] = mesh.LodIndex
         new_object["Z_ObjectID"]      = str(id)
         new_object["Z_SwapID_0"] = ""
-        # new_object["Z_SwapID_1"] = ""
-        # new_object["Z_SwapID_2"] = ""
-        # new_object["Z_SwapID_3"] = ""
-        # new_object["Z_SwapID_4"] = ""
+        new_object["Z_SwapID_1"] = ""
+        new_object["Z_SwapID_2"] = ""
+        new_object["Z_SwapID_3"] = ""
+        new_object["Z_SwapID_4"] = ""
         if customization_info.BodyType != "":
             new_object["Z_CustomizationBodyType"] = customization_info.BodyType
             new_object["Z_CustomizationSlot"]     = customization_info.Slot
@@ -702,12 +729,12 @@ def CreateModel(model, id, customization_info, bone_names):
                 # raise Exception(f"Tool was unable to find material that this mesh uses, ID: {material.MatID}")
                 PrettyPrint(f"Tool was unable to find material that this mesh uses, ID: {material.MatID}")
                 # 未找到材质直接新建
-                bpy.data.materials.new(material.MatID)
+                AddMaterialToBlend_EMPTY(material.MatID)
                 # 再次添加
                 try:
                     new_object.data.materials.append(bpy.data.materials[material.MatID])
-                except Exception: 
-                    PrettyPrint(f"Tool was unable to find material that this mesh uses, ID: {material.MatID}")
+                except: 
+                    raise Exception(f"Tool was unable to find material that this mesh uses, ID: {material.MatID}")
             # assign material to faces
             numTris    = int(material.NumIndices/3)
             StartIndex = int(material.StartIndex/3)
@@ -3685,6 +3712,10 @@ class SaveStingrayMeshOperator(Operator):
         except:
             self.report({'ERROR'}, f"{object.name} 没有HD2自定义属性")
             return{'CANCELLED'}
+        # 材质名称检查与修正
+        for idx in range(len(object.material_slots)):
+            CheckValidMaterial(object,idx)
+        
         
         # SwapID = ""
         SwapID_list = []
@@ -3695,6 +3726,7 @@ class SaveStingrayMeshOperator(Operator):
         else:
             if object["Z_SwapID"] != "":
                 object["Z_SwapID_0"] = object["Z_SwapID"]
+                del object["Z_SwapID"]
         
         SwapID_keys = [key for key in object.keys() if key.startswith("Z_SwapID_")]
         
@@ -3708,9 +3740,10 @@ class SaveStingrayMeshOperator(Operator):
                         return {'CANCELLED'}
         
         
- 
+        # save方法会在保存结束后将原先选中物体取消选择，所以在每次迭代保存时应该重新让物体选中
         if SwapID_list:
             for SwapID in SwapID_list:
+                object.select_set(True)
                 Global_TocManager.Save(int(ID), MeshID)
                 Entry = Global_TocManager.GetPatchEntry_B(int(ID), MeshID)
                 self.report({'INFO'}, f"转移 Entry ID: {Entry.FileID} to: {SwapID}")
@@ -3759,6 +3792,10 @@ class BatchSaveStingrayMeshOperator(Operator):
             try:
                 ID = object["Z_ObjectID"]
                 
+                # 材质名称检查与修正
+                for idx in range(len(object.material_slots)):
+                    CheckValidMaterial(object,idx)
+                
                 if SwapID_keys:
                     for key in SwapID_keys:
                         if object[key] != "" :
@@ -3779,24 +3816,33 @@ class BatchSaveStingrayMeshOperator(Operator):
         for IDitem in IDs:
             ID = IDitem[0]
             SwapID_list = IDitem[1]
-            # for object in objects:
-            #     try:
-            #         if object["Z_ObjectID"] == ID:
-            #            object.select_set(True)
-            #     except: pass
+            valid_object_list = []
+            for object in objects:
+                try:
+                    if object["Z_ObjectID"] == ID:
+                        valid_object_list.append(object)
+                        # object.select_set(True)
+                except: pass
 
             # Global_TocManager.Save(int(ID), MeshID)
             
             if SwapID_list:
                 for SwapID in SwapID_list:
                     
+                    for valid_obj in valid_object_list:
+                        valid_obj.select_set(True)
+                    
                     Global_TocManager.Save(int(ID), MeshID)
+                    
                     Entry = Global_TocManager.GetPatchEntry_B(int(ID), MeshID)
                     
                     Global_TocManager.RemoveEntryFromPatch(int(SwapID), MeshID)
                     Entry.FileID = int(SwapID)
             
             else:
+                for valid_obj in valid_object_list:
+                    valid_obj.select_set(True)
+                    
                 Global_TocManager.Save(int(ID), MeshID)
                 
         return{'FINISHED'}
