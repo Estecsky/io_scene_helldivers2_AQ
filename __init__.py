@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 8, 2),
+    "version": (1, 8, 3),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -3742,13 +3742,27 @@ class SaveStingrayMeshOperator(Operator):
         
         # save方法会在保存结束后将原先选中物体取消选择，所以在每次迭代保存时应该重新让物体选中
         if SwapID_list:
+            if ID in SwapID_list:
+                if SwapID_list.count(ID) > 1:
+                    self.report({"ERROR"}, f"Object: {object.name} 的转换ID栏最多只能填一次自身ID.")
+                    return {'CANCELLED'}
+
+                SwapID_list.remove(ID)
+                #将其放到末尾
+                SwapID_list.append(ID)
+
             for SwapID in SwapID_list:
                 object.select_set(True)
                 Global_TocManager.Save(int(ID), MeshID)
                 Entry = Global_TocManager.GetPatchEntry_B(int(ID), MeshID)
-                self.report({'INFO'}, f"转移 Entry ID: {Entry.FileID} to: {SwapID}")
-                Global_TocManager.RemoveEntryFromPatch(int(SwapID), MeshID)
-                Entry.FileID = int(SwapID)
+                if SwapID != ID:
+                    self.report({'INFO'}, f"转移 Entry ID: {Entry.FileID} to: {SwapID}")
+                    Global_TocManager.RemoveEntryFromPatch(int(SwapID), MeshID)
+                    Entry.FileID = int(SwapID)
+                else:
+                    self.report({'INFO'}, f"Entry ID: {Entry.FileID} 保持自身")
+
+                
         
         else:
             Global_TocManager.Save(int(self.object_id), MeshID)
@@ -3827,6 +3841,15 @@ class BatchSaveStingrayMeshOperator(Operator):
             # Global_TocManager.Save(int(ID), MeshID)
             
             if SwapID_list:
+                if ID in SwapID_list:
+                    if SwapID_list.count(ID) > 1:
+                        self.report({"ERROR"}, f"Object: {object.name} 的转换ID栏最多只能填一次自身ID.")
+                        return {'CANCELLED'}
+
+                    SwapID_list.remove(ID)
+                    #将其放到末尾
+                    SwapID_list.append(ID)
+                    
                 for SwapID in SwapID_list:
                     
                     for valid_obj in valid_object_list:
@@ -3835,9 +3858,9 @@ class BatchSaveStingrayMeshOperator(Operator):
                     Global_TocManager.Save(int(ID), MeshID)
                     
                     Entry = Global_TocManager.GetPatchEntry_B(int(ID), MeshID)
-                    
-                    Global_TocManager.RemoveEntryFromPatch(int(SwapID), MeshID)
-                    Entry.FileID = int(SwapID)
+                    if SwapID != ID:
+                        Global_TocManager.RemoveEntryFromPatch(int(SwapID), MeshID)
+                        Entry.FileID = int(SwapID)
             
             else:
                 for valid_obj in valid_object_list:
