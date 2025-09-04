@@ -11,7 +11,7 @@ bl_info = {
 #region Imports
 
 # System
-import ctypes, os, tempfile, subprocess, time, webbrowser
+import ctypes, os, tempfile, subprocess, time, webbrowser, re
 import random as r
 from copy import deepcopy
 import copy
@@ -928,10 +928,49 @@ def InitializeConfig():
     else:
         UpdateConfig()
 
+def get_helldivers2_path():
+    import winreg
+
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam")
+        steam_path, _ = winreg.QueryValueEx(key, "SteamPath")
+        winreg.CloseKey(key)
+    except Exception:
+        return None
+
+    steam_path = os.path.normpath(steam_path)
+    library_vdf = os.path.join(steam_path, "steamapps", "libraryfolders.vdf")
+
+    if not os.path.exists(library_vdf):
+        return None
+
+    libraries = [os.path.join(steam_path, "steamapps")]
+    with open(library_vdf, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    for match in re.finditer(r'"\d+"\s+"([^"]+)"', content):
+        lib_path = match.group(1).replace("\\\\", "\\")
+        libraries.append(os.path.join(lib_path, "steamapps"))
+
+    for lib in libraries:
+        manifest = os.path.join(lib, "appmanifest_553850.acf")
+        if os.path.exists(manifest):
+            with open(manifest, "r", encoding="utf-8") as f:
+                data = f.read()
+            m = re.search(r'"installdir"\s+"([^"]+)"', data)
+            if m:
+                game_folder = m.group(1)
+                return os.path.join(lib, "common", game_folder, "data")
+
+    return None
+    
 def UpdateConfig():
     global Global_gamepath, Global_defaultgamepath
     if Global_gamepath == "":
-        Global_gamepath = Global_defaultgamepath
+        if get_helldivers2_path():
+            Global_gamepath = get_helldivers2_path()
+        else:
+            Global_gamepath = Global_defaultgamepath
     config = configparser.ConfigParser()
     config['DEFAULT'] = {'filepath' : Global_gamepath}
     with open(Global_configpath, 'w') as configfile:
