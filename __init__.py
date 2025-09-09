@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 8, 3),
+    "version": (1, 8, 4),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -4447,6 +4447,7 @@ class HellDivers2ToolsPanel(Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "Modding"
+    bl_order = 0
 
     def draw_material_editor(self, Entry, layout, row):
         addon_prefs = AQ_PublicClass.get_addon_prefs()
