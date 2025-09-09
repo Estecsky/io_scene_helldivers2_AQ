@@ -1,4 +1,4 @@
-本地更新时间：2025-07-22 10:27:52.142
+本地更新时间：2025-09-07 16:45:04.747
 000d250a449ecle8#已无法搜索#已被删除
 0089bbe3e284fcaa#战备#榴弹发射器
 009da023c64d178d#大概环境物体#有虫子地形常见的发光蘑菇
@@ -11,7 +11,7 @@
 0216c0b325d4039b#大概环境物体#有一个撤离点八边形平台
 02582f3da1f8daf5#音频#科研人员语音？
 025e32620d233f8c#大概环境物体,没有导入确认#None
-026f37e8ba4c848e#披风#披风
+026f37e8ba4c848e#披风#异见者梦魇
 0290d8011fce62ef#头盔#FS-38 Eradicator “根除者”
 0328c90203280fac#无网格#未知和033a82665ef6f506一样
 033a82665ef6f506#无网格#未知和0328c90203280fac一样
@@ -46,7 +46,7 @@
 072fe3192650fb7a#未知#None
 079529fe7dd7c0cb#敌人#机器人，有只无畏
 07cbc16d0fb49c79#大概环境物体#None
-07d76506917339e0#大概环境物体#None
+07d76506917339e0#大概环境物体#虫洞
 0800ab45492e68be#大概环境物体#None
 0814d9c208553dd8#大概环境物体,没有导入确认#None
 08241ba732c97a9d#盔甲#FS-23 BATTLE MASTER
@@ -143,7 +143,7 @@ None#None#None
 1127fae25101bfed#导入失败#None
 11788b07de18a273#无网格,大概环境物体#天气
 117f133784b80582#未知#一个球体
-11a35cf5481b8b04#披风#None
+11a35cf5481b8b04#披风#慈心闪耀
 11b62f0e71ea927f#未知,大概环境物体#None
 11bbdf8ce39e5fc5#战备#火箭哨戒炮
 11c8924a519ae214#未知#None
@@ -173,7 +173,6 @@ None#None#None
 154bd6143819df7d#战备#哨戒机枪炮台
 155c93418f2c6a72#头盔,其他#（疑似SC-34复用素材，如有需请搜索984f）
 155d438fd9fb132d#无网格,未知#None
-1577e917ad1f287d#战备#加特林哨戒炮台
 1586cce69a903b4c#大概环境物体#None
 15a2f2c851f23ca7#大概环境物体,没有导入确认#None
 15cbda5690b8d0b6#大概环境物体,没有导入确认#None
@@ -215,7 +214,7 @@ None#None#None
 1a5935b920948b1d#大概环境物体,没有导入确认#None
 1a61913f7f81ade2#无网格,大概环境物体#植物
 1a6444c34016fb3b#无网格,未知#None
-1a9e30964b6b9812#无网格#不知道是啥
+1a9e30964b6b9812#头盔,其他#热力追踪-弃用模型
 1af4e5cb78261b76#敌人,建筑#停放状态运输船
 1b4c4165524eecba#大概环境物体#None
 1b711db1cbf30d3d#导入失败#None
@@ -299,7 +298,6 @@ None#None#None
 24e58267f829a5a1#无网格#None
 25580eb09bebd814#大概环境物体#None
 25777f36524b9ab8#无网格#披风
-259962454a6e9369#音频#机械音效
 25a04f6d9707d2cc#枪、装备#毒气雷
 25b8cff26c7c0112#无网格#None
 25e9f208e612bfba#未知,导入失败#None
@@ -344,13 +342,13 @@ None#None#None
 2a6f3b4aa3866047#大概环境物体,没有导入确认#None
 2a8bf6d9ec6b5e95#音频#大概是炼油任务的加油音效
 2a9ae41320e0209a#无网格#None
-2a9fb8f5d0576eae#战备#电弧
+2a9fb8f5d0576eae#战备#电弧发射器
 2ab752f65427a44c#枪配件#None
 2b229c45e37caf55#未知#None
 2b2d0c516898b9c5#其他#升旗任务用的棋子，带权重
 2b6904ecb991fcf1#音频#日语冻肉（女），声音1
 2b6d645c35bce4ea#盔甲#EX-00 原型X
-2c1d2e2106bea32b#披风#None
+2c1d2e2106bea32b#披风#忠诚公民之斗篷
 2c26bc4c6592fa14#战备,其他#飞鹰
 2c34905fd727d3d2#视频#生化人进攻新闻
 2c835fcfd5507b19#未知#None
@@ -384,7 +382,7 @@ None#None#None
 31070bb368f5846e#音频#环境音效
 3110ef1a6426dea3#大概环境物体#None
 31894c33c4ed1e2a#枪配件,枪、装备#双管散弹枪（地图拾取）
-318c6255be1254cd#敌人,建筑#机器人构筑母体
+318c6255be1254cd#敌人,建筑#机器人构筑者（修改这个）
 3196ede0c925ba83#头盔#SA-12 Seroo Assisted “伺服辅助”
 31b9e16f5db8dc08#枪配件#None
 31d06451a09679f1#盔甲#FS-05 Marksman（民主官护甲）
@@ -457,7 +455,7 @@ None#None#None
 3bbd5fc1e4eebfd2#未知,无网格#None
 3bc4a40374234457#未知#一个球
 3bf0844097ab595f#枪、装备#飞刀
-3c5227a93c2382a1#敌人#武斗虫、孢裂武斗虫
+3c5227a93c2382a1#敌人#武斗虫、孢裂武斗虫、爆裂武斗虫
 3c582bb31efdf77d#未知#None
 3c598a8ed3d745c9#未知#None
 None#None#None
@@ -479,27 +477,27 @@ None#None#None
 3f461921484335b5#大概环境物体#None
 3f82b158dd9aab2a#大概环境物体#None
 3f90dd6ef5bf26a8#其他#超多环境贴图
-3fa092215399a882#None#None
+3fa092215399a882#大概环境物体#None
 3fb0465efe7e50c8#大概环境物体#机器人信号站相关
 3fc1a4041b22131e#头盔,其他#（疑似AF-91复用素材，如有需请搜索21a2）
-401657035ed471d8#None#None
+401657035ed471d8#大概环境物体#None
 4039414215c85ba0#大概环境物体#None
 40544379bd2902f9#已无法搜索#（已搜索不到该文件）
 4055e41d30f235de#未知#None
-40593bd12429ce80#None#None
-405b1a417f98ac5e#None#None
-408e77319773715c#None#None
+40593bd12429ce80#无网格#None
+405b1a417f98ac5e#大概环境物体#None
+408e77319773715c#披风#None
 409ab96b2850283d#None#大量环境贴图
 40cecc6f5af56654#头盔#FS-34 Exterminator “灭绝者”
 40f94d1946d23d4f#无网格#None
 40faf112f20318ea#盔甲#PH-9 "掠食者"肘击轻甲
 41203170aae394c0#盔甲#CM-21 "战壕护理员 "医疗轻甲 cm21
-414905cfe5921865#None#None
+414905cfe5921865#无网格#大概是烟幕贴图
 414c9e29700a661f#None#None
 418322d5ff8b13bc#战备#岗哨炮还是机枪
-41a3c59a34c67c3b#None#None
+41a3c59a34c67c3b#大概环境物体#一个倒圆锥
 41aaf9b680e015f6#大概环境物体#None
-41c8eff8188e4862#None#None
+41c8eff8188e4862#无网格#None
 41c9952a05eb1ef7#None#None
 41e00583408a4cc9#视频#None
 41f85f595b88a7bc#视频#None
@@ -544,7 +542,7 @@ None#None#None
 47b23480ad67cde4#音频#环境音效
 47b43a883caae42c#战备#蛋盾
 47b488d185118353#None#None
-47c136bfceca8c87#披风#None
+47c136bfceca8c87#披风#无暇忠诚（旧）新：4b3085719366f5f2
 4838de4e8edc9838#大概环境物体#车胎
 486337c57edb8ed7#视频#None
 4889687de9b6a0d9#None#None
@@ -566,7 +564,7 @@ None#None#None
 4a626f893df48d74#None#None
 4a76b1e78f20e4f0#None#None
 4ad2c0e1eb4b7913#None#None
-4b3085719366f5f2#None#None
+4b3085719366f5f2#披风#无暇忠诚（新）
 4b8f9a84127fb95b#音频#日语 npc语音，疏散重要人员语音
 4ba5258c48182349#None#None
 4bec69547a558869#None#None
@@ -597,7 +595,7 @@ None#None#None
 4f5b8d953aee8704#None#None
 4fce1fd89df84f34#未知#None
 4fe8daed70460f7d#None#None
-4ff64273030e87d6#None#None
+4ff64273030e87d6#战备#加特林哨戒炮台
 501b113721d6faf0#其他#样本
 5038358f85c78631#None#None
 505946056f612280#None#None
@@ -631,7 +629,7 @@ None#None#None
 5266a06c4aafa586#None#None
 526d5b052e32d047#None#None
 526df9aaf55c7095#None#None
-5271f63cc59292dd#披风#None
+5271f63cc59292dd#披风#独立先驱
 5283ca26db0fbf74#None#None
 5299709b4d1d5567#None#None
 529f66e32fa47a06#None#None
@@ -693,7 +691,7 @@ None#None#None
 58bdcd1c444b0981#战备#反步兵地雷（BYD用这玩意都该上天）
 58c9ac7791da1f2f#大概环境物体#机器人尸体
 58cc04e08a03076c#敌人#尖啸虫（飞龙）
-58dbd3805dc9d389#披风#None
+58dbd3805dc9d389#披风#陨落英雄之崛起
 58e4bd4b2278d15c#盔甲#B-01 Tactical（游戏内第一个）
 594adc768304e7c8#None#None
 59592063866a2bfa#None#None
@@ -749,7 +747,7 @@ None#None#None
 601c46aba1e1475b#大概环境物体#有个集装箱
 601d800f120b6485#大概环境物体#None
 603ced1f44b289bf#未知#None
-605544d9807599b6#建筑#机器人塔吊
+605544d9807599b6#敌人,建筑#机器人塔吊
 60a3c45e1f64f2d1#未知#None
 60cbc9458302a275#大概环境物体#None
 60e0f2e800173da1#无网格#j
@@ -762,12 +760,12 @@ None#None#None
 61e4e89f96fc4e1a#None#解放者机甲（不是这个）
 61e68f90933eae78#None#None
 62540171a97848cf#敌人#喜剧人
-6286516637d5c967#其他#奖章、超币模型
+6286516637d5c967#其他#奖章、超币、申购点模型
 62c6fbc5cd90448d#盔甲#AF-91 “实地化学家”
 62ec9c912c88c15d#敌人#坦克
 63007c7bff738b9a#None#None
 6369816737a36a40#无网格#None
-63a534dd4757fe92#盔甲#SC-15 无人机大师sc15
+63a534dd4757fe92#盔甲#SC-15 Drone Master “无人机大师”sc15
 641457f8ecb6bd56#其他#None
 64220836bcff780a#None#None
 647308cc007f32ae#敌人#虫族指挥官
@@ -808,7 +806,7 @@ None#None#None
 687636554fbf6a46#头盔,其他#（又一个初始头盔）
 68885d13fe44fca9#None#None
 6899162ae1fe59ce#None#None
-68ac37dae3b424c1#大概环境物体#机器人尸体
+68ac37dae3b424c1#盔甲#FS-61 Dreadnought “无畏”
 68b1dc617c8c549e#无网格#None
 68bb1ac0b0ca836c#None#None
 68e80476c1c602f5#战备#重机枪部署支架
@@ -822,7 +820,7 @@ None#None#None
 69c66efe95decaf0#敌人#None
 69f1bad849d3999c#敌人#某个坦克的底盘
 69fe01efbf8eab01#None#None
-6a1ceba3a8c5bebb#披风#None
+6a1ceba3a8c5bebb#披风#猎暴人
 6a9026cd7318c9bd#枪、装备#emp手雷
 6ab0cc0092072a25#None#None
 6ac709cabc02ed1b#None#None
@@ -859,7 +857,7 @@ None#None#None
 6f3971467216042a#None#None
 6f3ddbe1e939d280#None#None
 6f4bacfab445958c#None#None
-6f587e524618248d#None#None
+6f587e524618248d#披风#飞鹰之怒
 6f605198a099fcf2#枪配件#中倍瞄准镜1(主宰那些）
 6f684454ec954396#None#None
 6f6fb2be7ac74d61#None#None
@@ -882,7 +880,7 @@ None#None#None
 717e1b94adc14b1e#敌人,建筑#探测塔
 7197eda433731404#敌人#绿牛（孢子）
 71d22171a3e96edc#未知#None
-71da7b69dd726112#披风#None
+71da7b69dd726112#披风#后族怀恩披风
 71ef8d93bd802871#音频#舰桥广告音频
 72094aff222d5a72#已无法搜索#（已搜索不到该文件）
 724a90dbd91f95a1#None#None
@@ -953,7 +951,7 @@ None#None#None
 7a088b8e45e12ed6#敌人#小跳虫
 7a0eada96669cea3#已无法搜索#（已搜索不到该文件）
 7a1767f323dd5836#无网格,没有导入确认,未知#None
-7a8ede61a5d379fd#None#喷火机器人杂兵废案
+7a8ede61a5d379fd#敌人#喷火旅通用杂兵
 7ab08367885cd2e3#大概环境物体#None
 7abbdd092bcd1bd9#其他#空降仓加载动画
 7ae5a2f32d6f24f1#头盔,其他#（疑似AF-91复用素材，如有需请搜索21a2）
@@ -980,7 +978,7 @@ None#None#None
 7d72a031b0b3c618#无网格#None
 7d7521aeb9af1b54#None#None
 7d9617a57a8a620b#未知#None
-7d9b326a1a7dcb1e#已无法搜索#已经搜不到文件了
+7d9b326a1a7dcb1e#已无法搜索#None
 7dbfe1fc80cce134#大概环境物体#None
 7dc10a4f3d90a9c0#已无法搜索#（已搜索不到该文件）
 7dc7024d6d4d56df#敌人,大概环境物体#击杀移动工厂相关
@@ -1053,7 +1051,7 @@ None#None#None
 852d4fe85cd8d315#None#None
 853e14ebabc3c0ff#无网格#None
 855b1322798cf7c4#None#None
-855b36a0321f7106#敌人#胆汁喷涌虫（绿胖子
+855b36a0321f7106#敌人#胆汁喷涌虫+爆裂喷涌虫
 856d8941d0be9d31#大概环境物体#None
 857f3e6f6b1902f1#None#None
 85915731040f081e#None#None
@@ -1398,7 +1396,7 @@ b4bb7766fc6b7f5a#None#None
 b4bc0833706d87e0#其他#橙样本
 b4f9d36e9cac97c4#None#None
 b50a65230753aa78#None#None
-b51016078dfdafc1#披风#None
+b51016078dfdafc1#披风#未知披风
 b512f04f2eceaf80#None#None
 b54304b8f965195e#导入失败#None
 b590fbd24b4538a8#导入失败#None
@@ -1597,7 +1595,7 @@ ce96dc6cc71dae3e#未知#None
 cf0439d698894bc9#大概环境物体#None
 cf1acde501ccfa1b#战备#激光大炮和类星体（类星体需要打开导入所有lod)
 cf38aad0d88bc104#大概环境物体#None
-cf3ecbab2a0f09fb#披风#None
+cf3ecbab2a0f09fb#披风#未知
 cf54614eff390ab4#音频#升旗任务 超级地球国歌
 cfe3a75c4bb420b8#大概环境物体#None
 cff8814d32063179#大概环境物体#None
@@ -1606,7 +1604,7 @@ d04cf78394d01a27#未知#None
 d069d4df20ffce34#未知#None
 d0aea47e6e285f0d#大概环境物体#None
 d0b1e9cb5b9e6e83#视频#None
-d0b4a33f3ffabc9a#披风#None
+d0b4a33f3ffabc9a#披风#永恒荣耀之羽
 d105bc493a5ea7b0#建筑#None
 d122f84ee92343b3#建筑#None
 d131344b6fc2d0aa#大概环境物体#基本上是一些兴趣点物品，有两个常见的互动平板
@@ -1615,7 +1613,7 @@ d147c56bceee0b80#未知#None
 d184206b2e0a0168#盔甲#(B-01外观，做旧森林绿色贴图)(游戏未实装)
 d1968909ea085527#枪、装备#肉锤
 d19fd46437fa710b#未知,无网格#None
-d20526b16b630778#披风#None
+d20526b16b630778#披风#未发布披风
 d2470562f055afeb#未知#None
 d2711cd33fc143e1#大概环境物体#None
 d2855c984961879d#大概环境物体#None
@@ -1630,7 +1628,7 @@ d4831745b9581d0d#大概环境物体#None
 d4a21b91333ecffe#未知#None
 d4aa75d30a8d7773#枪配件#补偿器
 d4ba1cddb7285db2#大概环境物体#None
-d4f208f2f0de27db#其他#撤离任务的刁民（需要全载lod）
+d4f208f2f0de27db#其他#撤离任务的平民（需要全载lod）
 d525af521f091b86#无网格,未知#None
 d53ff091836f3409#无网格,未知#None
 d5462c196995c180#大概环境物体#None
@@ -1655,7 +1653,7 @@ d7c143feec79d3d0#大概环境物体#军备箱
 d7d981d10e4327ef#无网格,未知#None
 d7e0e8a6c8ab0e2c#盔甲#CM-17屠夫，医疗重甲
 d7e81f3ee85cf067#视频#None
-d7f47935d8aaafd6#披风#None
+d7f47935d8aaafd6#披风#殉道之王
 d833f3c65453cf1f#枪配件,已无法搜索#None
 d843e8d6f3ae91e3#未知#None
 d85cf8192edbddc1#枪配件#防卫者弹匣
@@ -1683,7 +1681,7 @@ db38cafcabe5f1cf#大概环境物体#None
 db3a2c25101deb84#无网格,未知#None
 db719d81aa6e13f7#大概环境物体#兴趣点物品之类的
 db868fbad274f20d#其他#未知贴图
-dba9ea8479528d2a#披风#None
+dba9ea8479528d2a#披风#未知
 dbae525060f06d70#None#None
 dbd9381f9ea9788f#枪、装备#穿甲解放者+震荡解放者+原版解放者
 dbeffd5a240465a1#None#None
@@ -1717,7 +1715,7 @@ df59f9c78a184bd5#枪配件#弹匣
 df732158f005b184#大概环境物体#None
 df8f04d3d2665c39#None#None
 dfa7c28c3b490a8c#盔甲#B-08 Light Gunner（轻装枪手，垫料轻甲）
-dfb81f9917285965#枪、装备#铝热弹
+dfb81f9917285965#枪、装备#G-123 铝热弹
 dfb87b29ca4e2409#None#None
 dff933404cdc5671#None#None
 dffc3188d3b29317#敌人#有个无畏
@@ -1777,7 +1775,7 @@ e60dd47b23f863f0#None#None
 e6309917e22b4439#盔甲#None
 e67fc77d1a66dbf4#大概环境物体#机器人旗帜02，水雷
 e6cbb56cc2daac09#大概环境物体#嘟嘟哒嘟嘟哒
-e6d7558d4924f9bc#披风#None
+e6d7558d4924f9bc#披风#神圣投票团
 e6ea4c6654b2a4c2#其他#None
 e72aef006e329793#盔甲#None
 e72d3e9b05c3db0b#战备#解放者机甲（机炮机甲）
@@ -1803,7 +1801,7 @@ e9eb23287c5156be#大概环境物体#机器人地雷（非游戏内载入？）
 e9f1e8e0e9e7389f#建筑#超级地球炸弹和装弹口
 e9f485231cb9170e#大概环境物体#机器人地雷（非游戏内载入？）
 e9f7da425997f38b#头盔#CW-22 Kodiak “科迪亚克”
-ea2b289bb6c14cfe#敌人#强袭虫
+ea2b289bb6c14cfe#敌人#强袭虫+爆裂强袭虫
 ea332215d84149cc#未知#None
 ea4fdca9d19a09af#未知#None
 ea588b491a1e1ad8#未知#None
@@ -1901,7 +1899,7 @@ f6ed2061460fa33f#None#None
 f6fb08cc02d24255#其他,音频#冻肉受击音效/无线电效果尾音/大部分无法导入，但有个空降仓（只对落地后的空降仓生效）（翻译有一个是车辆），SOS信标，撤离信标（无法导入）
 f6fb3cb126c467fd#None#None
 f705425626fa4c04#None#None
-f70996775c6430a9#战备,其他#飞鹰空袭炸弹？
+f70996775c6430a9#战备,其他#飞鹰——500kg、空袭、燃烧通用导弹
 f71bc359a0699cea#None#None
 f7646e79610c124d#战备#空爆火箭弹发射器
 f76547e27a0e3617#枪配件#None
@@ -1929,7 +1927,7 @@ fb4cb0b881fa860e#大概环境物体#虫巢
 fb532cd4de43ea49#大概环境物体#None
 fb572eada0673fa0#大概环境物体#None
 fba34e3d76fdf452#大概环境物体#None
-fbb7a18a2e7a4355#披风#None
+fbb7a18a2e7a4355#披风#力挽狂澜
 fbe6ca24ac6229e9#战备,其他#摄像机狗
 fbf51cfe549ef1a7#大概环境物体#树
 fc1a5bf2f3ff15df#战备#防弹盾牌
@@ -1967,7 +1965,7 @@ ff0745d985bd815e#枪配件#None
 ff2a9db5dfe875d3#头盔#FS-11 ExEeutioner “行刑者”
 ff364b90ab852837#大概环境物体#None
 ff3b6711ff9badd7#未知#None
-ff46cca8b18f1236#披风#None
+ff46cca8b18f1236#披风#忠义堡垒
 ff657f2e85e12eda#未知#None
 ff8faac620d7709f#未知#None
 ff91164b8b3b61d1#未知#None
@@ -1986,7 +1984,7 @@ e9f6ef51d693fdd5#头盔#I-102 “龙行者”i102
 9e9d2e828d1146d0#头盔#I-92 “消防队”
 71aa8c9bf9a0aef0#头盔#I-44 Salamander “火蜥”
 a0a51b7b380c6d1a#头盔#AF-50 “毒瘴游骑兵”
-be1fbdaa4b77e86b#头盔#i
+be1fbdaa4b77e86b#头盔#AF-02"危害大师"
 86a9bdfc23c01517#盔甲#AF-50 “毒瘴游骑兵”af50
 21a24072a79aeba8#头盔#AF-91 “实地化学家”af91
 884fde6481f699e3#头盔#AF-52 “禁锢”af52
@@ -2019,13 +2017,13 @@ b186eae3f2b61509#盔甲#SR-64 “煤渣砖”
 460f2faee22f5850#盔甲#AC-2 “服从指挥”ac2
 1577e917ad1f287d#战备#火焰喷射炮台
 5a0f047f2695b403#战备#反坦克炮台
-56aa04adbbeea69f#枪、装备#眩晕短棍+长矛+战斗短柄斧+军刀
+56aa04adbbeea69f#枪、装备#眩晕短棍+长矛+战斗短柄斧+军刀+砍刀
 0bdf199f7ac14f43#战备#快速侦察载具
 0296cbe5005ea13f#大概环境物体#光能环境
 033fd51c0660afa2#其他#标尺贴图？
 08b56bdc6e6a5656#披风#Strength in Our Arms
 0e82d9c60237c414#大概环境物体#任务点的炸弹（低难度）
-0e881874a5c4b6f5#披风#Rebar Resolve
+0e881874a5c4b6f5#披风#Rebar Resolve(钢筋意志大氅)
 10002f32fbbb51ab#大概环境物体#光能环境
 10bb865b75e35204#大概环境物体#虫子核弹任务常见的巨型石柱
 111043168e66c83b#其他#眩晕弹标志
@@ -2035,13 +2033,13 @@ b186eae3f2b61509#盔甲#SR-64 “煤渣砖”
 137f18a52cf24380#未知#None
 164be0763df2019f#大概环境物体#城市旋转楼梯等环境
 17192e056e4a44e2#大概环境物体#残骸
-1720abf7d928e062#披风#更新光能后的披风
+1720abf7d928e062#披风#更新光能后的披风（突破）
 18466005ef235d2b#战备#毒气雷？
 186e33e335212da9#未知#None
 18c73c17704cecd5#大概环境物体#光能环境
 1c1fd6c37796ba98#大概环境物体#光能环境
 1d187c6408409deb#大概环境物体,已无法搜索#None
-1f30fa35a3db9042#披风#更新光能后的披风
+1f30fa35a3db9042#披风#更新光能后的披风（检具者的荣耀）
 22633206544fc985#大概环境物体#光能环境，墙
 233b6d4238458309#大概环境物体#光能环境，集装箱，围栏
 2350348a9acf49c4#枪、装备#SG22游击兵
@@ -2052,8 +2050,8 @@ b186eae3f2b61509#盔甲#SR-64 “煤渣砖”
 26ab2acd60808b4b#大概环境物体#光能环境
 294cebcbddd299df#未知#很奇怪的孢子
 2a42fc886c2ceabe#大概环境物体#雨林星球环境（各种各样的树根）
-2b289c082ed7cace#披风#更新光能后的披风
-2c8d8cc831d0c732#敌人#双足
+2b289c082ed7cace#披风#更新光能后的披风（梦想卫士）
+2c8d8cc831d0c732#敌人#强化版双足
 2cf5d7a154dea63e#战备,其他#DSS+旁边的驱逐舰
 2cfcf02d400aa2b7#未知#None
 2d821486db99d8cb#枪配件#加速步枪的镜子（全lod导入）
@@ -2066,7 +2064,7 @@ b186eae3f2b61509#盔甲#SR-64 “煤渣砖”
 386910904ba4ce80#未知#None
 39c7982ba8ea2f8c#其他#单手盾护盾特效？
 39d3248b21c1e1de#未知#None
-3ccdbf5337ae6c81#披风#更新光能后的披风
+3ccdbf5337ae6c81#披风#更新光能后的披风（磐石毅力）
 3cfa2afc8ac0fa88#敌人,建筑#追踪虫巢穴
 3efe6bf95712a270#未知#None
 40395ea0e2bdc5e8#未知#None
@@ -2091,7 +2089,7 @@ b186eae3f2b61509#盔甲#SR-64 “煤渣砖”
 4c20ff4ec63befa7#大概环境物体#光能环境
 501f9b9af6e2b680#大概环境物体#光能环境
 50c4a70c3174bc79#敌人#穿刺虫的触手
-5250019e4856399f#披风#更新光能后的披风
+5250019e4856399f#披风#“净化日食”
 55af0611a8528d57#其他#体积云雾
 5795e99a988d10b7#战备#StA-X3 W.A.S.P.发射器（黄蜂发射器）
 596e77bf3cb8aec4#未知#None
@@ -2139,7 +2137,7 @@ b186eae3f2b61509#盔甲#SR-64 “煤渣砖”
 9be3a228df6de4a2#大概环境物体#虫族石头
 9d4eb484c405e7a2#战备#E/GL-21 掷弹兵防卫墙
 9e722f58c1034676#无网格#None
-a106e097ad7ff3ce#其他#好像是什么很重要的贴图
+a106e097ad7ff3ce#其他#贴图——云朵/天气
 a132a4dae67d3f6c#大概环境物体#光能黑匣子任务坠毁的飞机残骸为主的环境物体
 a4a5d38031f72135#建筑#超级地球地对空导弹
 a68c0263a22a26dd#大概环境物体#光能巨石 以及其周围环境物体
@@ -2257,16 +2255,16 @@ b35389f321a08b41#视频#有关黑洞是虫洞的新闻
 210974ac5ca0fd43#大概环境物体#各种机器人尸体/废墟物件
 22aab81a4e50c4f5#大概环境物体#None
 245969d59a963694#大概环境物体#各种机器人尸体/废墟物件
-259962454a6e9369#音频#含地狱火音效
+259962454a6e9369#音频#含地狱火音效 + 机械音效
 25f7260caeb218e1#大概环境物体#None
 27342aa93ab71b77#大概环境物体#None
-27a21978b9089c60#枪、装备#堑壕工具（双孔）
-28144646f3715e9d#披风#None
+27a21978b9089c60#枪、装备,其他#堑壕工具（双孔）
+28144646f3715e9d#披风#自由之眼
 2a7540b34cb9ffa2#大概环境物体#None
 None#None#None
 2b0336473cd4ff71#大概环境物体#不能坐的椅子
 2b31334149754aea#敌人,建筑#巨型构筑者
-2b66c54f65b07181#披风#None
+2b66c54f65b07181#披风#自由愿景
 2bbab0e4fecdc2c6#大概环境物体#None
 2c2aae7320ddfa84#未知#None
 2e032a0e6a8235f4#未知#None
@@ -2396,7 +2394,7 @@ ad7bb8098838104f#大概环境物体#None
 adfc1ba45c16c4fa#大概环境物体#None
 ae2eafa68f874fe8#大概环境物体#None
 afaa31c40dc4e26d#未知#None
-afac01a32ebc55ba#披风#None
+afac01a32ebc55ba#披风#自由象征
 b0f4242e75257499#大概环境物体#虫子尸体
 b1a3ac4c5a4b60b3#大概环境物体#None
 b39d63687bc3d401#大概环境物体#None
@@ -2425,7 +2423,7 @@ d6af5b82333a30cd#未知#None
 d8018c5d211b73c1#大概环境物体#None
 d974a9c7259f5904#无网格#非终结族虫子
 da118f8b96d7f7d4#大概环境物体#None
-de32b3958137b795#披风#None
+de32b3958137b795#披风#求自由
 e22118fe5e07a54d#敌人,大概环境物体#机器人相关
 e22a7c632219f264#大概环境物体#None
 e31e56139735f550#未知#None
@@ -2446,7 +2444,7 @@ f3f9846f08c98455#大概环境物体#None
 f487e941f3f30902#大概环境物体#None
 f65a48f4b064c550#音频#机器人炮舰塔音频
 f6ea02942c173da0#大概环境物体#市区广告
-f7ddd187e625c82d#披风#“荣耀之羽”
+f7ddd187e625c82d#披风#于民主
 f8f36de01fc6500c#音频#石油提取任务相关音频
 fa1f3b0a31ad8103#大概环境物体#None
 fa226bc4defbfdc3#大概环境物体#None
@@ -2456,9 +2454,9 @@ fdf011daecf24312#音频,大概环境物体#各种族战斗音乐/机器人模型
 ff768e259e49acab#音频#机器人干扰塔可能包括ATAT的干扰设备
 以下是2025.3.18更新后的条目，此次更新具有重大意义，标志着私募箭头的木琴彻底移除，模型mod全部失效，哀鸿遍野，史称318大静谧#None#None
 00cf0ef7df912a6e#盔甲#GS-66 “立法者”
-0a59c7429a608760#None#None
+0a59c7429a608760#大概环境物体#None
 0c2855d1e8317b28#音频#无畏相关音频
-0de2d07bd2424a65#None#None
+0de2d07bd2424a65#未知#None
 100bdc63447e0375#大概环境物体#None
 14fe2734dcb8d1ed#盔甲#GS-17 “边境元帅”
 1a9e1e280e0112d8#None#None
@@ -2468,25 +2466,25 @@ ff768e259e49acab#音频#机器人干扰塔可能包括ATAT的干扰设备
 2351919ff531f494#盔甲#GS-11 “民主代理人”
 23725ae5eea97a53#敌人#孢裂食腐虫
 26589a6832b1e77d#未知#None
-2989c92632755591#None#None
-2aade79bc95e12e8#None#None
+2989c92632755591#未知#None
+2aade79bc95e12e8#已无法搜索#None
 2f762004cd12e6e1#大概环境物体#None
-3b0be0b74092b1ee#None#None
+3b0be0b74092b1ee#已无法搜索#None
 3c14455d53db72fe#枪、装备#TED-63 炸药
 40f692147f40f7c0#建筑#探测塔
 447edfc5ae183288#大概环境物体#None
-4a600305ecab1826#敌人#追猎虫
+4a600305ecab1826#敌人#掠食追猎虫
 4e127822c2aa4109#None#None
 50625976873c3ebf#大概环境物体#垃圾，会爆炸的电池，不能坐的椅子，路灯柱子等
-5920e4ae1ca4ee23#None#None
-627062f52d182e4b#None#None
-6702a6cab6856cc5#None#None
-68875f4ce3a9debd#None#None
-758bc3cb581155e8#音频#追猎虫相关音频
+5920e4ae1ca4ee23#大概环境物体#两台饮料机都在这里了
+627062f52d182e4b#已无法搜索#None
+6702a6cab6856cc5#未知#None
+68875f4ce3a9debd#大概环境物体#None
+758bc3cb581155e8#敌人#孢裂追猎虫
 7b7e8dbee2abbf78#大概环境物体#None
-7c33f358689e2c74#None#None
+7c33f358689e2c74#敌人#火榴弹无畏
 7d4287cda3cd9e41#敌人#孢裂武斗虫
-800b2c57b7ec4d9d#敌人,未知,枪、装备#可能是机器人武器
+800b2c57b7ec4d9d#敌人#喷火旅杂兵（但是没有燃料罐背包）
 88e1a0e04fa84f73#敌人#None
 8b288279e6de20e1#大概环境物体#None
 946f74c57a5d3ccb#未知#None
@@ -2497,18 +2495,18 @@ acc4b8f14d554fb4#大概环境物体#各种机器人尸体/废墟物件
 b3905dbac70e6e52#大概环境物体#None
 b3a2dc455eda9736#无网格#None
 c76c97b3dfb67c5c#未知#None
-cb1f8f8aa3ccb1e0#None#None
+cb1f8f8aa3ccb1e0#披风#弹带之道，SDK中为Covering Fire，与游戏不符
 ccce27b558fd5275#音频#拦截车队——干扰塔ATAT的音效
 d2f2dd4a65a22617#大概环境物体#None
 d5edf126c87d4652#None#None
 da5b1502a6ffa4ab#大概环境物体#None
 dbe6c57c7e3b8747#头盔#GS-11 “民主代理人”
 de42668ead147315#None#None
-e326d3c8c67f46c0#敌人#None
+e326d3c8c67f46c0#敌人#火焰火箭哥
 ed6a6390ba691cbd#大概环境物体#None
-f3f0536e7e34ad11#敌人#None
+f3f0536e7e34ad11#敌人#龙息喷大盾
 f7eb45a4ebc21335#None#None
-f8be75b97be4df4c#None#None
+f8be75b97be4df4c#未知#None
 faedbfbebb16d1d3#大概环境物体#机器人轨道炮相关
 5.13更新#None#None
 03fbef05fbf99b12#大概环境物体#None
@@ -2604,7 +2602,7 @@ faedbfbebb16d1d3#大概环境物体#机器人轨道炮相关
 802cc92e12493f63#无网格,未知#只有贴图
 832151ee4dec95bf#大概环境物体#None
 841a3054a1f20489#无网格,未知#应该是音频
-843540663759c08b#敌人,其他#机器人弹药库
+843540663759c08b#敌人,其他,已无法搜索#机器人弹药库
 855ea06e998711df#无网格,未知#只有贴图
 85b0cf6c769f8aab#音频#市民+SEAF用力/受击音效？还有NPC的音效库（哼哼哼。。。啊啊啊啊啊）
 8a7bab93cfb16ccd#大概环境物体#树
@@ -2636,7 +2634,7 @@ a903bade9edffdbb#大概环境物体#None
 a9247828769b1a3e#大概环境物体#None
 a92a332094ab700f#大概环境物体#None
 aa525c81ce9ff3dd#大概环境物体#None
-aac6028be41ffe98#其他#超级地球平民（需要全载lod）
+aac6028be41ffe98#其他#超级地球平民
 ab7cee9c31b3dc5d#大概环境物体#None
 abb5be515c9e779c#枪配件#解放者弹鼓
 ac9e6615c04097d8#大概环境物体#光能环境物品
@@ -2684,11 +2682,11 @@ e14a246f0e812620#大概环境物体#None
 e576efbe64b44f9b#音频#回收黑匣子相关音效
 e5a342f15ed77914#导入失败#None
 e70365dfeb8a1178#披风#“谦卑徽记”
-e7765eef5f60acea#音频,敌人#光能肉瘤怪（无法导入）+光能族新怪音效（肉块？）
+e7765eef5f60acea#敌人#肉瘤体（无法导入）
 e829d44fb5653ec4#枪、装备#R-2 修正
 e8609b230f0a229f#大概环境物体#None
 e9fee40e195b1d12#无网格,未知#没有模型，只有材质和贴图
-efdab187762db020#已无法搜索#市民语音+SEAF语音
+efdab187762db020#音频#市民语音+SEAF语音
 f33b56ddf8dfc99e#敌人#可能是背景板统御舰
 f3a97a38f6fa1fc4#建筑#超级地球行星防御加农炮
 f4498afb0b7fea4d#音频#教程关音乐
@@ -2830,81 +2828,277 @@ a7b23b55209766ae#战备,音频#PLAS-45 纪元（需要全载lod）
 36313bf684c1fd79#战备#A/LAS-98 激光戒哨炮
 None#None#None
 031c90406564341b#敌人#战争纵步者
-2716585d7672000f#None#None
-2912dc2e499f4261#None#None
-29a915d8fefff5c6#None#None
-29f5430bd6b1ad04#None#None
-2c0595f98c14b8de#None#None
-326e442af1edb7e7#None#None
-359b06a6f5dffb65#None#None
+2716585d7672000f#大概环境物体#None
+2912dc2e499f4261#大概环境物体#None
+29a915d8fefff5c6#大概环境物体#None
+29f5430bd6b1ad04#大概环境物体#None
+2c0595f98c14b8de#敌人,建筑#城市战——机器人探测塔
+326e442af1edb7e7#大概环境物体#None
+359b06a6f5dffb65#大概环境物体#None
 None#None#None
 3bf3ee630c39bf80#大概环境物体#None
 3c5133cadd1b86d5#大概环境物体#None
-3e429e0f00a64abf#None#None
-49d992fb58342041#None#None
+3e429e0f00a64abf#其他#海报——进军生化斯坦
+49d992fb58342041#大概环境物体#None
 4aa61d6a6e660fdb#大概环境物体#None
-4c56c2a02a6f2cf3#None#None
+4c56c2a02a6f2cf3#其他#海报合集
 4e177e0c1d3b598d#大概环境物体#None
 4f0c60fb08dac81b#大概环境物体#None
-4f8f86f2af57e57b#None#None
+4f8f86f2af57e57b#大概环境物体#None
 52f83c8e62501d45#大概环境物体#None
 5708c9ae3c04e957#大概环境物体#None
 5905ea15f1fb9e11#大概环境物体#None
 59ca3d399eb729be#大概环境物体#None
-5a1cd7ad35e7f478#None#None
-5adeb2a0a6103a7d#None#None
-5eecb73e7b1ec91e#None#None
-605375e1e77e35a5#None#None
-67f694116fe04866#None#None
+5a1cd7ad35e7f478#敌人,建筑#城市战——机器人炮舰塔
+5adeb2a0a6103a7d#大概环境物体#None
+5eecb73e7b1ec91e#披风#“巧取豪夺”
+605375e1e77e35a5#大概环境物体#None
+67f694116fe04866#大概环境物体#None
 None#None#None
-69bb18da9fcee907#None#None
-6babea43100ba5d7#None#None
-7068182444984936#None#None
+69bb18da9fcee907#披风#“辉煌指挥官”
+6babea43100ba5d7#大概环境物体#None
+7068182444984936#大概环境物体#None
 None#None#None
-767529832d12ef45#None#None
+767529832d12ef45#敌人,建筑#城市战——机器人指挥碉堡
 None#None#None
-83115589d54b20e9#None#None
+83115589d54b20e9#大概环境物体#None
 None#None#None
 8a2eefa98f4441de#敌人,建筑#机器人相关
-90c9e991e37ea36b#None#None
-91b9547fed8ad4c7#None#None
-9c9ae57b85392fee#None#None
+90c9e991e37ea36b#建筑#地对空导弹相关
+91b9547fed8ad4c7#大概环境物体#None
+9c9ae57b85392fee#大概环境物体#None
 None#None#None
-9d966785adf28c2b#None#None
-a2dafa3b1e10dab2#None#None
-a597d2b8cee749e4#None#None
-a5a29ba7c4e14125#None#None
-a5a82ed1e7d640a2#None#None
-a78ab77e49e52444#None#None
+9d966785adf28c2b#大概环境物体#None
+a2dafa3b1e10dab2#大概环境物体#None
+a597d2b8cee749e4#披风#“解封蓝图”
+a5a29ba7c4e14125#大概环境物体#None
+a5a82ed1e7d640a2#敌人,建筑#城市战——摧毁运输舰
+a78ab77e49e52444#大概环境物体#None
 None#None#None
-aa6a9d8e2d50d099#None#None
-acffdc4e6f1bc1fe#None#None
-ae2b184205c03601#None#None
-b06e9cdc64cd41c2#None#None
-b732e8266cedcc10#None#None
+aa6a9d8e2d50d099#大概环境物体#None
+acffdc4e6f1bc1fe#大概环境物体#None
+ae2b184205c03601#无网格#破碎屏幕贴图
+b06e9cdc64cd41c2#敌人,建筑#城市战——机器人指挥碉堡
+b732e8266cedcc10#未知#None
 None#None#None
-becbc4a3743e6c64#None#None
-c3a695febe0ca9b4#None#None
-c3c987dace572a55#None#None
-c55be0ad56165a49#None#None
-c5657d9246c5d938#None#None
+becbc4a3743e6c64#大概环境物体#None
+c3a695febe0ca9b4#大概环境物体#None
+c3c987dace572a55#大概环境物体#None
+c55be0ad56165a49#大概环境物体#None
+c5657d9246c5d938#大概环境物体#None
 None#None#None
-c6c807ca146f6c9a#None#None
-ca963c474ae0befb#None#None
-cdb7e68477d19760#None#None
-d14cd809633fde0d#None#None
-d6fa3cf9f5564abb#None#None
-d8c9304e8c794b6c#None#None
-d9cc794f94a8f5c5#None#None
-d9cd77cd01ceec51#None#None
-d9fd3dfedabe03be#None#None
-daece455a569908d#None#None
+c6c807ca146f6c9a#披风#“红星回忆”
+ca963c474ae0befb#其他#海报
+cdb7e68477d19760#大概环境物体#None
+d14cd809633fde0d#大概环境物体#None
+d6fa3cf9f5564abb#大概环境物体#None
+d8c9304e8c794b6c#敌人,建筑#城市战——机器人航空指挥塔
+d9cc794f94a8f5c5#大概环境物体#None
+d9cd77cd01ceec51#大概环境物体#None
+d9fd3dfedabe03be#大概环境物体#None
+daece455a569908d#大概环境物体#None
 None#None#None
-df2b5fb9c373b663#None#None
-dfc2c5704406f113#None#None
-e11be3012a33ce53#None#None
-e4210604d01414be#None#None
-e6838e8a7b19bd04#None#None
-ec847b749e6b54c1#None#None
-f950db2e29a5db9f#None#None
-fa5a9d6c8b6df7da#None#None
+df2b5fb9c373b663#无网格#植物贴图
+dfc2c5704406f113#大概环境物体#None
+e11be3012a33ce53#敌人,建筑#城市战——摧毁运输舰
+e4210604d01414be#大概环境物体#None
+e6838e8a7b19bd04#敌人,建筑#城市战——机器人航空指挥塔
+ec847b749e6b54c1#大概环境物体#None
+f950db2e29a5db9f#大概环境物体#None
+fa5a9d6c8b6df7da#披风#“进军-81”
+01c1becaa12a1643#大概环境物体#None
+02143290611ed62b#大概环境物体#None
+None#None#None
+05215ba2782a1a22#敌人,建筑#城市战——机器人干扰塔
+0692f83587540ae5#大概环境物体#None
+106134046041ab90#大概环境物体#None
+11d275e62dfec5fd#大概环境物体#None
+1230a746045f365f#大概环境物体#None
+1b6c0922f8941450#建筑#地对空导弹相关
+1cfd6f612fce7c8c#大概环境物体#None
+None#None#None
+1eee5c22038560e5#未知#None
+2383518de1150733#无网格#植物贴图
+8.26更新#None#None
+a856edff49cfdd95#头盔#A-9 “地狱伞兵”
+1d6dc4216e7ce52d#盔甲#A-9 “地狱伞兵”
+1a2fc86abd27bf5b#头盔#A-35 “侦察者”
+f32d3723bfe55d2f#盔甲#A-35 “侦查者”
+fd3eef9a0329b2c2#枪、装备#MA5C突击步枪 光环
+44dd33af0ef2b0d1#枪、装备#M90A霰弹枪 光环
+e0d35fe7ce80e3f0#枪、装备#M7S冲锋枪 光环
+2a5298e1c2f70c82#枪、装备#M6C/特种作战手枪 光环
+14cbdc95cf806868#None#None
+15c99d0ff8b8cdaf#无网格#None
+1821bea1cde8f4b1#大概环境物体#None
+None#None#None
+None#None#None
+24fd7080a7855c85#已无法搜索#None
+26183b87d924f35a#None#None
+None#None#None
+35cbcf1adb1c54b5#None#None
+39397b5c638b5604#None#None
+4278337eb066849e#披风#未知
+42c86d3fed3d5e57#None#None
+43a58284e0300e8a#None#None
+43e3bc7654999794#披风#未知
+None#None#None
+4b92ff9a0256159f#头盔#DS-10 “巨兽猎手”
+4bd1d225fc323879#None#None
+4c3ccd4d0a7dbca4#None#None
+53027d7c592e0c82#None#None
+5c404005f63b0e8c#导入失败#None
+5d68e55823acd1bf#战备#EAT-700 消耗性凝固汽油弹
+65ae6eceb9c8c8a1#未知#None
+688ee018d4691ebf#None#None
+76ce3ed1fe7c9356#None#None
+7831df275e198bc2#None#None
+79152596856c70af#None#None
+7cc2dbcacd8d8b45#None#None
+819c3075cd835a3f#None#None
+836681cab5300fb8#None#None
+84047df6913ba033#None#None
+879d716672399554#None#None
+90a7565630084517#None#None
+91206593068ae0b6#None#None
+927428cc7ac4fa4b#None#None
+a0191f1b1c42d07b#None#None
+a1e669b391021517#None#None
+a50f4822153fea59#披风#“荣耀传家宝”
+aaebfbedc571fd7a#盔甲#DS-10 “巨兽猎手”
+ab44d0cd03a6004d#导入失败#None
+b0ae954c0b978553#披风#“隐匿之眼”
+b2580b3085c35e37#None#None
+b50f93beb5c4735d#None#None
+b7c0b44a73ee63db#None#None
+bb1fdfd142f9124d#未知#None
+bcbf4ce5f8d03ba3#None#None
+c12cc19227af98b1#None#None
+c279c7c7244693a6#None#None
+c2e4f9f71e257d92#None#None
+c827316dffb96b8c#None#None
+cb7a4e1358875fe7#None#None
+cc8e2cb0bb5ef9d4#None#None
+cf35eacd21aa52e4#None#None
+cfcd468406dc14fe#None#None
+d49124262f964c16#None#None
+d4c315057c14ab17#None#None
+d74fd09e2007ba5c#None#None
+da20c4addae978f7#None#None
+daea076bd08858af#None#None
+db5a3b672b9d3dd1#披风#未知
+deedb8223fe1aae5#None#None
+e209e0049b730678#None#None
+e2a0a4d16661873f#None#None
+e6549af5b43cd589#None#None
+e98809600219ffea#None#None
+eb695c664d5e1306#导入失败#None
+ebc7888cf3886e91#枪、装备#AR-2 “野狼”
+ec773c960c76921d#None#None
+ee92f465dcc34978#已无法搜索#None
+f590214c53f2049a#None#None
+fa2ba496b218db16#None#None
+0172baa250683d1d#None#None
+039fb224d76ccab4#None#None
+07d3bc7cb4f13365#None#None
+0d1c1d758bfe5fa6#None#None
+0f33d5a5243e28ce#None#None
+0fb6bc6f27f10545#None#None
+1045338fe7559a16#导入失败#None
+10c3ad1be04f9edc#None#None
+9.2更新#None#None
+9852e5e0b70a7441#头盔#DS-42 “联邦之刃”
+541fbc971b1aef62#盔甲#DS-42 “联邦之刃”
+dbfd326577ba126f#头盔#DS-191 “天蝎”
+b60eaad684926425#盔甲#DS-191 “天蝎”
+dbf00f1b8761aba5#枪、装备#G-7 菠萝
+70d708e5fd627493#战备#S-11 矛枪
+863dc0bbdb912c40#敌人#蟑龙
+0f9c1ccc845ab6f6#敌人#霸王虫（需要全载lod）
+fc54494a4e3ccc25#建筑#移动雷达
+0dff5200594e867f#建筑#地面全地形采集钻机（需要全载lod）
+03b03072ff7b4c2b#大概环境物体#None
+06a08803173e70bb#敌人,建筑#4893835539688718504 虫穴可破坏的骨门
+078d187f158c0d8f#大概环境物体#None
+081a62c36c8e524f#大概环境物体#树
+0b5777eff150b7fb#大概环境物体#None
+0c894e2c281a0fc9#大概环境物体#None
+16709dfb93032286#大概环境物体#None
+16dcc6b65c9367f7#大概环境物体#None
+1c1851d8594f6b96#枪、装备#AR-2 的枪口
+1e00df4eee6f9bfa#敌人,建筑#9609589072036733218 大裂谷的断桥，机甲上去会断的那个
+2011d86accaefacf#大概环境物体#None
+26018b6fd2e24460#大概环境物体#None
+2943b24cda0252a5#敌人,建筑#有一个飞龙塔
+34cad511a11d60d0#大概环境物体#None
+3bcd6d586fcb6140#大概环境物体#None
+415fd4963279394c#无网格#神秘贴图
+43fc25faeb097d68#未知#None
+442ba10e5307be15#无网格#神秘贴图
+44cc31f593a455a8#敌人,建筑#孢子塔
+45d0e619089c0dc6#敌人,建筑#9609589072036733218 断了的断桥
+4a33a584fb7500a3#大概环境物体#None
+5293a01cf7023371#大概环境物体#None
+52ff468cfad87230#无网格#大量植物贴图
+None#None#None
+55c0a93f2e03e79f#无网格#植物贴图
+56354fdc2103e63d#大概环境物体#None
+5dd84ef01f50b385#大概环境物体#None
+62a190ae89d691bc#大概环境物体#树
+62ee14cd042334e7#大概环境物体#None
+64a130b3862d1868#大概环境物体#None
+6523b9ec911aa8c3#大概环境物体#None
+67c8ef71fba5eeb8#无网格#神秘贴图
+6ff86f5a83667dc4#大概环境物体#None
+None#None#None
+7128fa1356cd6e65#大概环境物体#None
+78151f5325a10f04#无网格#好像是什么天气贴图
+7858476999abfcad#大概环境物体#None
+7be04adb392a3045#枪、装备#AR-2 的弹匣
+8191edbf2438d1f6#大概环境物体#None
+83a5c0926330fb5b#无网格#神秘贴图
+863836403dfd5744#大概环境物体#None
+None#None#None
+8c826f9f8c4e1f05#未知#None
+8e690a16aedb4731#未知#None
+8fd87a5553550af5#大概环境物体#None
+903d7a82d692f8ce#大概环境物体#None
+913a0e5000086747#大概环境物体#None
+None#None#None
+9b1e1a49f75975fa#大概环境物体#None
+9c72aa6f61f921b2#大概环境物体#None
+9d05a4cc2f0a999a#未知#None
+9d9696166d294914#未知#None
+9de86a1dd6bda377#大概环境物体#None
+9e36b92e66db020e#大概环境物体#None
+a0cca093590c7470#大概环境物体#None
+a5de3adab8b29ac8#未知#None
+ac69025f892e1dd2#大概环境物体#None
+ac6cb426bd99bf82#大概环境物体#None
+ac84e68a6b9d1389#披风#未知
+ad32bb3d8d5896a7#大概环境物体#None
+b01f1a6dd78e21b4#大概环境物体#None
+None#None#None
+b7fb3e5ac6f836b0#大概环境物体#None
+b8bc4d1697939999#大概环境物体#None
+bb7be5fa2ec55103#大概环境物体#None
+bf7b6bb2497fa1d4#无网格#None
+c0016783025671af#大概环境物体#None
+c62cf40ae9c27599#无网格#None
+c6781ca113e1d790#大概环境物体#None
+ca845d843581061e#大概环境物体#None
+cbc0d073efb47b2e#披风#“风驰引路者”
+cbc7b9d7eb4bb3ce#大概环境物体#None
+cd3eb6124f0dbfb9#大概环境物体#None
+d0b7a123e50f7d36#披风#“正当占领者”
+d216b0b060fe8549#无网格#None
+d8c47e565857b36a#大概环境物体#None
+db0138009928a180#大概环境物体#None
+dc3b76868143fe75#大概环境物体#None
+e1981e17d1113045#未知#None
+ea01324c73144e1b#大概环境物体#None
+edecc0b41a3cf919#无网格#None
+ef27b47663fe4816#大概环境物体#None
+f0b32805220020db#建筑#虫卵
+f0e0c823c0a155ee#未知#None
+f7afe3d03de64ed5#大概环境物体#None
