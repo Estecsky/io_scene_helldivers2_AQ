@@ -4071,7 +4071,7 @@ class AddMaterialOperator(Operator):
         ("advanced_blue-green", "Advanced 蓝绿光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
         ("advanced_green", "Advanced 绿光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
 
-        ("flowing","流光","光能电塔的流光材质"),
+        ("flowing","流光","光能电塔的流光材质，材质参数中切换uv空间改成负的就是从上往下，正的是从下往上"),
         ("glass", "透明玻璃", "透明玻璃，不知道能干嘛，自己猜()"),
         ("basic+Fixed", "Basic+", "A basic material with a color, normal, and PBR map which renders in the UI, Sourced from a SEAF NPC"),
         ("basic", "Basic", "A basic material with a color, normal, and PBR map. Sourced from a trash bag prop."),
