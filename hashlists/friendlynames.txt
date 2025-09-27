@@ -4823,7 +4823,7 @@
 12279528435724053588 content/fac_helldivers/equipment/sidearm_weapons/plasma_pistol/plasma_pistol
 6912088101323449320 content/fac_helldivers/equipment/primary_weapons/battle_rifle/battle_rifle
 5972955417680186543 content/fac_helldivers/equipment/sidearm_weapons/grenade_pistol/grenade_pistol
-1892480894983787169 content/fac_helldivers/equipment/sidearm_weapons/magnum_pistol/magnum_pistol
+1892480894983787169 P-113裁决
 17623191861664038783 content/fac_helldivers/equipment/primary_weapons/crossbow_greyfax/crossbow_greyfax
 12100643055971655455 content/fac_helldivers/equipment/primary_weapons/assault_rifle_patriot/assault_rifle_patriot
 17283952461205890046 content/fac_helldivers/equipment/primary_weapons/plasma_rifle_charge/plasma_rifle_charge
@@ -6614,7 +6614,7 @@
 15022264489388865902 ed_left_wing_section_01
 7400678424961384593 s/cy_sat_pillbox_16m_03
 17188156872846113929 _sat_parking_lot_16m_03
-25933506294237940 istol_magazine_standard
+25933506294237940 P-113裁决弹匣
 17734063664249075691 ug_tac_shrieker_nest_05
 4057450719208857466 y_camp_panzer_medium_02
 16526882722016140140 _camp_armored_medium_01
@@ -7159,7 +7159,7 @@
 10035997378415074895 CyborgEyeGlow2???
 4945697432933156965 4倍瞄准镜
 16634382492500136054 鹰眼
-18319281757224320923 电弧榴弹发射器(GL-52
+18319281757224320923 电弧榴弹发射器(GL-52)
 2980234130573201393 双刃镰刀
 9288730696111894479 双刃镰刀散热器
 3503658004598565718 武器配件1
@@ -7191,3 +7191,4 @@
 5763345476439588671 M6C/特种作战手枪弹匣
 4046732776742447255 S-11矛枪
 17446537956247465852 S-11矛枪的矛
+7483912604024319283 肉瘤体
