@@ -42,10 +42,13 @@ class HD2_AddonPreferences(bpy.types.AddonPreferences):
         max=59,
     )  # type: ignore
     
+    MakeCollections  : BoolProperty(name="Make Collections", description = "Make new collection when importing meshes", default = False)
+    ShowAnimations   : BoolProperty(name="Animations", description = "Show Animations", default = False)
     tga_Tex_Import_Switch : BoolProperty(name="TGA_Tex_Import_Switch",default = False,description = "开启TGA纹理导入开关，tga会自动转换为dds,文件输出目录为软件缓存目录")
     png_Tex_Import_Switch : BoolProperty(name="PNG_Tex_Import_Switch",default = False,description = "开启PNG纹理导入开关，png会自动转换为dds,文件输出目录为软件缓存目录")
     ShowArchivePatchPath : BoolProperty(name="ShowArchivePatchPath",default = False,description = "实时显示活动Archive和Patch的路径")
     ShowZipPatchButton : BoolProperty(name="ShowZipPatchButton",default = False,description = "显示打包Patch为Zip功能")
+    ShowQuickSwitch : BoolProperty(name="ShowQuickSwitch",default = True ,description = "显示快捷设置按钮，开启此项会将导入Lods、导入静态物体、自动Lods按钮直接显示在主面板")
     Layout_search_New : BoolProperty(name="Layout_search_New",default = True ,description = "显示搜索已知Archive为主的布局")
     ShadeSmooth      : BoolProperty(name="Shade Smooth", description = "导入模型时平滑着色,开启此项将关闭自动平滑", default = True)
     SaveUseAutoSmooth : BoolProperty(name="SaveUseAutoSmooth",default = True,description = "保存网格时使用自动平滑并将平滑角度设为180度，视觉上将与平滑着色一致，关闭则不对保存网格做任何调整")
@@ -61,6 +64,7 @@ class HD2_AddonPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "ShowArchivePatchPath",text="实时显示活动Archive和Patch的路径")
         layout.prop(self, "ShowZipPatchButton",text="显示打包Patch为Zip功能")
         layout.prop(self, "Layout_search_New",text="显示搜索已知Archive为主的布局")
+        layout.prop(self, "ShowQuickSwitch",text="显示快捷设置按钮")
         layout.prop(self, "SaveUseAutoSmooth",text="保存网格时开启自动平滑")
         addon_updater_ops.update_settings_ui(self, context)
 

@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (1, 8, 4),
+    "version": (2, 0, 0),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -15,7 +15,7 @@ import ctypes, os, tempfile, subprocess, time, webbrowser, re
 import random as r
 from copy import deepcopy
 import copy
-from math import ceil # type: ignore
+from math import ceil , sqrt # type: ignore
 from pathlib import Path
 
 # Blender
@@ -24,10 +24,17 @@ from bpy_extras.io_utils import ImportHelper, ExportHelper
 from bpy.props import StringProperty, BoolProperty, IntProperty, EnumProperty, PointerProperty
 from bpy.types import Panel, Operator, PropertyGroup, Scene, Menu
 
+from .stingray.animation import StingrayAnimation, AnimationException
+from .stingray.material import LoadShaderVariables, LoadShaderVariables_CN, StingrayMaterial,Global_ShaderVariables,Global_ShaderVariables_CN
+from .stingray.bones import LoadBoneHashes, StingrayBones
+from .stingray.texture import StingrayTexture
+
+
 # Local
 # NOTE: Not bothering to do importlib reloading shit because these modules are unlikely to be modified frequently enough to warrant testing without Blender restarts
 from .math import MakeTenBitUnsigned, TenBitUnsigned
 from .memoryStream import MemoryStream
+from .logger import PrettyPrint
 from .AQ_Prefs_HD2 import AQ_PublicClass
 
 import zipfile
@@ -44,7 +51,6 @@ from . import get_update_archivelistCN
 AddonPath = os.path.dirname(__file__)
 BlenderAddonsPath = os.path.dirname(AddonPath)
 
-Global_dllpath             = f"{AddonPath}\\deps\\HDTool_Helper.dll"
 Global_texconvpath         = f"{AddonPath}\\deps\\texconv.exe"
 Global_palettepath         = f"{AddonPath}\\deps\\NormalPalette.dat"
 Global_materialpath        = f"{AddonPath}\\materials"
@@ -52,6 +58,7 @@ Global_typehashpath        = f"{AddonPath}\\hashlists\\typehash.txt"
 Global_filehashpath        = f"{AddonPath}\\hashlists\\filehash.txt"
 Global_friendlynamespath   = f"{AddonPath}\\hashlists\\friendlynames.txt"
 Global_variablespath       = f"{AddonPath}\\hashlists\\shadervariables.txt"
+Global_bonehashpath      = f"{AddonPath}\\hashlists\\bonehash.txt"
 
 Global_variablesCNpath     = f"{AddonPath}\\hashlists\\shadervariables_combine_CN.txt"
 Global_updatearchivelistCNpath = f"{AddonPath}\\hashlists\\update_archive_listCN.txt"
@@ -61,23 +68,31 @@ Global_defaultgamepath     = "C:\Program Files (x86)\Steam\steamapps\common\Hell
 Global_defaultgamepath     = Global_defaultgamepath[:len(Global_defaultgamepath) - 1]
 Global_gamepath            = ""
 
+Global_BoneNames = {}
+
+Global_SectionHeader = "---Helldivers 2 AQ魔改---"
 
 
-
-Global_CPPHelper = ctypes.cdll.LoadLibrary(Global_dllpath) if os.path.isfile(Global_dllpath) else None
-
-Global_ShaderVariables = {}
-Global_ShaderVariables_CN = {}
 Global_updatearchivelistCN_list = []
 Global_PatchBasePath = ""
 Global_Foldouts = []
 #endregion
 #region Common Hashes & Lookups
 
-CompositeMeshID = 14191111524867688662
-MeshID = 16187218042980615487
+CompositeUnitID = 14191111524867688662
+UnitID = 16187218042980615487
 TexID  = 14790446551990181426
 MaterialID  = 16915718763308572383
+BoneID = 1792059921637536489
+WwiseBankID = 6006249203084351385
+WwiseDepID = 12624162998411505776
+WwiseStreamID = 5785811756662211598
+WwiseMetaDataID = 15351235653606224144
+ParticleID = 12112766700566326628
+AnimationID = 10600967118105529382
+StateMachineID = 11855396184103720540
+StringID = 979299457696010195
+PhysicsID = 6877563742545042104
 
 TextureTypeLookup = {
     "original": ("pbr: ", 
@@ -104,16 +119,14 @@ TextureTypeLookup = {
         "Base Color: ",
         "Normal: "
     ),
-    "bloom": (
-        "Normal: ",
-        "Bloom Color: ",
-        "Bloom Color: "
+    "bloom":  ("normal/ao/cavity: ",
+                 "emission: ",
+                 "color/metallic: "
     ),
     "glass": (
         "Glass stain: ",""
     ),
-    "emissive": ("normal/ao/cavity: ", "emission: ", "color/metallic: "),
-    "advanced_no_emi": (
+    "advanced_default": (
     "",
     "",
     "Normal/AO/Roughness: ",
@@ -258,8 +271,8 @@ TextureTypeLookup = {
     ),
     "flowing": (
         "",
-        "Normal: ",
-        "",
+        "Normal_1: ",
+        "Normal_2: ",
         "Mask: ",
         ""
     ),
@@ -273,35 +286,45 @@ TextureTypeLookup = {
     
 }
 
+Global_Materials = (
+        ("bloom", "Bloom", "A bloom material with two color, normal map which does not render in the UI"),
+        ("original", "Original", "The original template used for all mods uploaded to Nexus prior to the addon's public release, which is bloated with additional unnecessary textures. Sourced from a terminid."),
+        ("advanced_default", "Advanced 默认无光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),   
+        ("advanced_orange", "Advanced 橙光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_yellow", "Advanced 黄光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_red", "Advanced 红光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_pink", "Advanced 粉光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_purple", "Advanced 紫光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_dark-blue", "Advanced 深蓝光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_blue", "Advanced 蓝光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_light-blue", "Advanced 浅蓝光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_blue-green", "Advanced 蓝绿光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+        ("advanced_green", "Advanced 绿光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
+
+        ("flowing","流光","光能电塔的流光材质，材质参数中切换uv空间改成负的就是从上往下，正的是从下往上"),
+        ("glass", "透明玻璃", "透明玻璃，不知道能干嘛，自己猜()"),
+        ("basic+Fixed", "Basic+", "A basic material with a color, normal, and PBR map which renders in the UI, Sourced from a SEAF NPC"),
+        ("basic", "Basic", "A basic material with a color, normal, and PBR map. Sourced from a trash bag prop."),
+        ("alphaclip", "Alpha Clip", "金属度在颜色贴图的alpha通道，A material that supports an alpha mask which does not render in the UI. Sourced from a skeleton pile")
+    )
+
+Global_MaterialParentIDs = {
+    15235712479575174153 : "bloom",
+    6101987038150196875 : "original",
+    17265463703140804126 : "advanced_default",
+    16342443352312747293 : "flowing",
+    9576304397847579354 : "glass",
+    8580182439406660688 : "basic+Fixed",
+    15356477064658408677 : "basic",
+    15586118709890920288 : "alphaclip",
+    17720495965476876300 : "armorlut",
+    # 9576304397847579354  : "translucent",
+}
+
 #endregion
 
 #region Functions: Miscellaneous
 
-def PrettyPrint(msg, type="info"): # Inspired by FortnitePorting
-    reset = u"\u001b[0m"
-    color = reset
-    match type:
-        case "info":
-            color = u"\u001b[36m"
-        case "warn":
-            color = u"\u001b[31m"
-        case "error":
-            color = u"\u001b[33m"
-        case _:
-            pass
-    print(f"{color}[HD2TOOL]{reset} {msg}")
-
-def DXGI_FORMAT(format):
-    Dict = {0: "UNKNOWN", 1: "R32G32B32A32_TYPELESS", 2: "R32G32B32A32_FLOAT", 3: "R32G32B32A32_UINT", 4: "R32G32B32A32_SINT", 5: "R32G32B32_TYPELESS", 6: "R32G32B32_FLOAT", 7: "R32G32B32_UINT", 8: "R32G32B32_SINT", 9: "R16G16B16A16_TYPELESS", 10: "R16G16B16A16_FLOAT", 11: "R16G16B16A16_UNORM", 12: "R16G16B16A16_UINT", 13: "R16G16B16A16_SNORM", 14: "R16G16B16A16_SINT", 15: "R32G32_TYPELESS", 16: "R32G32_FLOAT", 17: "R32G32_UINT", 18: "R32G32_SINT", 19: "R32G8X24_TYPELESS", 20: "D32_FLOAT_S8X24_UINT", 21: "R32_FLOAT_X8X24_TYPELESS", 22: "X32_TYPELESS_G8X24_UINT", 23: "R10G10B10A2_TYPELESS", 24: "R10G10B10A2_UNORM", 25: "R10G10B10A2_UINT", 26: "R11G11B10_FLOAT", 27: "R8G8B8A8_TYPELESS", 28: "R8G8B8A8_UNORM", 29: "R8G8B8A8_UNORM_SRGB", 30: "R8G8B8A8_UINT", 31: "R8G8B8A8_SNORM", 32: "R8G8B8A8_SINT", 33: "R16G16_TYPELESS", 34: "R16G16_FLOAT", 35: "R16G16_UNORM", 36: "R16G16_UINT", 37: "R16G16_SNORM", 38: "R16G16_SINT", 39: "R32_TYPELESS", 40: "D32_FLOAT", 41: "R32_FLOAT", 42: "R32_UINT", 43: "R32_SINT", 44: "R24G8_TYPELESS", 45: "D24_UNORM_S8_UINT", 46: "R24_UNORM_X8_TYPELESS", 47: "X24_TYPELESS_G8_UINT", 48: "R8G8_TYPELESS", 49: "R8G8_UNORM", 50: "R8G8_UINT", 51: "R8G8_SNORM", 52: "R8G8_SINT", 53: "R16_TYPELESS", 54: "R16_FLOAT", 55: "D16_UNORM", 56: "R16_UNORM", 57: "R16_UINT", 58: "R16_SNORM", 59: "R16_SINT", 60: "R8_TYPELESS", 61: "R8_UNORM", 62: "R8_UINT", 63: "R8_SNORM", 64: "R8_SINT", 65: "A8_UNORM", 66: "R1_UNORM", 67: "R9G9B9E5_SHAREDEXP", 68: "R8G8_B8G8_UNORM", 69: "G8R8_G8B8_UNORM", 70: "BC1_TYPELESS", 71: "BC1_UNORM", 72: "BC1_UNORM_SRGB", 73: "BC2_TYPELESS", 74: "BC2_UNORM", 75: "BC2_UNORM_SRGB", 76: "BC3_TYPELESS", 77: "BC3_UNORM", 78: "BC3_UNORM_SRGB", 79: "BC4_TYPELESS", 80: "BC4_UNORM", 81: "BC4_SNORM", 82: "BC5_TYPELESS", 83: "BC5_UNORM", 84: "BC5_SNORM", 85: "B5G6R5_UNORM", 86: "B5G5R5A1_UNORM", 87: "B8G8R8A8_UNORM", 88: "B8G8R8X8_UNORM", 89: "R10G10B10_XR_BIAS_A2_UNORM", 90: "B8G8R8A8_TYPELESS", 91: "B8G8R8A8_UNORM_SRGB", 92: "B8G8R8X8_TYPELESS", 93: "B8G8R8X8_UNORM_SRGB", 94: "BC6H_TYPELESS", 95: "BC6H_UF16", 96: "BC6H_SF16", 97: "BC7_TYPELESS", 98: "BC7_UNORM", 99: "BC7_UNORM_SRGB", 100: "AYUV", 101: "Y410", 102: "Y416", 103: "NV12", 104: "P010", 105: "P016", 106: "420_OPAQUE", 107: "YUY2", 108: "Y210", 109: "Y216", 110: "NV11", 111: "AI44", 112: "IA44", 113: "P8", 114: "A8P8", 115: "B4G4R4A4_UNORM", 130: "P208", 131: "V208", 132: "V408"}
-    return Dict[format]
-
-def DXGI_FORMAT_SIZE(format):
-    if format.find("BC1") != -1 or format.find("BC4") != -1:
-        return 8
-    elif format.find("BC") != -1:
-        return 16
-    else:
-        raise Exception("Provided DDS' format is currently unsupported")
 
 def EntriesFromStrings(file_id_string, type_id_string):
     FileIDs = file_id_string.split(',')
@@ -407,7 +430,8 @@ def duplicate(obj, data=True, actions=True, collection=None):
     if data:
         obj_copy.data = obj_copy.data.copy()
     if actions and obj_copy.animation_data:
-        obj_copy.animation_data.action = obj_copy.animation_data.action.copy()
+        if obj_copy.animation_data.action:
+            obj_copy.animation_data.action = obj_copy.animation_data.action.copy()
     bpy.context.collection.objects.link(obj_copy)
     return obj_copy
 
@@ -457,7 +481,7 @@ def PrepareMesh(og_object):
 
     return object
 
-def GetMeshData(og_object):
+def GetMeshData(og_object, Global_TocManager, Global_BoneNames):
     global Global_palettepath
     object = PrepareMesh(og_object)
     bpy.context.view_layer.objects.active = object
@@ -473,12 +497,24 @@ def GetMeshData(og_object):
     boneIndices = []
     faces       = []
     materials   = [ RawMaterialClass() for idx in range(len(object.material_slots))]
-    for idx in range(len(object.material_slots)): materials[idx].IDFromName(object.material_slots[idx].name)
+    mat_count = {}
+    for idx in range(len(object.material_slots)):
+        try:
+            mat_id = int(object.material_slots[idx].name)
+        except:
+            raise Exception("Material name must be a number")
+        if mat_id not in mat_count:
+            mat_count[mat_id] = -1
+        mat_count[mat_id] += 1
+        materials[idx].IDFromName(og_object['Z_ObjectID'], str(mat_id), mat_count[mat_id])
 
     # get vertex color
     if mesh.vertex_colors:
         color_layer = mesh.vertex_colors.active
         for face in object.data.polygons:
+            if color_layer == None: 
+                PrettyPrint(f"{og_object.name} Color Layer does not exist", 'ERROR')
+                break
             for vert_idx, loop_idx in zip(face.vertices, face.loop_indices):
                 col = color_layer.data[loop_idx].color
                 colors[vert_idx] = [col[0], col[1], col[2], col[3]]
@@ -496,8 +532,8 @@ def GetMeshData(og_object):
         #tangents[loop.vertex_index]   = loop.tangent.normalized()
         #bitangents[loop.vertex_index] = loop.bitangent.normalized()
     # if fuckywuckynormalwormal do this bullshit
-    LoadNormalPalette(Global_palettepath)
-    normals = NormalsFromPalette(normals)
+    #LoadNormalPalette()
+    #normals = NormalsFromPalette(normals)
     # get uvs
     for uvlayer in object.data.uv_layers:
         if len(uvs) >= 3:
@@ -511,8 +547,30 @@ def GetMeshData(og_object):
     # get weights
     vert_idx = 0
     numInfluences = 4
+    stingray_mesh_entry = Global_TocManager.GetEntry(int(og_object["Z_ObjectID"]), int(UnitID), IgnorePatch=False, SearchAll=True)
+    if stingray_mesh_entry:
+        if not stingray_mesh_entry.IsLoaded: stingray_mesh_entry.Load(True, False)
+        stingray_mesh_entry = stingray_mesh_entry.LoadedData
+    else:
+        raise Exception(f"Unable to get mesh entry {og_object['Z_ObjectID']}")
+    bone_info = stingray_mesh_entry.BoneInfoArray
+    transform_info = stingray_mesh_entry.TransformInfo
+    lod_index = og_object["BoneInfoIndex"]
+    bone_names = []
+    if not bpy.context.scene.Hd2ToolPanelSettings.LegacyWeightNames:
+        if len(object.vertex_groups) > 0:
+            for g in object.vertex_groups:
+                bone_names.append(g.name)
+            remap_info = [bone_names for _ in range(len(object.material_slots))]
+            bone_info[lod_index].SetRemap(remap_info, transform_info)
+        
+        vertex_to_material_index = [5000 for _ in range(len(mesh.vertices))]
+        for polygon in mesh.polygons:
+            for vertex in polygon.vertices:
+                vertex_to_material_index[vertex] = polygon.material_index
+    
     if len(object.vertex_groups) > 0:
-        for vertex in mesh.vertices:
+        for index, vertex in enumerate(mesh.vertices):
             group_idx = 0
             for group in vertex.groups:
                 # limit influences
@@ -521,9 +579,48 @@ def GetMeshData(og_object):
                 if group.weight > 0.001:
                     vertex_group        = object.vertex_groups[group.group]
                     vertex_group_name   = vertex_group.name
-                    parts               = vertex_group_name.split("_")
-                    HDGroupIndex        = int(parts[0])
-                    HDBoneIndex         = int(parts[1])
+                    
+                    #
+                    # CHANGE THIS TO SUPPORT THE NEW BONE NAMES
+                    # HOW TO ACCESS transform_info OF STINGRAY MESH??
+                    if bpy.context.scene.Hd2ToolPanelSettings.LegacyWeightNames:
+                        parts               = vertex_group_name.split("_")
+                        HDGroupIndex        = int(parts[0])
+                        HDBoneIndex         = int(parts[1])
+                    else:
+                        material_idx = vertex_to_material_index[index]
+                        try:
+                            name_hash = int(vertex_group_name)
+                        except ValueError:
+                            name_hash = murmur32_hash(vertex_group_name.encode("utf-8"))
+                        HDGroupIndex = 0
+                        try:
+                            real_index = transform_info.NameHashes.index(name_hash)
+                        except ValueError:
+                            existing_names = []
+                            for i, h in enumerate(transform_info.NameHashes):
+                                try:
+                                    if i in bone_info[lod_index].RealIndices:
+                                        existing_names.append(Global_BoneNames[h])
+                                except KeyError:
+                                    existing_names.append(str(h))
+                                except IndexError:
+                                    pass
+                            if object:
+                                PrettyPrint(f"Deleting object early and exiting weight painting mode...", 'error')
+                                bpy.ops.object.mode_set(mode='OBJECT')
+                                bpy.data.objects.remove(object, do_unlink=True)
+                            raise Exception(f"\n\nVertex Group: {vertex_group_name} is not a valid vertex group for the model.\nIf you are using legacy weight names, make sure you enable the option in the settings.\n\nValid vertex group names: {existing_names}")
+                        try:
+                            HDBoneIndex = bone_info[lod_index].GetRemappedIndex(real_index, material_idx)
+                        except (ValueError, IndexError): # bone index not in remap because the bone is not in the LOD bone data
+                            continue
+                            
+                    # get real index from remapped index -> hashIndex = bone_info[mesh.LodIndex].GetRealIndex(bone_index); boneHash = transform_info.NameHashes[hashIndex]
+                    # want to get remapped index from bone name
+                    # hash = ...
+                    # real_index = transform_info.NameHashes.index(hash)
+                    # remap = bone_info[mesh.LodIndex].GetRemappedIndex(real_index)
                     if HDGroupIndex+1 > len(boneIndices):
                         dif = HDGroupIndex+1 - len(boneIndices)
                         boneIndices.extend([[[0,0,0,0] for n in range(len(vertices))]]*dif)
@@ -534,7 +631,88 @@ def GetMeshData(og_object):
     else:
         boneIndices = []
         weights     = []
+        
+    #bpy.ops.object.mode_set(mode='POSE')
+    # check option for saving bones
+    # get armature object
+    prev_obj = bpy.context.view_layer.objects.active
+    prev_objs = bpy.context.selected_objects
+    prev_mode = prev_obj.mode
+    armature_obj = None
+    for modifier in og_object.modifiers:
+        if modifier.type == "ARMATURE":
+            armature_obj = modifier.object
+            break
+    if armature_obj is not None:
+        was_hidden = armature_obj.hide_get()
+        armature_obj.hide_set(False)
+        bpy.context.view_layer.objects.active = armature_obj
+        bpy.ops.object.mode_set(mode='EDIT')
+        for bone in armature_obj.data.edit_bones: # I'd like to use edit bones but it doesn't work for some reason
+            PrettyPrint(bone.name)
+            try:
+                name_hash = int(bone.name)
+            except ValueError:
+                name_hash = murmur32_hash(bone.name.encode("utf-8"))
+            try:
+                transform_index = transform_info.NameHashes.index(name_hash)
+            except ValueError:
+                PrettyPrint(f"Failed to write data for bone: {bone.name}. This may be intended", 'warn')
+                continue
+                
+            m = bone.matrix.transposed()
+            transform_matrix = StingrayMatrix4x4()
+            transform_matrix.v = [
+                m[0][0], m[0][1], m[0][2], m[0][3],
+                m[1][0], m[1][1], m[1][2], m[1][3],
+                m[2][0], m[2][1], m[2][2], m[2][3],
+                m[3][0], m[3][1], m[3][2], m[3][3]
+            ]
+            transform_info.TransformMatrices[transform_index] = transform_matrix
+            if bone.parent:
+                parent_matrix = bone.parent.matrix
+                local_transform_matrix = parent_matrix.inverted() @ bone.matrix
+                translation, rotation, scale = local_transform_matrix.decompose()
+                rotation = rotation.to_matrix()
+                transform_local = StingrayLocalTransform()
+                transform_local.rot.x = [rotation[0][0], rotation[1][0], rotation[2][0]]
+                transform_local.rot.y = [rotation[0][1], rotation[1][1], rotation[2][1]]
+                transform_local.rot.z = [rotation[0][2], rotation[1][2], rotation[2][2]]
+                transform_local.pos = translation
+                transform_local.scale = scale
+                transform_info.Transforms[transform_index] = transform_local
+            else:
+                transform_local = StingrayLocalTransform()
+                transform_info.Transforms[transform_index] = transform_local
+                
+            # matrices in bone_info are the inverted joint matrices (for some reason)
+            # and also relative to the mesh transform
+            mesh_info_index = og_object["MeshInfoIndex"]
+            mesh_info = stingray_mesh_entry.MeshInfoArray[mesh_info_index]
+            origin_transform = transform_info.TransformMatrices[mesh_info.TransformIndex].ToLocalTransform()
+            origin_transform_matrix = mathutils.Matrix.LocRotScale(origin_transform.pos, 
+            mathutils.Matrix([origin_transform.rot.x, origin_transform.rot.y, origin_transform.rot.z]), 
+            origin_transform.scale).inverted()
+            
+            for b in bone_info:
+                if transform_index in b.RealIndices:
+                    b_index = b.RealIndices.index(transform_index)
+                    m = (origin_transform_matrix @ bone.matrix).inverted().transposed()
+                    transform_matrix = StingrayMatrix4x4()
+                    transform_matrix.v = [
+                        m[0][0], m[0][1], m[0][2], m[0][3],
+                        m[1][0], m[1][1], m[1][2], m[1][3],
+                        m[2][0], m[2][1], m[2][2], m[2][3],
+                        m[3][0], m[3][1], m[3][2], m[3][3]
+                    ]
+                    b.Bones[b_index] = transform_matrix
 
+        armature_obj.hide_set(was_hidden)
+        for obj in prev_objs:
+            obj.select_set(True)
+        bpy.context.view_layer.objects.active = prev_obj
+        bpy.ops.object.mode_set(mode=prev_mode)
+    #bpy.ops.object.mode_set(mode='OBJECT')
     # get faces
     temp_faces = [[] for n in range(len(object.material_slots))]
     for f in mesh.polygons:
@@ -564,16 +742,28 @@ def GetMeshData(og_object):
         except: pass
         matNum += 1
 
-    bpy.data.objects.remove(object, do_unlink=True)
+    if object is not None and object.name:
+        PrettyPrint(f"Removing {object.name}")
+        bpy.data.objects.remove(object, do_unlink=True)
+    else:
+        PrettyPrint(f"Current object: {object}")
     return NewMesh
 
-def GetObjectsMeshData():
+def GetObjectsMeshData(Global_TocManager, Global_BoneNames):
     objects = bpy.context.selected_objects
     bpy.ops.object.select_all(action='DESELECT')
-    data = []
+    data = {}
     for object in objects:
-        data.append(GetMeshData(object))
+        if object.type != 'MESH':
+            continue
+        ID = object["Z_ObjectID"]
+        MeshData = GetMeshData(object, Global_TocManager, Global_BoneNames)
+        try:
+            data[ID][MeshData.MeshInfoIndex] = MeshData
+        except:
+            data[ID] = {MeshData.MeshInfoIndex: MeshData}
     return data
+
 
 def NameFromMesh(mesh, id, customization_info, bone_names, use_sufix=True):
     # generate name
@@ -593,17 +783,19 @@ def NameFromMesh(mesh, id, customization_info, bone_names, use_sufix=True):
 
     if use_sufix and bone_names != None:
         for bone_name in bone_names:
-            if Hash32(bone_name) == mesh.MeshID:
+            if murmur32_hash(bone_name.encode()) == mesh.UnitID:
                 name = bone_name
 
     return name
 
-def CreateModel(model, id, customization_info, bone_names):
+def CreateModel(stingray_unit, id, Global_BoneNames):
     addon_prefs = AQ_PublicClass.get_addon_prefs()
+    model, customization_info, bone_names, transform_info, bone_info = stingray_unit.RawMeshes, stingray_unit.CustomizationInfo, stingray_unit.BoneNames, stingray_unit.TransformInfo, stingray_unit.BoneInfoArray
+
     if len(model) < 1: return
     # Make collection
     old_collection = bpy.context.collection
-    if bpy.context.scene.Hd2ToolPanelSettings.MakeCollections:
+    if addon_prefs.MakeCollections:
         new_collection = bpy.data.collections.new(NameFromMesh(model[0], id, customization_info, bone_names, False))
         old_collection.children.link(new_collection)
     else:
@@ -634,16 +826,12 @@ def CreateModel(model, id, customization_info, bone_names):
         # make object from mesh
         new_object = bpy.data.objects.new(name, new_mesh)
         # set transform
-        PrettyPrint(f"scale: {mesh.DEV_Transform.scale}")
-        PrettyPrint(f"location: {mesh.DEV_Transform.pos}")
-        new_object.scale = (mesh.DEV_Transform.scale[0],mesh.DEV_Transform.scale[1],mesh.DEV_Transform.scale[2])
-        new_object.location = (mesh.DEV_Transform.pos[0],mesh.DEV_Transform.pos[1],mesh.DEV_Transform.pos[2])
-
-        # TODO: fix incorrect rotation
-        rot = mesh.DEV_Transform.rot
-        rotation_matrix = mathutils.Matrix([rot.x, rot.y, rot.z])
+        local_transform = mesh.DEV_Transform.ToLocalTransform()
+        new_object.scale = local_transform.scale
+        new_object.location = local_transform.pos
         new_object.rotation_mode = 'QUATERNION'
-        new_object.rotation_quaternion = rotation_matrix.to_quaternion()
+        new_object.rotation_quaternion = mathutils.Matrix([local_transform.rot.x, local_transform.rot.y, local_transform.rot.z]).to_quaternion()
+
 
         # set object properties
         new_object["MeshInfoIndex"] = mesh.MeshInfoIndex
@@ -691,11 +879,22 @@ def CreateModel(model, id, customization_info, bone_names):
                     uvlayer.data[loop_idx].uv = (uvs[vert_idx][0], uvs[vert_idx][1]*-1 + 1)
         # -- || ASSIGN WEIGHTS || -- #
         created_groups = []
+        available_bones = []
+        for i, h in enumerate(transform_info.NameHashes):
+            try:
+                if i in bone_info[mesh.LodIndex].RealIndices:
+                    available_bones.append(Global_BoneNames.get(h, str(h)))
+            except IndexError:
+                pass
+        vertex_to_material_index = [5000]*len(mesh.VertexPositions)
+        for mat_idx, mat in enumerate(mesh.Materials):
+            for face in mesh.Indices[mat.StartIndex//3:(mat.StartIndex//3+mat.NumIndices//3)]:
+                for vert_idx in face:
+                    vertex_to_material_index[vert_idx] = mat_idx
         for vertex_idx in range(len(mesh.VertexWeights)):
             weights      = mesh.VertexWeights[vertex_idx]
             index_groups = [Indices[vertex_idx] for Indices in mesh.VertexBoneIndices]
-            group_index  = 0
-            for indices in index_groups:
+            for group_index, indices in enumerate(index_groups):
                 if bpy.context.scene.Hd2ToolPanelSettings.ImportGroup0 and group_index != 0:
                     continue
                 if type(weights) != list:
@@ -703,14 +902,161 @@ def CreateModel(model, id, customization_info, bone_names):
                 for weight_idx in range(len(weights)):
                     weight_value = weights[weight_idx]
                     bone_index   = indices[weight_idx]
-                    #bone_index   = mesh.DEV_BoneInfo.GetRealIndex(bone_index)
-                    group_name   = str(group_index) + "_" + str(bone_index)
+                    if not bpy.context.scene.Hd2ToolPanelSettings.LegacyWeightNames:
+                        try:
+                            hashIndex = bone_info[mesh.LodIndex].GetRealIndex(bone_index, vertex_to_material_index[vertex_idx])
+                        except:
+                            continue
+                        boneHash = transform_info.NameHashes[hashIndex]
+                        group_name = Global_BoneNames.get(boneHash, str(boneHash))
+                    else:
+                        group_name = str(group_index) + "_" + str(bone_index)
                     if group_name not in created_groups:
                         created_groups.append(group_name)
+                        try:
+                            available_bones.remove(group_name)
+                        except ValueError:
+                            pass
                         new_vertex_group = new_object.vertex_groups.new(name=str(group_name))
                     vertex_group_data = [vertex_idx]
                     new_object.vertex_groups[str(group_name)].add(vertex_group_data, weight_value, 'ADD')
-                group_index += 1
+        if not bpy.context.scene.Hd2ToolPanelSettings.LegacyWeightNames:
+            for bone in available_bones:
+                new_vertex_group = new_object.vertex_groups.new(name=str(bone))
+                
+        # -- || ADD BONES || -- #
+        if bpy.context.scene.Hd2ToolPanelSettings.ImportArmature:
+            skeletonObj = None
+            armature = None
+            if len(bpy.context.selected_objects) > 0:
+                skeletonObj = bpy.context.selected_objects[0]
+            if skeletonObj and skeletonObj.type == 'ARMATURE':
+                armature = skeletonObj.data
+            if bpy.context.scene.Hd2ToolPanelSettings.MergeArmatures and armature != None:
+                PrettyPrint(f"Merging to previous skeleton: {skeletonObj.name}")
+            else:
+                PrettyPrint(f"Creating New Skeleton")
+                armature = bpy.data.armatures.new(f"{id}_skeleton{mesh.LodIndex}")
+                armature.display_type = "OCTAHEDRAL"
+                armature.show_names = False
+                skeletonObj = bpy.data.objects.new(f"{id}_lod{mesh.LodIndex}_rig", armature)
+                skeletonObj['BonesID'] = str(stingray_unit.BonesRef)
+                skeletonObj.show_in_front = True
+                
+            if addon_prefs.MakeCollections:
+                if 'skeletons' not in bpy.data.collections:
+                    collection = bpy.data.collections.new("skeletons")
+                    bpy.context.scene.collection.children.link(collection)
+                else:
+                    collection = bpy.data.collections['skeletons']
+            else:
+                collection = bpy.context.collection
+
+            try:
+                collection.objects.link(skeletonObj)
+            except Exception as e:
+                PrettyPrint(f"{e}", 'warn')
+
+            #bpy.context.active_object = skeletonObj
+            bpy.context.view_layer.objects.active = skeletonObj
+            bpy.ops.object.mode_set(mode='EDIT')
+            bones = None
+            boneParents = None
+            boneTransforms = {}
+            boneMatrices = {}
+            doPoseBone = {}
+            if mesh.LodIndex in [-1, 0]:
+                bones = [None] * transform_info.NumTransforms
+                boneParents = [0] * transform_info.NumTransforms
+                for i, transform in enumerate(transform_info.TransformEntries):
+                    boneParent = transform.ParentBone
+                    boneHash = transform_info.NameHashes[i]
+                    if boneHash in Global_BoneNames: # name of bone
+                        boneName = Global_BoneNames[boneHash]
+                    else:
+                        boneName = str(boneHash)
+                    newBone = armature.edit_bones.get(boneName)
+                    if newBone is None:
+                        newBone = armature.edit_bones.new(boneName)
+                        newBone.tail = 0, 0.05, 0
+                        doPoseBone[newBone.name] = True
+                    else:
+                        doPoseBone[newBone.name] = False
+                    bones[i] = newBone
+                    boneParents[i] = boneParent
+                    boneTransforms[newBone.name] = transform_info.Transforms[i]
+                    boneMatrices[newBone.name] = transform_info.TransformMatrices[i]
+            else:
+                b_info = bone_info[mesh.LodIndex]
+                bones = [None] * b_info.NumBones
+                boneParents = [0] * b_info.NumBones
+                for i, bone in enumerate(b_info.Bones): # this is not every bone in the transform_info
+                    boneIndex = b_info.RealIndices[i] # index of bone in transform info
+                    boneParent = transform_info.TransformEntries[boneIndex].ParentBone # index of parent bone in transform info
+                    # index of parent bone in b_info.Bones?
+                    if boneParent in b_info.RealIndices:
+                        boneParentIndex = b_info.RealIndices.index(boneParent)
+                    else:
+                        boneParentIndex = -1
+                    boneHash = transform_info.NameHashes[boneIndex]
+                    if boneHash in Global_BoneNames: # name of bone
+                        boneName = Global_BoneNames[boneHash]
+                    else:
+                        boneName = str(boneHash)
+                    newBone = armature.edit_bones.get(boneName)
+                    if newBone is None:
+                        newBone = armature.edit_bones.new(boneName)
+                        newBone.tail = 0, 0.05, 0
+                        doPoseBone[newBone.name] = True
+                    else:
+                        doPoseBone[newBone.name] = False
+                    bones[i] = newBone
+                    boneTransforms[newBone.name] = transform_info.Transforms[boneIndex]
+                    boneMatrices[newBone.name] = transform_info.TransformMatrices[boneIndex]
+                    boneParents[i] = boneParentIndex
+                    
+            # parent all bones
+            for i, bone in enumerate(bones):
+                if boneParents[i] > -1:
+                    bone.parent = bones[boneParents[i]]
+            
+            # pose all bones   
+            bpy.context.view_layer.objects.active = skeletonObj
+            
+            for i, bone in enumerate(armature.edit_bones):
+                try:
+                    if not doPoseBone[bone.name]: continue
+                    a = boneMatrices[bone.name]
+                    mat = mathutils.Matrix.Identity(4)
+                    mat[0] = a.v[0:4]
+                    mat[1] = a.v[4:8]
+                    mat[2] = a.v[8:12]
+                    mat[3] = a.v[12:16]
+                    mat.transpose()
+                    bone.matrix = mat
+                except Exception as e:
+                    PrettyPrint(f"Failed setting bone matricies for: {e}. This may be intended", 'warn')
+                
+            bpy.ops.object.mode_set(mode='OBJECT')
+            
+            # assign armature modifier to the mesh object
+            modifier = new_object.modifiers.get("ARMATURE")
+            if (modifier == None):
+                modifier = new_object.modifiers.new("Armature", "ARMATURE")
+                modifier.object = skeletonObj
+
+            if bpy.context.scene.Hd2ToolPanelSettings.ParentArmature:
+                new_object.parent = skeletonObj
+            
+            # select the armature at the end so we can chain import when merging
+            for obj in bpy.context.selected_objects:
+                obj.select_set(False)
+            skeletonObj.select_set(True)
+            
+            # create empty animation data if it does not exist
+            if not skeletonObj.animation_data:
+              skeletonObj.animation_data_create()
+                 
         # -- || ASSIGN MATERIALS || -- #
         # convert mesh to bmesh
         bm = bmesh.new()
@@ -767,15 +1113,6 @@ def CreateModel(model, id, customization_info, bone_names):
                 new_mesh.use_auto_smooth = False
                 new_mesh.shade_smooth()
             
-
-
-        # Create skeleton
-        if False:
-            if mesh.DEV_BoneInfo != None:
-                for Bone in mesh.DEV_BoneInfo.Bones:
-                    current_pos = [Bone.v[12], Bone.v[13], Bone.v[14]]
-                    bpy.ops.object.empty_add(type='SPHERE', radius=0.08, align='WORLD', location=(current_pos[0], current_pos[1], current_pos[2]), scale=(1, 1, 1))
-
 #endregion
 
 #region Functions: Stingray Hashing
@@ -826,7 +1163,7 @@ def AddFriendlyName(ID, Name):
 def SaveFriendlyNames():
     with open(Global_filehashpath, 'w') as f:
         for hash_info in Global_NameHashes:
-            if hash_info[1] != "" and int(hash_info[0]) == Hash64(hash_info[1]):
+            if hash_info[1] != "" and int(hash_info[0]) == murmur64_hash(hash_info[1].encode()):
                 string = str(hash_info[0]) + " " + str(hash_info[1])
                 f.writelines(string+"\n")
     with open(Global_friendlynamespath, 'w') as f:
@@ -835,36 +1172,68 @@ def SaveFriendlyNames():
                 string = str(hash_info[0]) + " " + str(hash_info[1])
                 f.writelines(string+"\n")
 
-def Hash32(string):
-    output    = bytearray(4)
-    c_output  = (ctypes.c_char * len(output)).from_buffer(output)
-    Global_CPPHelper.dll_Hash32(c_output, string.encode())
-    F = MemoryStream(output, IOMode = "read")
-    return F.uint32(0)
 
-def Hash64(string):
-    output    = bytearray(8)
-    c_output  = (ctypes.c_char * len(output)).from_buffer(output)
-    Global_CPPHelper.dll_Hash64(c_output, string.encode())
-    F = MemoryStream(output, IOMode = "read")
-    return F.uint64(0)
+def bytes_to_long(bytes):
+    assert len(bytes) == 8
+    return sum((b << (k * 8) for k, b in enumerate(bytes)))
+
+def murmur64_hash(data, seed: int = 0):
+
+    m = 0xc6a4a7935bd1e995
+    r = 47
+
+    MASK = 2 ** 64 - 1
+
+    data_as_bytes = bytearray(data)
+
+    h = seed ^ ((m * len(data_as_bytes)) & MASK)
+
+    off = int(len(data_as_bytes)/8)*8
+    for ll in range(0, off, 8):
+        k = bytes_to_long(data_as_bytes[ll:ll + 8])
+        k = (k * m) & MASK
+        k = k ^ ((k >> r) & MASK)
+        k = (k * m) & MASK
+        h = (h ^ k)
+        h = (h * m) & MASK
+
+    l = len(data_as_bytes) & 7
+
+    if l >= 7:
+        h = (h ^ (data_as_bytes[off+6] << 48))
+
+    if l >= 6:
+        h = (h ^ (data_as_bytes[off+5] << 40))
+
+    if l >= 5:
+        h = (h ^ (data_as_bytes[off+4] << 32))
+
+    if l >= 4:
+        h = (h ^ (data_as_bytes[off+3] << 24))
+
+    if l >= 3:
+        h = (h ^ (data_as_bytes[off+2] << 16))
+
+    if l >= 2:
+        h = (h ^ (data_as_bytes[off+1] << 8))
+
+    if l >= 1:
+        h = (h ^ data_as_bytes[off])
+        h = (h * m) & MASK
+
+    h = h ^ ((h >> r) & MASK)
+    h = (h * m) & MASK
+    h = h ^ ((h >> r) & MASK)
+
+    return h
+    
+def murmur32_hash(data, seed: int = 0):
+    return murmur64_hash(data, seed) >> 32
 
 #endregion
 
 #region Functions: Initialization
 
-def LoadNormalPalette(path):
-    Global_CPPHelper.dll_LoadPalette(path.encode())
-
-def NormalsFromPalette(normals):
-    f = MemoryStream(IOMode = "write")
-    normals = [f.vec3_float(normal) for normal in normals]
-    output    = bytearray(len(normals)*4)
-    c_normals = ctypes.c_char_p(bytes(f.Data))
-    c_output  = (ctypes.c_char * len(output)).from_buffer(output)
-    Global_CPPHelper.dll_NormalsFromPalette(c_output, c_normals, ctypes.c_uint32(len(normals)))
-    F = MemoryStream(output, IOMode = "read")
-    return [F.uint32(0) for normal in normals]
 
 Global_TypeHashes = []
 def LoadTypeHashes():
@@ -888,17 +1257,7 @@ def LoadNameHashes():
                 Global_NameHashes.append([int(parts[0]), parts[1].replace("\n", "")])
                 Loaded.append(int(parts[0]))
 
-def LoadShaderVariables():
-    global Global_ShaderVariables
-    with open(Global_variablespath, 'r') as f:
-        for line in f.readlines():
-            Global_ShaderVariables[int(line.split()[1], 16)] = line.split()[0]
-# 载入翻译
-def LoadShaderVariables_CN():
-    global Global_ShaderVariables_CN
-    with open(Global_variablesCNpath, 'r', encoding='utf-8') as f:
-        for line in f.readlines():
-            Global_ShaderVariables_CN[line.split()[1]] = line.split()[0]
+
 # 载入Archive收集表条目
 def LoadUpdateArchiveList_CN():
     global Global_updatearchivelistCN_list
@@ -910,6 +1269,16 @@ def LoadUpdateArchiveList_CN():
             Global_updatearchivelistCN_list.append({"ArchiveID": str(line.split("#")[0]),
                                                     "Classify": line.split("#")[1].split(","),
                                                     "Description": line.split("#")[2] })
+            
+def GetEntryParentMaterialID(entry):
+    if entry.TypeID == MaterialID:
+        f = MemoryStream(entry.TocData)
+        for i in range(6):
+            f.uint32(0)
+        parentID = f.uint64(0)
+        return parentID
+    else:
+        raise Exception(f"Entry: {entry.FileID} is not a material")
 #endregion
 
 #region Configuration
@@ -981,6 +1350,7 @@ def UpdateConfig():
 #region Classes and Functions: Stingray Archives
 
 class TocEntry:
+
     def __init__(self):
         self.FileID = self.TypeID = self.TocDataOffset = self.Unknown1 = self.GpuResourceOffset = self.Unknown2 = self.TocDataSize = self.GpuResourceSize = self.EntryIndex = self.StreamSize = self.StreamOffset = 0
         self.Unknown3 = 16
@@ -998,8 +1368,9 @@ class TocEntry:
         self.IsSelected = False
         self.MaterialTemplate = None # for determining tuple to use for labeling textures in the material editor
         self.DEV_DrawIndex = -1
+
     # -- Serialize TocEntry -- #
-    def Serialize(self, TocFile, Index=0):
+    def Serialize(self, TocFile: MemoryStream, Index=0):
         self.FileID             = TocFile.uint64(self.FileID)
         self.TypeID             = TocFile.uint64(self.TypeID)
         self.TocDataOffset      = TocFile.uint64(self.TocDataOffset)
@@ -1016,7 +1387,7 @@ class TocEntry:
         return self
 
     # -- Write TocEntry Data -- #
-    def SerializeData(self, TocFile, GpuFile, StreamFile):
+    def SerializeData(self, TocFile: MemoryStream, GpuFile, StreamFile):
         if TocFile.IsReading():
             TocFile.seek(self.TocDataOffset)
             self.TocData = bytearray(self.TocDataSize)
@@ -1064,53 +1435,40 @@ class TocEntry:
         if self.IsLoaded:
             self.Load(True, False)
     # -- Load Data -- #
-    def Load(self, Reload=False, MakeBlendObject=True):
+    def Load(self, Reload=False, MakeBlendObject=True, LoadMaterialSlotNames=False):
         callback = None
-        if self.TypeID == MeshID: callback = LoadStingrayMesh
+        if self.TypeID == UnitID: callback = LoadStingrayUnit
         if self.TypeID == TexID: callback = LoadStingrayTexture
         if self.TypeID == MaterialID: callback = LoadStingrayMaterial
-        if self.TypeID == CompositeMeshID: callback = LoadStingrayCompositeMesh
-        if self.TypeID == Hash64("bones"): callback = LoadStingrayBones
+        # if self.TypeID == ParticleID: callback = LoadStingrayParticle
+        if self.TypeID == CompositeUnitID: callback = LoadStingrayCompositeUnit
+        if self.TypeID == BoneID: callback = LoadStingrayBones
+        if self.TypeID == AnimationID: callback = LoadStingrayAnimation
+        # if callback == None: callback = LoadStingrayDump
+
         if callback != None:
-            self.LoadedData = callback(self.FileID, self.TocData, self.GpuData, self.StreamData, Reload, MakeBlendObject)
+            if self.TypeID == UnitID:
+                PrettyPrint(f"LoadMaterialSlotNames: {LoadMaterialSlotNames}")
+                self.LoadedData = callback(self.FileID, self.TocData, self.GpuData, self.StreamData, Reload, MakeBlendObject, LoadMaterialSlotNames)
+            else:
+                self.LoadedData = callback(self.FileID, self.TocData, self.GpuData, self.StreamData, Reload, MakeBlendObject)
             if self.LoadedData == None: raise Exception("Archive Entry Load Failed")
-            self.IsLoaded   = True
-            # if self.TypeID == MeshID and not self.IsModified:
-            #     for object in bpy.data.objects:
-            #         try:
-            #             objectID = object["Z_ObjectID"]
-            #             infoIndex = object["MeshInfoIndex"]
-            #             if objectID == str(self.FileID):
-            #                 PrettyPrint(f"Writing Vertex Groups for {object.name}")
-            #                 vertexNames = []
-            #                 for group in object.vertex_groups:
-            #                     vertexNames.append(group.name)
-            #                 newGroups = [objectID, infoIndex, vertexNames]
-            #                 if newGroups not in self.VertexGroups:
-            #                     self.VertexGroups.append(newGroups)
-            #                 PrettyPrint(self.VertexGroups)
-            #                 PrettyPrint(f"Writing Transforms for {object.name}")
-            #                 transforms = []
-            #                 transforms.append(object.location)
-            #                 transforms.append(object.rotation_euler)
-            #                 transforms.append(object.scale)
-            #                 objectTransforms = [objectID, infoIndex, transforms]
-            #                 if objectTransforms not in self.Transforms:
-            #                     self.Transforms.append(objectTransforms)
-            #                 PrettyPrint(self.Transforms)
-            #         except:
-            #             PrettyPrint(f"Object: {object.name} has No HD2 Properties")
+            self.IsLoaded = True
+
     # -- Write Data -- #
-    def Save(self):
+    def Save(self, **kwargs):
         if not self.IsLoaded: self.Load(True, False)
-        if self.TypeID == MeshID: callback = SaveStingrayMesh
+        if self.TypeID == UnitID: callback = SaveStingrayMesh
         if self.TypeID == TexID: callback = SaveStingrayTexture
         if self.TypeID == MaterialID: callback = SaveStingrayMaterial
-        if callback == None: raise Exception("Save Callback could not be found")
+        # if self.TypeID == ParticleID: callback = SaveStingrayParticle
+        if self.TypeID == AnimationID: callback = SaveStingrayAnimation
+        # if callback == None: callback = SaveStingrayDump
 
         if self.IsLoaded:
-            data = callback(self.FileID, self.TocData, self.GpuData, self.StreamData, self.LoadedData)
+            data = callback(self, self.FileID, self.TocData, self.GpuData, self.StreamData, self.LoadedData)
             self.SetData(data[0], data[1], data[2])
+        return True
 
 class TocFileType:
     def __init__(self, ID=0, NumFiles=0):
@@ -1173,6 +1531,7 @@ class StreamToc:
         self.TocEntries = []
         self.Path = ""
         self.Name = ""
+        self.LocalName = ""
 
     def Serialize(self, SerializeData=True):
         # Create Toc Types Structs
@@ -1328,7 +1687,8 @@ class TocManager():
     # ---- Archive Code ---- #
     def LoadArchive(self, path, SetActive=True, IsPatch=False):
         # TODO: Add error if IsPatch is true but the path is not to a patch
-
+        global Global_MaterialParentIDs
+        
         for Archive in self.LoadedArchives:
             if Archive.Path == path:
                 return Archive
@@ -1343,16 +1703,21 @@ class TocManager():
         elif SetActive and IsPatch:
             self.Patches.append(toc)
             self.ActivePatch = toc
+            
+            # 预载材质模板
+            for entry in self.ActivePatch.TocEntries:
+                if entry.TypeID == MaterialID:
+                    ID = GetEntryParentMaterialID(entry)
+                    if ID in Global_MaterialParentIDs:
+                        entry.MaterialTemplate = Global_MaterialParentIDs[ID]
+                        # entry.Load()
+                        PrettyPrint(f"Find Custom material, Template: {entry.MaterialTemplate}")
+                    else:
+                        PrettyPrint(f"Material: {entry.FileID} Parent ID: {ID} is not an custom material, skipping.")
+
 
         # Get search archives
         if len(self.SearchArchives) == 0:
-            # for root, dirs, files in os.walk(Path(path).parent):
-            #     for name in files:
-            #         if Path(name).suffix == "":
-            #             search_toc = StreamToc()
-            #             success = search_toc.FromFile(os.path.join(root, name), False)
-            #             if success:
-            #                 self.SearchArchives.append(search_toc)
             futures = []
             tocs = []
             executor = concurrent.futures.ThreadPoolExecutor()
@@ -1370,6 +1735,8 @@ class TocManager():
 
         return toc
 
+    def GetEntryByLoadArchive(self, FileID: int, TypeID: int):
+        return self.GetEntry(FileID, TypeID, SearchAll=False, IgnorePatch=True)
     # def GetEntryByPatch(self, FileID: int, TypeID: int):
     #     return self.GetEntry(FileID, TypeID)
 
@@ -1422,6 +1789,7 @@ class TocManager():
     def Load(self, FileID, TypeID, Reload=False, SearchAll=False):
         Entry = self.GetEntry(FileID, TypeID, SearchAll)
         if Entry != None: Entry.Load(Reload)
+        
     def Save(self, FileID, TypeID):
         Entry = self.GetEntry(FileID, TypeID)
         if not Global_TocManager.IsInPatch(Entry):
@@ -1464,7 +1832,7 @@ class TocManager():
 
     def CreatePatchFromActive(self,NewPatchIndex):
         if self.ActiveArchive == None:
-            raise Exception("No Archive exists to create patch from, please open one first")
+            raise Exception("没有激活的Archive，无法创建Patch，请先载入一个Archive。")
 
         self.ActivePatch = deepcopy(self.ActiveArchive)
         self.ActivePatch.TocEntries  = []
@@ -1480,7 +1848,7 @@ class TocManager():
         
     def RenameActivePatch(self, NewPath):
         if self.ActivePatch == None:
-            raise Exception("No patch exists, please create one first")
+            raise Exception("没有激活的Patch，无法重命名，请先创建一个Patch。")
         path = self.ActivePatch.Path
         
         fileNamelist = path.split("\\")[:-1]
@@ -1496,15 +1864,20 @@ class TocManager():
         for Patch in self.Patches:
             if Patch.Name == Name:
                 self.SetActivePatch(Patch)
+    def CheckActivePatch(self):
+        if self.ActivePatch == None:
+            return False
+        else:
+            return True
 
     def AddNewEntryToPatch(self, Entry):
         if self.ActivePatch == None:
-            raise Exception("No patch exists, please create one first")
+            raise Exception("没有激活的Patch，无法添加Entry，请先创建一个Patch。")
         self.ActivePatch.AddEntry(Entry)
 
     def AddEntryToPatch(self, FileID, TypeID):
         if self.ActivePatch == None:
-            raise Exception("No patch exists, please create one first")
+            raise Exception("没有激活的Patch，无法添加Entry，请先创建一个Patch。")
 
         Entry = self.GetEntry(FileID, TypeID)
         if Entry != None:
@@ -1543,83 +1916,36 @@ class TocManager():
 
 #endregion
 
+#region Classes and Functions: Stingray Animation
+def LoadStingrayAnimation(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject):
+    toc = MemoryStream(TocData)
+    PrettyPrint("Loading Animation")
+    animation = StingrayAnimation()
+    animation.Serialize(toc)
+    PrettyPrint("Finished Loading Animation")
+    if MakeBlendObject: # To-do: create action for armature
+        context = bpy.context
+        armature = context.active_object
+        try:
+            bones_id = int(armature['BonesID'])
+        except ValueError:
+            raise Exception(f"\n\nCould not obtain custom property: BonesID from armature: {armature.name}. Please make sure this is a valid value")
+        bones_entry = Global_TocManager.GetEntryByLoadArchive(int(bones_id), BoneID)
+        if not bones_entry.IsLoaded:
+            bones_entry.Load()
+        bones_data = bones_entry.TocData
+        animation.to_action(context, armature, bones_data, ID)
+    return animation
+    
+def SaveStingrayAnimation(self, ID, TocData, GpuData, StreamData, Animation):
+    toc = MemoryStream(IOMode = "write")
+    Animation.Serialize(toc)
+    return [toc.Data, b"", b""]
+
+#endregion
+
 #region Classes and Functions: Stingray Materials
-class ShaderVariable:
-    klasses = {
-        0: "Scalar",
-        1: "Vector2",
-        2: "Vector3",
-        3: "Vector4",
-        12: "Other"
-    }
 
-    def __init__(self):
-        self.klass = self.klassName = self.elements = self.ID = self.offset = self.elementStride = 0
-        self.values = []
-        self.name = ""
-
-class StingrayMaterial:
-    def __init__(self):
-        self.undat1 = self.undat3 = self.undat4 = self.undat5 = self.undat6 = self.RemainingData = bytearray()
-        # self.EndOffset = self.undat2 = self.UnkID = self.NumTextures = self.NumUnk = 0
-        self.EndOffset = self.undat2 = self.UnkID = self.NumTextures = self.NumVariables = self.VariableDataSize = 0
-        self.TexUnks = []
-        self.TexIDs  = []
-        self.ShaderVariables = []
-
-        self.DEV_ShowEditor = False
-        self.DEV_DDSPaths = []
-    def Serialize(self, f):
-        self.undat1      = f.bytes(self.undat1, 12)
-        self.EndOffset   = f.uint32(self.EndOffset)
-        self.undat2      = f.uint64(self.undat2)
-        self.UnkID       = f.uint64(self.UnkID) # could be shader id?
-        self.undat3      = f.bytes(self.undat3, 32)
-        self.NumTextures = f.uint32(self.NumTextures)
-        self.undat4      = f.bytes(self.undat4, 36)
-        # self.NumUnk      = f.uint32(self.NumUnk)
-        # self.undat5      = f.bytes(self.undat5, 28)
-        self.NumVariables= f.uint32(self.NumVariables)
-        self.undat5      = f.bytes(self.undat5, 12)
-        self.VariableDataSize = f.uint32(self.VariableDataSize)
-        self.undat6      = f.bytes(self.undat6, 12)
-        if f.IsReading():
-            self.TexUnks = [0 for n in range(self.NumTextures)]
-            self.TexIDs = [0 for n in range(self.NumTextures)]
-            self.ShaderVariables = [ShaderVariable() for n in range(self.NumVariables)]
-        self.TexUnks = [f.uint32(TexUnk) for TexUnk in self.TexUnks]
-        self.TexIDs  = [f.uint64(TexID) for TexID in self.TexIDs]
-    # ShaderVariables added
-        for variable in self.ShaderVariables:
-            variable.klass = f.uint32(variable.klass)
-            variable.klassName = ShaderVariable.klasses[variable.klass]
-            variable.elements = f.uint32(variable.elements)
-            variable.ID = f.uint32(variable.ID)
-            if variable.ID in Global_ShaderVariables:
-                variable.name = Global_ShaderVariables[variable.ID]
-            variable.offset = f.uint32(variable.offset)
-            variable.elementStride = f.uint32(variable.elementStride)
-            if f.IsReading():
-                variable.values = [0 for n in range(variable.klass + 1)]  # Create an array with the length of the data which is one greater than the klass value
-
-        variableValueLocation = f.Location # Record and add all of the extra data that is skipped around during the variable offsets
-
-        if f.IsReading():self.RemainingData = f.bytes(self.RemainingData, len(f.Data) - f.tell())
-        if f.IsWriting():self.RemainingData = f.bytes(self.RemainingData)
-        
-        f.Location = variableValueLocation
-
-        for variable in self.ShaderVariables:
-            oldLocation = f.Location
-            f.Location = f.Location + variable.offset
-            for idx in range(len(variable.values)):
-                variable.values[idx] = f.float32(variable.values[idx])
-            f.Location = oldLocation
-            
-        self.EditorUpdate()
-
-    def EditorUpdate(self):
-        self.DEV_DDSPaths = [None for n in range(len(self.TexIDs))]
 
 def LoadStingrayMaterial(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject):
     exists = True
@@ -1637,7 +1963,7 @@ def LoadStingrayMaterial(ID, TocData, GpuData, StreamData, Reload, MakeBlendObje
     elif force_reload: AddMaterialToBlend(ID, Material, True)
     return Material
 
-def SaveStingrayMaterial(ID, TocData, GpuData, StreamData, LoadedData):
+def SaveStingrayMaterial(self, ID, TocData, GpuData, StreamData, LoadedData):
     mat = LoadedData
     for TexIdx in range(len(mat.TexIDs)):
         oldTexID = mat.TexIDs[TexIdx]
@@ -1750,79 +2076,7 @@ def DDS_Export_Linear(tempdir,input_path):
 
 #region Classes and Functions: Stingray Textures
 
-class StingrayMipmapInfo:
-    def __init__(self):
-        self.Start     = self.BytesLeft = self.Height = self.Width  = 0
-    def Serialize(self, Toc):
-        self.Start      = Toc.uint32(self.Start)
-        self.BytesLeft  = Toc.uint32(self.BytesLeft)
-        self.Height     = Toc.uint16(self.Height)
-        self.Width      = Toc.uint16(self.Width)
-        return self
 
-class StingrayTexture:
-    def __init__(self):
-        self.UnkID = self.Unk1  = self.Unk2  = 0
-        self.MipMapInfo = []
-
-        self.ddsHeader = bytearray(148)
-        self.rawTex    = b""
-
-        self.Format     = ""
-        self.Width      = 0
-        self.Height     = 0
-        self.NumMipMaps = 0
-    def Serialize(self, Toc, Gpu, Stream):
-        # clear header, so we dont have to deal with the .stream file
-        if Toc.IsWriting():
-            self.Unk1 = 0; self.Unk2  = 0xFFFFFFFF
-            self.MipMapInfo = [StingrayMipmapInfo() for n in range(15)]
-
-        self.UnkID = Toc.uint32(self.UnkID)
-        self.Unk1  = Toc.uint32(self.Unk1)
-        self.Unk2  = Toc.uint32(self.Unk2)
-        if Toc.IsReading(): self.MipMapInfo = [StingrayMipmapInfo() for n in range(15)]
-        self.MipMapInfo = [mipmapInfo.Serialize(Toc) for mipmapInfo in self.MipMapInfo]
-        self.ddsHeader  = Toc.bytes(self.ddsHeader, 148)
-        self.ParseDDSHeader()
-
-        if Toc.IsWriting():
-            Gpu.bytes(self.rawTex)
-        else:# IsReading
-            if len(Stream.Data) > 0:
-                self.rawTex = Stream.Data
-            else:
-                self.rawTex = Gpu.Data
-
-    def ToDDS(self):
-        return self.ddsHeader + self.rawTex
-    
-    def FromDDS(self, dds):
-        self.ddsHeader = dds[:148]
-        self.rawTex    = dds[148::]
-    
-    def ParseDDSHeader(self):
-        dds = MemoryStream(self.ddsHeader, IOMode="read")
-        dds.seek(12)
-        self.Height = dds.uint32(0)
-        self.Width  = dds.uint32(0)
-        dds.seek(28)
-        self.NumMipMaps = dds.uint32(0)
-        dds.seek(128)
-        self.Format = DXGI_FORMAT(dds.uint32(0))
-    
-    def CalculateGpuMipmaps(self):
-        Stride = DXGI_FORMAT_SIZE(self.Format) / 16
-        start_mip = max(1, self.NumMipMaps-6)
-
-        CurrentWidth = self.Width
-        CurrentSize = int((self.Width*self.Width)*Stride)
-        for mip in range(self.NumMipMaps-1):
-            if mip+1 == start_mip:
-                return CurrentSize
-
-            if CurrentWidth > 4: CurrentWidth /= 2
-            CurrentSize += int((CurrentWidth*CurrentWidth)*Stride)
 
 def LoadStingrayTexture(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject):
     exists = True
@@ -1869,7 +2123,7 @@ def BlendImageToStingrayTexture(image, StingrayTex):
     else:
         raise Exception("Failed to convert TGA to DDS")
 
-def SaveStingrayTexture(ID, TocData, GpuData, StreamData, LoadedData):
+def SaveStingrayTexture(self,ID, TocData, GpuData, StreamData, LoadedData):
     exists = True
     try: bpy.data.images[str(ID)]
     except: exists = False
@@ -1886,53 +2140,98 @@ def SaveStingrayTexture(ID, TocData, GpuData, StreamData, LoadedData):
 
 #region Classes and Functions: Stingray Bones
 
-class StingrayBones:
-    def __init__(self):
-        self.NumNames = self.NumUnk = 0
-        self.UnkArray1 = []; UnkArray2 = []; UnkArray3 = []; self.Names = []
-    def Serialize(self, f):
-        self.NumNames = f.uint32(self.NumNames)
-        self.NumUnk   = f.uint32(self.NumUnk)
-        if f.IsReading():
-            self.UnkArray1 = [0 for n in range(self.NumUnk)]
-            self.UnkArray2 = [0 for n in range(self.NumNames)]
-            self.UnkArray3 = [0 for n in range(self.NumUnk)]
-        self.UnkArray1 = [f.uint32(value) for value in self.UnkArray1]
-        self.UnkArray2 = [f.uint32(value) for value in self.UnkArray2]
-        self.UnkArray3 = [f.uint32(value) for value in self.UnkArray3]
-        if f.IsReading():
-            Data = f.read().split(b"\x00")
-            self.Names = [dat.decode() for dat in Data]
-        else:
-            Data = b""
-            for string in self.Names:
-                Data += string.encode() + b"\x00"
-            f.write(Data)
-        return self
-
 def LoadStingrayBones(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject):
-    StingrayBonesData = StingrayBones()
+    StingrayBonesData = StingrayBones(Global_BoneNames)
     StingrayBonesData.Serialize(MemoryStream(TocData))
     return StingrayBonesData
+
 
 #endregion
 
 #region Classes and Functions: Stingray Composite Meshes
 
-class StingrayCompositeMesh:
+class CompositeMeshInfoItem:
+    
     def __init__(self):
-        self.unk1 = self.NumExternalMeshes = self.StreamInfoOffset = 0
+        self.MeshLayoutIdx = 0
+        self.NumMaterials = 0
+        self.MaterialsOffset = 0
+        self.NumGroups = 0
+        self.GroupsOffset = 0
+        self.unk1 = bytearray()
+        self.unk2 = 0
+        self.Groups = []
+        self.Materials = []
+        
+    def Serialize(self, f: MemoryStream):
+        start_position = f.tell()
+        self.MeshLayoutIdx = f.uint32(self.MeshLayoutIdx)
+        self.unk1 = f.bytes(self.unk1, 20)
+        self.NumMaterials = f.uint32(self.NumMaterials)
+        self.MaterialsOffset = f.uint32(self.MaterialsOffset)
+        self.unk2 = f.uint64(self.unk2)
+        self.NumGroups = f.uint32(self.NumGroups)
+        self.GroupsOffset = f.uint32(self.GroupsOffset)
+        if f.IsReading(): self.Materials = [0] * self.NumMaterials
+        f.seek(start_position + self.MaterialsOffset)
+        self.Materials = [f.uint32(material) for material in self.Materials]
+        f.seek(start_position + self.GroupsOffset)
+        if f.IsReading(): self.Groups = [MeshSectionInfo(self.Materials) for _ in range(self.NumGroups)]
+        self.Groups = [group.Serialize(f) for group in self.Groups]
+
+class CompositeMeshInfo:
+    
+    def __init__(self):
+        self.MeshCount = 0
+        self.Meshes = []
+        self.MeshInfoItemOffsets = []
+        self.MeshInfoItems = []
+        
+    def Serialize(self, f: MemoryStream):
+        start_position = f.tell()
+        self.MeshCount = f.uint32(self.MeshCount)
+        if f.IsReading(): self.Meshes = [0] * self.MeshCount
+        self.Meshes = [f.uint32(mesh) for mesh in self.Meshes]
+        if f.IsReading(): self.MeshInfoItemOffsets = [0] * self.MeshCount
+        self.MeshInfoItemOffsets = [f.uint32(mesh) for mesh in self.MeshInfoItemOffsets]
+        if f.IsReading(): self.MeshInfoItems = [CompositeMeshInfoItem() for _ in range(self.MeshCount)]
+        for i, item in enumerate(self.MeshInfoItems):
+            f.seek(start_position + self.MeshInfoItemOffsets[i])
+            item.Serialize(f)
+        
+
+class StingrayCompositeUnit:
+    def __init__(self):
+        self.unk1 = self.NumUnits = self.StreamInfoOffset = 0
         self.Unreversed = bytearray()
         self.NumStreams = 0
+        self.UnitHashes = []
+        self.UnitTypeHashes = []
+        self.MeshInfoOffsets = []
         self.StreamInfoArray = []
         self.StreamInfoOffsets = []
+        self.MeshInfos = []
         self.StreamInfoUnk = []
         self.StreamInfoUnk2 = 0
         self.GpuData = None
-    def Serialize(self, f, gpu):
+    def Serialize(self, f: MemoryStream, gpu):
         self.unk1               = f.uint64(self.unk1)
-        self.NumExternalMeshes  = f.uint32(self.NumExternalMeshes)
+        self.NumUnits           = f.uint32(self.NumUnits)
         self.StreamInfoOffset   = f.uint32(self.StreamInfoOffset)
+        if f.IsReading():
+            self.UnitHashes = [0] * self.NumUnits
+            self.UnitTypeHashes = [0] * self.NumUnits
+        for i in range(self.NumUnits):
+            self.UnitTypeHashes[i] = f.uint64(self.UnitTypeHashes[i])
+            self.UnitHashes[i] = f.uint64(self.UnitHashes[i])
+        if f.IsReading():
+            self.MeshInfoOffsets = [0] * self.NumUnits
+        self.MeshInfoOffsets = [f.uint32(offset) for offset in self.MeshInfoOffsets]
+        if f.IsReading(): self.MeshInfos = [CompositeMeshInfo() for _ in range(self.NumUnits)]
+        for i, offset in enumerate(self.MeshInfoOffsets):
+            f.seek(offset)
+            self.MeshInfos[i].Serialize(f)
+            
         if f.IsReading():
             self.Unreversed = bytearray(self.StreamInfoOffset-f.tell())
         self.Unreversed     = f.bytes(self.Unreversed)
@@ -1942,9 +2241,8 @@ class StingrayCompositeMesh:
             f.seek(ceil(float(f.tell())/16)*16); self.StreamInfoOffset = f.tell()
         self.NumStreams = f.uint32(len(self.StreamInfoArray))
         if f.IsWriting():
-            if not redo_offsets: self.StreamInfoOffsets = [0 for n in range(self.NumStreams)] #type: ignore
-            else: self.StreamInfoOffsets = [f.tell() for n in range(self.NumStreams)]
-            self.StreamInfoUnk = [mesh_info.MeshID for mesh_info in self.MeshInfoArray[:self.NumStreams]]
+            self.StreamInfoOffsets = [0 for n in range(self.NumStreams)]
+            self.StreamInfoUnk = [mesh_info.UnitID for mesh_info in self.MeshInfoArray[:self.NumStreams]]
         if f.IsReading():
             self.StreamInfoOffsets = [0 for n in range(self.NumStreams)]
             self.StreamInfoUnk     = [0 for n in range(self.NumStreams)]
@@ -1961,32 +2259,75 @@ class StingrayCompositeMesh:
         self.GpuData = gpu
         return self
 
-def LoadStingrayCompositeMesh(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject):
-    StingrayCompositeMeshData = StingrayCompositeMesh()
+def LoadStingrayCompositeUnit(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject):
+    StingrayCompositeMeshData = StingrayCompositeUnit()
     StingrayCompositeMeshData.Serialize(MemoryStream(TocData), MemoryStream(GpuData))
     return StingrayCompositeMeshData
 
 #endregion
 
 #region Classes and Functions: Stingray Meshes
+Global_MaterialSlotNames = {}
+
 
 class StingrayMatrix4x4: # Matrix4x4: https://help.autodesk.com/cloudhelp/ENU/Stingray-SDK-Help/engine_c/plugin__api__types_8h.html#line_89
     def __init__(self):
         self.v = [float(0)]*16
-    def Serialize(self, f):
+    def Serialize(self, f: MemoryStream):
         self.v = [f.float32(value) for value in self.v]
         return self
+    def ToLocalTransform(self):
+        matrix = mathutils.Matrix([
+            [self.v[0], self.v[1], self.v[2], self.v[12]],
+            [self.v[4], self.v[5], self.v[6], self.v[13]],
+            [self.v[8], self.v[9], self.v[10], self.v[14]],
+            [self.v[3], self.v[7], self.v[11], self.v[15]]
+        ])
+        local_transform = StingrayLocalTransform()
+        loc, rot, scale = matrix.decompose()
+        rot = rot.to_matrix()
+        local_transform.pos = loc
+        local_transform.scale = scale
+        local_transform.rot.x = rot[0]
+        local_transform.rot.y = rot[1]
+        local_transform.rot.z = rot[2]
+        return local_transform
 
 class StingrayMatrix3x3: # Matrix3x3: https://help.autodesk.com/cloudhelp/ENU/Stingray-SDK-Help/engine_c/plugin__api__types_8h.html#line_84
     def __init__(self):
-        self.x = [0,0,0]
-        self.y = [0,0,0]
-        self.z = [0,0,0]
-    def Serialize(self, f):
+        self.x = [1,0,0]
+        self.y = [0,1,0]
+        self.z = [0,0,1]
+    def Serialize(self, f: MemoryStream):
         self.x = f.vec3_float(self.x)
-        self.y = f.vec3_float(self.x)
-        self.z = f.vec3_float(self.x)
+        self.y = f.vec3_float(self.y)
+        self.z = f.vec3_float(self.z)
         return self
+    def ToQuaternion(self):
+        T = self.x[0] + self.y[1] + self.z[2]
+        M = max(T, self.x[0], self.y[1], self.z[2])
+        qmax = 0.5 * sqrt(1-T + 2*M)
+        if M == self.x[0]:
+            qx = qmax
+            qy = (self.x[1] + self.y[0]) / (4*qmax)
+            qz = (self.x[2] + self.z[0]) / (4*qmax)
+            qw = (self.z[1] - self.y[2]) / (4*qmax)
+        elif M == self.y[1]:
+            qx = (self.x[1] + self.y[0]) / (4*qmax)
+            qy = qmax
+            qz = (self.y[2] + self.z[1]) / (4*qmax)
+            qw = (self.x[2] - self.z[0]) / (4*qmax)
+        elif M == self.z[2]:
+            qx = (self.x[2] + self.z[0]) / (4*qmax)
+            qy = (self.y[2] + self.z[1]) / (4*qmax)
+            qz = qmax
+            qw = (self.x[2] - self.z[0]) / (4*qmax)
+        else:
+            qx = (self.z[1] - self.y[2]) / (4*qmax)
+            qy = (self.x[2] - self.z[0]) / (4*qmax)
+            qz = (self.y[0] + self.x[1]) / (4*qmax)
+            qw = qmax
+        return [qx, qy, qz, qw]
 
 class StingrayLocalTransform: # Stingray Local Transform: https://help.autodesk.com/cloudhelp/ENU/Stingray-SDK-Help/engine_c/plugin__api__types_8h.html#line_100
     def __init__(self):
@@ -1994,32 +2335,48 @@ class StingrayLocalTransform: # Stingray Local Transform: https://help.autodesk.
         self.pos   = [0,0,0]
         self.scale = [1,1,1]
         self.dummy = 0 # Force 16 byte alignment
-    def Serialize(self, f):
+        self.Incriment = self.ParentBone = 0
+
+    def Serialize(self, f: MemoryStream):
         self.rot    = self.rot.Serialize(f)
         self.pos    = f.vec3_float(self.pos)
         self.scale  = f.vec3_float(self.scale)
         self.dummy  = f.float32(self.dummy)
         return self
-    def SerializeV2(self, f): # Quick and dirty solution, unknown exactly what this is for
+    def SerializeV2(self, f: MemoryStream): # Quick and dirty solution, unknown exactly what this is for
         f.seek(f.tell()+48)
         self.pos    = f.vec3_float(self.pos)
         self.dummy  = f.float32(self.dummy)
+        return self
+    def SerializeTransformEntry(self, f: MemoryStream):
+        self.Incriment = f.uint16(self.Incriment)
+        self.ParentBone = f.uint16(self.ParentBone)
         return self
 
 class TransformInfo: # READ ONLY
     def __init__(self):
         self.NumTransforms = 0
         self.Transforms = []
-        self.PositionTransforms = []
-    def Serialize(self, f):
-        if f.IsWriting():
-            raise Exception("This struct is read only (write not implemented)")
-        self.NumTransforms = f.uint32(self.NumTransforms)
-        f.seek(f.tell()+12)
-        self.Transforms = [StingrayLocalTransform().Serialize(f) for n in range(self.NumTransforms)]
-        self.PositionTransforms = [StingrayLocalTransform().SerializeV2(f) for n in range(self.NumTransforms)]
-        for n in range(self.NumTransforms):
-            self.Transforms[n].pos = self.PositionTransforms[n].pos
+        self.TransformMatrices = []
+        self.TransformEntries = []
+        self.NameHashes = []
+    def Serialize(self, f: MemoryStream):
+        if f.IsReading():
+            self.NumTransforms = f.uint32(self.NumTransforms)
+            f.seek(f.tell()+12)
+            self.Transforms = [StingrayLocalTransform().Serialize(f) for n in range(self.NumTransforms)]
+            self.TransformMatrices = [StingrayMatrix4x4().Serialize(f) for n in range(self.NumTransforms)]
+            self.TransformEntries = [StingrayLocalTransform().SerializeTransformEntry(f) for n in range(self.NumTransforms)]
+            self.NameHashes = [f.uint32(n) for n in range(self.NumTransforms)]
+            PrettyPrint(f"hashes: {self.NameHashes}")
+        else:
+            self.NumTransforms = f.uint32(self.NumTransforms)
+            f.seek(f.tell()+12)
+            self.Transforms = [t.Serialize(f) for t in self.Transforms]
+            self.TransformMatrices = [t.Serialize(f) for t in self.TransformMatrices]
+            self.TransformEntries = [t.SerializeTransformEntry(f) for t in self.TransformEntries]
+            self.NameHashes = [f.uint32(h) for h in self.NameHashes]
+        return self
 
 class CustomizationInfo: # READ ONLY
     def __init__(self):
@@ -2027,7 +2384,7 @@ class CustomizationInfo: # READ ONLY
         self.Slot      = ""
         self.Weight    = ""
         self.PieceType = ""
-    def Serialize(self, f):
+    def Serialize(self, f: MemoryStream):
         if f.IsWriting():
             raise Exception("This struct is read only (write not implemented)")
         try: # TODO: fix this, this is basically completely wrong, this is generic user data, but for now this works
@@ -2050,37 +2407,15 @@ class CustomizationInfo: # READ ONLY
             self.PieceType = ""
             pass # tehee
 
-class StreamComponentType:
-    POSITION = 0
-    NORMAL = 1
-    TANGENT = 2 # not confirmed
-    BITANGENT = 3 # not confirmed
-    UV = 4
-    COLOR = 5
-    BONE_INDEX = 6
-    BONE_WEIGHT = 7
-    UNKNOWN_TYPE = -1
-
-class StreamComponentFormat:
-    FLOAT = 0
-    VEC2_FLOAT = 1
-    VEC3_FLOAT = 2
-    RGBA_R8G8B8A8 = 4
-    VEC4_UINT32 = 20 # unconfirmed
-    VEC4_UINT8 = 24
-    VEC4_1010102 = 25
-    UNK_NORMAL = 26
-    VEC2_HALF = 29
-    VEC4_HALF = 31
-    UNKNOWN_TYPE = -1
 
 class StreamComponentInfo:
+    
     def __init__(self, type="position", format="float"):
         self.Type   = self.TypeFromName(type)
         self.Format = self.FormatFromName(format)
         self.Index   = 0
         self.Unknown = 0
-    def Serialize(self, f):
+    def Serialize(self, f: MemoryStream):
         self.Type      = f.uint32(self.Type)
         self.Format    = f.uint32(self.Format)
         self.Index     = f.uint32(self.Index)
@@ -2141,7 +2476,7 @@ class StreamComponentInfo:
         elif self.Format == 29: return 4
         elif self.Format == 31: return 8
         raise Exception("Cannot get size of unknown vertex format: "+str(self.Format))
-    def SerializeComponent(self, f, value):
+    def SerializeComponent(self, f: MemoryStream, value):
         try:
             serialize_func = FUNCTION_LUTS.SERIALIZE_COMPONENT_LUT[self.Format]
             return serialize_func(f, value)
@@ -2152,46 +2487,102 @@ class BoneInfo:
     def __init__(self):
         self.NumBones = self.unk1 = self.RealIndicesOffset = self.FakeIndicesOffset = self.NumFakeIndices = self.FakeIndicesUnk = 0
         self.Bones = self.RealIndices = self.FakeIndices = []
-        self.DEV_RawData = bytearray()
-    def Serialize(self, f, end=None):
-        if f.IsReading():
-            self.DEV_RawData = bytearray(end-f.tell())
-            start = f.tell()
-            self.Serialize_REAL(f)
-            f.seek(start)
-        self.DEV_RawData = f.bytes(self.DEV_RawData)
+        self.NumRemaps = self.MatrixOffset = 0
+        self.Remaps = self.RemapOffsets = self.RemapCounts = []
+    def Serialize(self, f: MemoryStream, end=None):
+        self.Serialize_REAL(f)
         return self
 
-    def Serialize_REAL(self, f): # still need to figure out whats up with the unknown bit
+    def Serialize_REAL(self, f: MemoryStream): # still need to figure out whats up with the unknown bit
         RelPosition = f.tell()
-
+        
         self.NumBones       = f.uint32(self.NumBones)
-        self.unk1           = f.uint32(self.unk1)
-        self.RealIndicesOffset = f.uint32(self.RealIndicesOffset)
-        self.FakeIndicesOffset = f.uint32(self.FakeIndicesOffset)
+        self.MatrixOffset           = f.uint32(self.MatrixOffset) # matrix pointer
+        self.RealIndicesOffset = f.uint32(self.RealIndicesOffset) # unit indices
+        self.FakeIndicesOffset = f.uint32(self.FakeIndicesOffset) # remap indices
         # get bone data
         if f.IsReading():
             self.Bones = [StingrayMatrix4x4() for n in range(self.NumBones)]
             self.RealIndices = [0 for n in range(self.NumBones)]
             self.FakeIndices = [0 for n in range(self.NumBones)]
-        self.Bones = [bone.Serialize(f) for bone in self.Bones]
+        if f.IsReading(): f.seek(RelPosition+self.MatrixOffset)
+        else            : self.MatrixOffset = f.tell()-RelPosition
+        # save the right bone
+        for i, bone in enumerate(self.Bones):
+            if i == self.NumBones:
+                break
+            bone.Serialize(f)
+        #self.Bones = [bone.Serialize(f) for bone in self.Bones]
         # get real indices
         if f.IsReading(): f.seek(RelPosition+self.RealIndicesOffset)
         else            : self.RealIndicesOffset = f.tell()-RelPosition
         self.RealIndices = [f.uint32(index) for index in self.RealIndices]
-        # get unknown
-        return self
 
-        # get fake indices
+        # get remapped indices
         if f.IsReading(): f.seek(RelPosition+self.FakeIndicesOffset)
         else            : self.FakeIndicesOffset = f.tell()-RelPosition
-        self.NumFakeIndices = f.uint32(self.NumFakeIndices)
-        self.FakeIndicesUnk = f.uint64(self.FakeIndices[0])
-        self.FakeIndices = [f.uint32(index) for index in self.FakeIndices]
+        if f.IsReading():
+            RemapStartPosition = f.tell()
+            self.NumRemaps = f.uint32(self.NumRemaps)
+            self.RemapOffsets = [0]*self.NumRemaps
+            self.RemapCounts = [0]*self.NumRemaps
+            for i in range(self.NumRemaps):
+                self.RemapOffsets[i] = f.uint32(self.RemapOffsets[i])
+                self.RemapCounts[i] = f.uint32(self.RemapCounts[i])
+            for i in range(self.NumRemaps):
+                f.seek(RemapStartPosition+self.RemapOffsets[i])
+                self.Remaps.append([0]*self.RemapCounts[i])
+                self.Remaps[i] = [f.uint32(index) for index in self.Remaps[i]]
+        else:
+            RemapStartPosition = f.tell()
+            self.NumRemaps = f.uint32(self.NumRemaps)
+            for i in range(self.NumRemaps):
+                self.RemapOffsets[i] = f.uint32(self.RemapOffsets[i])
+                self.RemapCounts[i] = f.uint32(self.RemapCounts[i])
+            for i in range(self.NumRemaps):
+                f.seek(RemapStartPosition+self.RemapOffsets[i])
+                self.Remaps[i] = [f.uint32(index) for index in self.Remaps[i]]
         return self
-    def GetRealIndex(self, bone_index):
-        FakeIndex = self.FakeIndices.index(bone_index)
+    def GetRealIndex(self, bone_index, material_index=0):
+        FakeIndex = self.Remaps[material_index][bone_index]
         return self.RealIndices[FakeIndex]
+        
+    def GetRemappedIndex(self, bone_index, material_index=0):
+        return self.Remaps[material_index].index(self.RealIndices.index(bone_index))
+        
+    def SetRemap(self, remap_info: list[list[str]], transform_info):
+        # remap_info is a list of bones indexed by material
+        # so the list of bones for material slot 0 is covered by remap_info[0]
+        #ideally this eventually allows for creating a remap for any arbitrary bone; requires editing the transform_info
+        #return
+        # I wonder if you can just take the transform component from the previous bone it was on
+        # remap index should match the transform_info index!!!!!
+        self.NumRemaps = len(remap_info)
+        self.RemapCounts = [0] * self.NumRemaps
+        #self.RemapCounts = [len(bone_names) for bone_names in remap_info]
+        self.Remaps = []
+        self.RemapOffsets = [8*self.NumRemaps+4]
+        for i, bone_names in enumerate(remap_info):
+            r = []
+            for bone in bone_names:
+                try:
+                    h = int(bone)
+                except ValueError:
+                    h = murmur32_hash(bone.encode("utf-8"))
+                try:
+                    real_index = transform_info.NameHashes.index(h)
+                except ValueError: # bone not in transform info for unit, unrecoverable
+                    PrettyPrint(f"Bone '{bone}' does not exist in unit transform info, skipping...")
+                    continue
+                try:
+                    r.append(self.RealIndices.index(real_index))
+                    self.RemapCounts[i] += 1
+                except ValueError:
+                    PrettyPrint(f"Bone '{bone}' does not exist in LOD bone info, skipping...")
+            self.Remaps.append(r)
+            
+        for i in range(1, self.NumRemaps):
+            self.RemapOffsets.append(self.RemapOffsets[i-1]+4*self.RemapCounts[i])
 
 class StreamInfo:
     def __init__(self):
@@ -2202,7 +2593,7 @@ class StreamInfo:
         self.UnkEndingBytes = bytearray(16)
         self.DEV_StreamInfoOffset    = self.DEV_ComponentInfoOffset = 0 # helper vars, not in file
 
-    def Serialize(self, f):
+    def Serialize(self, f: MemoryStream):
         self.DEV_StreamInfoOffset = f.tell()
         self.ComponentInfoID = f.uint64(self.ComponentInfoID)
         self.DEV_ComponentInfoOffset = f.tell()
@@ -2240,45 +2631,54 @@ class StreamInfo:
         f.seek(EndOffset)
         return self
 
-class MeshSectionInfo:
-    def __init__(self, ID=0):
-        self.unk1 = self.VertexOffset=self.NumVertices=self.IndexOffset=self.NumIndices=self.unk2 = 0
+class MeshSectionInfo: # material info
+    def __init__(self, material_slot_list=[]):
+        self.MaterialIndex = self.VertexOffset=self.NumVertices=self.IndexOffset=self.NumIndices=self.unk2 = 0
         self.DEV_MeshInfoOffset=0 # helper var, not in file
-        self.ID = ID
-    def Serialize(self, f):
+        self.material_slot_list = material_slot_list
+        self.ID = 0
+        self.MaterialIndex = self.GroupIndex = 0
+    def Serialize(self, f: MemoryStream):
         self.DEV_MeshInfoOffset = f.tell()
-        self.unk1           = f.uint32(self.unk1)
+        self.MaterialIndex           = f.uint32(self.MaterialIndex)
+        if f.IsReading():
+            self.ID = self.material_slot_list[self.MaterialIndex]
         self.VertexOffset   = f.uint32(self.VertexOffset)
         self.NumVertices    = f.uint32(self.NumVertices)
         self.IndexOffset    = f.uint32(self.IndexOffset)
         self.NumIndices     = f.uint32(self.NumIndices)
-        self.unk2           = f.uint32(self.unk1)
+        self.GroupIndex           = f.uint32(self.GroupIndex)
         return self
 
 class MeshInfo:
     def __init__(self):
-        self.unk1 = self.unk3 = self.unk4 = self.TransformIndex = self.LodIndex = self.StreamIndex = self.NumSections = self.unk7 = self.unk8 = self.unk9 = self.NumSections_unk = self.MeshID = 0
+        self.unk1 = self.unk3 = self.unk4 = self.TransformIndex = self.LodIndex = self.StreamIndex = self.NumSections = self.unk7 = self.unk8 = self.unk9 = self.NumSections_unk = self.UnitID = 0
         self.unk2 = bytearray(32); self.unk6 = bytearray(40)
-        self.SectionIDs = self.Sections = []
-    def Serialize(self, f):
+        self.MaterialIDs = self.Sections = []
+        self.NumMaterials = 0
+        self.MaterialOffset = 0
+        self.SectionsOffset = 0
+    def Serialize(self, f: MemoryStream):
+        start_offset = f.tell()
         self.unk1 = f.uint64(self.unk1)
         self.unk2 = f.bytes(self.unk2, 32)
-        self.MeshID= f.uint32(self.MeshID)
+        self.UnitID= f.uint32(self.UnitID)
         self.unk3 = f.uint32(self.unk3)
         self.TransformIndex = f.uint32(self.TransformIndex)
         self.unk4 = f.uint32(self.unk4)
         self.LodIndex       = f.int32(self.LodIndex)
         self.StreamIndex    = f.uint32(self.StreamIndex)
         self.unk6           = f.bytes(self.unk6, 40)
-        self.NumSections_unk= f.uint32(len(self.Sections))
-        self.unk7           = f.uint32(0x80)
+        self.NumMaterials = f.uint32(self.NumMaterials)
+        self.MaterialOffset = f.uint32(self.MaterialOffset)
         self.unk8           = f.uint64(self.unk8)
-        self.NumSections    = f.uint32(len(self.Sections))
-        self.unk9           = f.uint32(0x80+(len(self.Sections)*4))
-        if f.IsReading(): self.SectionIDs  = [0 for n in range(self.NumSections)]
-        else:             self.SectionIDs  = [section.ID for section in self.Sections]
-        self.SectionIDs  = [f.uint32(ID) for ID in self.SectionIDs]
-        if f.IsReading(): self.Sections    = [MeshSectionInfo(self.SectionIDs[n]) for n in range(self.NumSections)]
+        self.NumSections    = f.uint32(self.NumSections)
+        if f.IsWriting(): self.SectionsOffset = self.MaterialOffset + 4*self.NumMaterials
+        self.SectionsOffset  = f.uint32(self.SectionsOffset)
+        if f.IsReading(): self.MaterialIDs  = [0 for n in range(self.NumMaterials)]
+        else:             self.MaterialIDs  = [section.ID for section in self.Sections]
+        self.MaterialIDs  = [f.uint32(ID) for ID in self.MaterialIDs]
+        if f.IsReading(): self.Sections    = [MeshSectionInfo(self.MaterialIDs) for n in range(self.NumSections)]
         self.Sections   = [Section.Serialize(f) for Section in self.Sections]
         return self
     def GetNumIndices(self):
@@ -2298,14 +2698,20 @@ class RawMaterialClass:
         self.StartIndex = 0
         self.NumIndices = 0
         self.DEV_BoneInfoOverride = None
-    def IDFromName(self, name):
+    def IDFromName(self, unit_id, name, index):
         if name.find(self.DefaultMaterialName) != -1:
             self.MatID   = self.DefaultMaterialName
             self.ShortID = self.DefaultMaterialShortID
         else:
             try:
                 self.MatID   = int(name)
-                self.ShortID = r.randint(1, 0xffffffff)
+                # self.ShortID = r.randint(1, 0xffffffff)
+                
+                try:
+                    self.ShortID = Global_MaterialSlotNames[unit_id][self.MatID][index]
+                except (KeyError, IndexError):
+                    PrettyPrint(f"Unable to find material slot for material {name} with material count {index} for unit {unit_id}, using random material slot name")
+                    self.ShortID = r.randint(1, 0xffffffff)
             except:
                 raise Exception("Material name must be a number")
 
@@ -2323,7 +2729,7 @@ class RawMeshClass:
         self.Indices          = []
         self.Materials        = []
         self.LodIndex         = -1
-        self.MeshID           = 0
+        self.UnitID           = 0
         self.DEV_Use32BitIndices = False
         self.DEV_BoneInfo      = None
         self.DEV_BoneInfoIndex = 0
@@ -2376,38 +2782,80 @@ class RawMeshClass:
         for idx in range(numBoneIndices):
             self.VertexBoneIndices.append([[0,0,0,0] for n in range(numVertices)])
 
-class SerializeFunctions:
+class BoneIndexException(Exception):
+    pass
 
+def sign(n):
+    if n >= 0:
+        return 1
+    if n < 0:
+        return -1
+
+def octahedral_encode(x, y, z):
+    l1_norm = abs(x) + abs(y) + abs(z)
+    if l1_norm == 0: return 0, 0
+    x /= l1_norm
+    y /= l1_norm
+    if z < 0:
+        x, y = ((1-abs(y)) * sign(x)), ((1-abs(x)) * sign(y))
+    return x, y
+
+def octahedral_decode(x, y):
+    z = 1 - abs(x) - abs(y)
+    if z < 0:
+        x, y = ((1-abs(y)) * sign(x)), ((1-abs(x)) * sign(y))
+    return mathutils.Vector((x, y, z)).normalized().to_tuple()
+
+def decode_packed_oct_norm(norm):
+    r10 = norm & 0x3ff
+    g10 = (norm >> 10) & 0x3ff
+    return octahedral_decode(
+        r10 * (2.0/1023.0) - 1,
+        g10 * (2.0/1023.0) - 1
+    )
+
+def encode_packed_oct_norm(x, y, z):
+    x, y = octahedral_encode(x, y, z)
+    return int((x+1)*(1023.0/2.0)) | (int((y+1)*(1023.0/2.0)) << 10)
+
+class SerializeFunctions:
+    
     def SerializePositionComponent(gpu, mesh, component, vidx):
         mesh.VertexPositions[vidx] = component.SerializeComponent(gpu, mesh.VertexPositions[vidx])
-
+    
     def SerializeNormalComponent(gpu, mesh, component, vidx):
-        norm = component.SerializeComponent(gpu, mesh.VertexNormals[vidx])
+        # norm = component.SerializeComponent(gpu, mesh.VertexNormals[vidx])
         if gpu.IsReading():
+            norm = component.SerializeComponent(gpu, mesh.VertexNormals[vidx])
             if not isinstance(norm, int):
                 norm = list(mathutils.Vector((norm[0],norm[1],norm[2])).normalized())
                 mesh.VertexNormals[vidx] = norm[:3]
             else:
-                mesh.VertexNormals[vidx] = norm
-
+                # mesh.VertexNormals[vidx] = norm
+                
+                mesh.VertexNormals[vidx] = decode_packed_oct_norm(norm)
+        else:
+            norm = encode_packed_oct_norm(*mathutils.Vector(mesh.VertexNormals[vidx]).normalized().to_tuple())
+            norm = component.SerializeComponent(gpu, norm)
+    
     def SerializeTangentComponent(gpu, mesh, component, vidx):
         mesh.VertexTangents[vidx] = component.SerializeComponent(gpu, mesh.VertexTangents[vidx])
-
+    
     def SerializeBiTangentComponent(gpu, mesh, component, vidx):
         mesh.VertexBiTangents[vidx] = component.SerializeComponent(gpu, mesh.VertexBiTangents[vidx])
-
+    
     def SerializeUVComponent(gpu, mesh, component, vidx):
         mesh.VertexUVs[component.Index][vidx] = component.SerializeComponent(gpu, mesh.VertexUVs[component.Index][vidx])
-
+    
     def SerializeColorComponent(gpu, mesh, component, vidx):
         mesh.VertexColors[vidx] = component.SerializeComponent(gpu, mesh.VertexColors[vidx])
-
+    
     def SerializeBoneIndexComponent(gpu, mesh, component, vidx):
         try:
              mesh.VertexBoneIndices[component.Index][vidx] = component.SerializeComponent(gpu, mesh.VertexBoneIndices[component.Index][vidx])
         except:
-            raise Exception(f"Vertex bone index out of range. Component index: {component.Index} vidx: {vidx}")
-
+            raise BoneIndexException(f"Vertex bone index out of range. Component index: {component.Index} vidx: {vidx}")
+    
     def SerializeBoneWeightComponent(gpu, mesh, component, vidx):
         if component.Index > 0: # TODO: add support for this (check archive 9102938b4b2aef9d)
             PrettyPrint("Multiple weight indices are unsupported!", "warn")
@@ -2418,13 +2866,13 @@ class SerializeFunctions:
 
     def SerializeFloatComponent(f, value):
         return f.float32(value)
-
+        
     def SerializeVec2FloatComponent(f, value):
         return f.vec2_float(value)
-
+        
     def SerializeVec3FloatComponent(f, value):
         return f.vec3_float(value)
-
+        
     def SerializeRGBA8888Component(f, value):
         if f.IsReading():
             r = min(255, int(value[0]*255))
@@ -2439,13 +2887,13 @@ class SerializeFunctions:
             value[2] = min(1, float(value[2]/255))
             value[3] = min(1, float(value[3]/255))
         return value
-
+        
     def SerializeVec4Uint32Component(f, value):
         return f.vec4_uint32(value)
-
+        
     def SerializeVec4Uint8Component(f, value):
         return f.vec4_uint8(value)
-
+        
     def SerializeVec41010102Component(f, value):
         if f.IsReading():
             value = TenBitUnsigned(f.uint32(0))
@@ -2453,25 +2901,48 @@ class SerializeFunctions:
         else:
             f.uint32(MakeTenBitUnsigned(value))
         return value
-
+        
     def SerializeUnkNormalComponent(f, value):
         if isinstance(value, int):
             return f.uint32(value)
         else:
             return f.uint32(0)
-
+            
     def SerializeVec2HalfComponent(f, value):
         return f.vec2_half(value)
-
+        
     def SerializeVec4HalfComponent(f, value):
         if isinstance(value, float):
             return f.vec4_half([value,value,value,value])
         else:
             return f.vec4_half(value)
-
+            
     def SerializeUnknownComponent(f, value):
         raise Exception("Cannot serialize unknown vertex format!")
 
+class StreamComponentType:
+    POSITION = 0
+    NORMAL = 1
+    TANGENT = 2 # not confirmed
+    BITANGENT = 3 # not confirmed
+    UV = 4
+    COLOR = 5
+    BONE_INDEX = 6
+    BONE_WEIGHT = 7
+    UNKNOWN_TYPE = -1
+    
+class StreamComponentFormat:
+    FLOAT = 0
+    VEC2_FLOAT = 1
+    VEC3_FLOAT = 2
+    RGBA_R8G8B8A8 = 4
+    VEC4_UINT32 = 20 # unconfirmed
+    VEC4_UINT8 = 24
+    VEC4_1010102 = 25
+    UNK_NORMAL = 26
+    VEC2_HALF = 29
+    VEC4_HALF = 31
+    UNKNOWN_TYPE = -1
 
 class FUNCTION_LUTS:
 
@@ -2513,8 +2984,12 @@ class StingrayMeshFile:
         self.CustomizationInfo = CustomizationInfo()
         self.TransformInfo     = TransformInfo()
         self.BoneNames = None
+        self.UnreversedData1_2 = bytearray()
+        self.NameHash = 0
+        self.LoadMaterialSlotNames = True
+
     # -- Serialize Mesh -- #
-    def Serialize(self, f, gpu, redo_offsets = False):
+    def Serialize(self, f, gpu, Global_TocManager, redo_offsets = False):
         PrettyPrint("Serialize")
         if f.IsWriting() and not redo_offsets:
             # duplicate bone info sections if needed
@@ -2538,6 +3013,8 @@ class StingrayMeshFile:
                 idx         = Raw_Mesh.MeshInfoIndex
                 Mesh_info   = self.MeshInfoArray[self.DEV_MeshInfoMap[idx]]
                 Mesh_info.Sections = []
+                Mesh_info.NumSections = 0
+                Mesh_info.NumMaterials = 0
                 for Material in Raw_Mesh.Materials:
                     Section = MeshSectionInfo()
                     Section.ID          = int(Material.ShortID)
@@ -2548,31 +3025,34 @@ class StingrayMeshFile:
                     # This doesnt do what it was intended to do
                     if Material.DEV_BoneInfoOverride != None:
                         PrettyPrint("Overriding unknown material values")
-                        Section.unk1 = Material.DEV_BoneInfoOverride
-                        Section.unk2 = Material.DEV_BoneInfoOverride
+                        Section.MaterialIndex = Material.DEV_BoneInfoOverride
+                        Section.GroupIndex = Material.DEV_BoneInfoOverride
                     else:
-                        Section.unk1 = len(Mesh_info.Sections) # | dont know what these actually are, but this is usually correct it seems
-                        Section.unk2 = len(Mesh_info.Sections) # /
+                        Section.MaterialIndex = len(Mesh_info.Sections) # | dont know what these actually are, but this is usually correct it seems
+                        Section.GroupIndex = len(Mesh_info.Sections) # /
 
                     Mesh_info.Sections.append(Section)
+                    Mesh_info.NumSections += 1
+                    Mesh_info.NumMaterials += 1
                     Order -= 1
                     try: # if material ID uses the defualt material string it will throw an error, but thats fine as we dont want to include those ones anyway
                         #if int(Material.MatID) not in self.MaterialIDs:
                         self.MaterialIDs.append(int(Material.MatID))
-                        self.SectionsIDs.append(int(Material.ShortID))
+                        self.SectionsIDs.append(int(Material.ShortID)) # MATERIAL SLOT NAME
                     except:
                         pass
 
         # serialize file
         self.UnkRef1            = f.uint64(self.UnkRef1)
         self.BonesRef           = f.uint64(self.BonesRef)
-        self.CompositeRef       = f.uint64(self.CompositeRef)
+        if f.IsWriting():         f.uint64(0)
+        else: self.CompositeRef = f.uint64(self.CompositeRef)
         self.HeaderData1        = f.bytes(self.HeaderData1, 28)
         self.TransformInfoOffset= f.uint32(self.TransformInfoOffset)
         self.HeaderData2        = f.bytes(self.HeaderData2, 20)
         self.CustomizationInfoOffset  = f.uint32(self.CustomizationInfoOffset)
         self.UnkHeaderOffset1   = f.uint32(self.UnkHeaderOffset1)
-        self.UnkHeaderOffset2   = f.uint32(self.UnkHeaderOffset1)
+        self.UnkHeaderOffset2   = f.uint32(self.UnkHeaderOffset2)
         self.BoneInfoOffset     = f.uint32(self.BoneInfoOffset)
         self.StreamInfoOffset   = f.uint32(self.StreamInfoOffset)
         self.EndingOffset       = f.uint32(self.EndingOffset)
@@ -2581,27 +3061,29 @@ class StingrayMeshFile:
         self.MaterialsOffset    = f.uint32(self.MaterialsOffset)
 
         if f.IsReading() and self.MeshInfoOffset == 0:
-            raise Exception("Unsuported Mesh Format (No geometry)")
+            raise Exception("Unsupported Mesh Format (No geometry)")
 
         if f.IsReading() and (self.StreamInfoOffset == 0 and self.CompositeRef == 0):
-            raise Exception("Unsuported Mesh Format (No buffer stream)")
+            raise Exception("Unsupported Mesh Format (No buffer stream)")
 
         # Get composite file
         if f.IsReading() and self.CompositeRef != 0:
-            Entry = Global_TocManager.GetEntry(self.CompositeRef, CompositeMeshID)
-            if Entry != None:
-                Global_TocManager.Load(Entry.FileID, Entry.TypeID)
-                self.StreamInfoArray = Entry.LoadedData.StreamInfoArray
-                gpu = Entry.LoadedData.GpuData
-            else:
-                raise Exception(f"Composite mesh file {self.CompositeRef} could not be found")
+            pass
+            #Entry = Global_TocManager.GetEntry(self.CompositeRef, CompositeUnitID)
+            #if Entry != None:
+            #    Global_TocManager.Load(Entry.FileID, Entry.TypeID)
+            #    self.StreamInfoArray = Entry.LoadedData.StreamInfoArray
+            #    gpu = Entry.LoadedData.GpuData
+            #else:
+            #    raise Exception(f"Composite mesh file {self.CompositeRef} could not be found")
 
         # Get bones file
         if f.IsReading() and self.BonesRef != 0:
-            Entry = Global_TocManager.GetEntry(self.BonesRef, Hash64("bones"))
+            Entry = Global_TocManager.GetEntry(self.BonesRef, BoneID)
             if Entry != None:
                 Global_TocManager.Load(Entry.FileID, Entry.TypeID)
                 self.BoneNames = Entry.LoadedData.Names
+                self.BoneHashes = Entry.LoadedData.BoneHashes
 
         # Get Customization data: READ ONLY
         if f.IsReading() and self.CustomizationInfoOffset > 0:
@@ -2609,22 +3091,49 @@ class StingrayMeshFile:
             self.CustomizationInfo.Serialize(f)
             f.seek(loc)
         # Get Transform data: READ ONLY
-        if f.IsReading() and self.TransformInfoOffset > 0:
+        #if f.IsReading() and self.TransformInfoOffset > 0:
+        UnreversedData1_2Size = 0
+        if self.TransformInfoOffset > 0: # need to update other offsets?
             loc = f.tell(); f.seek(self.TransformInfoOffset)
             self.TransformInfo.Serialize(f)
+            if f.tell() % 16 != 0:
+                f.seek(f.tell() + (16-f.tell()%16))
+            UnreversedData1_2Start = f.tell()
+            if self.CustomizationInfoOffset > 0:
+                self.CustomizationInfoOffset = UnreversedData1_2Start
+            if f.IsReading():
+                if self.BoneInfoOffset > 0:
+                    UnreversedData1_2Size = self.BoneInfoOffset-f.tell()
+                elif self.StreamInfoOffset > 0:
+                    UnreversedData1_2Size = self.StreamInfoOffset-f.tell()
+                elif self.MeshInfoOffset > 0:
+                    UnreversedData1_2Size = self.MeshInfoOffset-f.tell()
+            else:
+                UnreversedData1_2Size = len(self.UnreversedData1_2)
             f.seek(loc)
 
-        # Unreversed data
+        # Unreversed data before transform info offset (may include customization info)
+        # Unreversed data intersects other data we want to leave alone!
         if f.IsReading():
-            if self.BoneInfoOffset > 0:
+            if self.TransformInfoOffset > 0:
+                UnreversedData1Size = self.TransformInfoOffset - f.tell()
+            elif self.BoneInfoOffset > 0:
                 UnreversedData1Size = self.BoneInfoOffset-f.tell()
             elif self.StreamInfoOffset > 0:
                 UnreversedData1Size = self.StreamInfoOffset-f.tell()
+            elif self.MeshInfoOffset > 0:
+                UnreversedData1Size = self.MeshInfoOffset-f.tell()
         else: UnreversedData1Size = len(self.UnReversedData1)
         try:
             self.UnReversedData1    = f.bytes(self.UnReversedData1, UnreversedData1Size)
         except:
             PrettyPrint(f"Could not set UnReversedData1", "ERROR")
+        
+        if self.TransformInfoOffset > 0:
+            f.seek(UnreversedData1_2Start)
+            if UnreversedData1_2Size > 0:
+                self.UnreversedData1_2 = f.bytes(self.UnreversedData1_2, UnreversedData1_2Size)
+        
 
         # Bone Info
         if f.IsReading(): f.seek(self.BoneInfoOffset)
@@ -2649,6 +3158,25 @@ class StingrayMeshFile:
             else:
                 self.BoneInfoOffsets[boneinfo_idx] = f.tell() - self.BoneInfoOffset
             self.BoneInfoArray[boneinfo_idx] = self.BoneInfoArray[boneinfo_idx].Serialize(f, end_offset)
+            # Bone Hash linking
+            # if f.IsReading(): 
+            #     PrettyPrint("Hashes")
+            #     PrettyPrint(f"Length of bone names: {len(self.BoneNames)}")
+            #     HashOffset = self.CustomizationInfoOffset - ((len(self.BoneNames) - 1) * 4) # this is a bad work around as we can't always get the bone names since some meshes don't have a bone file listed
+            #     PrettyPrint(f"Hash Offset: {HashOffset}")
+            #     f.seek(HashOffset)
+            #     self.MeshBoneHashes = [0 for n in range(len(self.BoneNames))]
+            #     self.MeshBoneHashes = [f.uint32(Hash) for Hash in self.MeshBoneHashes]
+            #     PrettyPrint(self.MeshBoneHashes)
+            #     for index in self.BoneInfoArray[boneinfo_idx].RealIndices:
+            #         BoneInfoHash = self.MeshBoneHashes[index]
+            #         for index in range(len(self.BoneHashes)):
+            #             if self.BoneHashes[index] == BoneInfoHash:
+            #                 BoneName = self.BoneNames[index]
+            #                 PrettyPrint(f"Index: {index}")
+            #                 PrettyPrint(f"Bone: {BoneName}")
+            #                 continue
+
 
         # Stream Info
         if self.StreamInfoOffset != 0:
@@ -2658,7 +3186,7 @@ class StingrayMeshFile:
             self.NumStreams = f.uint32(len(self.StreamInfoArray))
             if f.IsWriting():
                 if not redo_offsets: self.StreamInfoOffsets = [0]*self.NumStreams
-                self.StreamInfoUnk = [mesh_info.MeshID for mesh_info in self.MeshInfoArray[:self.NumStreams]]
+                self.StreamInfoUnk = [mesh_info.UnitID for mesh_info in self.MeshInfoArray[:self.NumStreams]]
             if f.IsReading():
                 self.StreamInfoOffsets = [0]*self.NumStreams
                 self.StreamInfoUnk     = [0]*self.NumStreams
@@ -2679,7 +3207,7 @@ class StingrayMeshFile:
 
         if f.IsWriting():
             if not redo_offsets: self.MeshInfoOffsets = [0]*self.NumMeshes
-            self.MeshInfoUnk = [mesh_info.MeshID for mesh_info in self.MeshInfoArray]
+            self.MeshInfoUnk = [mesh_info.UnitID for mesh_info in self.MeshInfoArray]
         if f.IsReading():
             self.MeshInfoOffsets = [0]*self.NumMeshes
             self.MeshInfoUnk     = [0]*self.NumMeshes
@@ -2693,6 +3221,32 @@ class StingrayMeshFile:
             else            : self.MeshInfoOffsets[mesh_idx] = f.tell() - self.MeshInfoOffset
             self.MeshInfoArray[mesh_idx] = self.MeshInfoArray[mesh_idx].Serialize(f)
 
+        # Get geometry group
+        if f.IsReading() and self.CompositeRef != 0:
+            Entry = Global_TocManager.GetEntry(self.CompositeRef, CompositeUnitID)
+            if Entry != None:
+                Global_TocManager.Load(Entry.FileID, Entry.TypeID)
+                geometry_group = Entry.LoadedData
+                unit_index = geometry_group.UnitHashes.index(int(self.NameHash))
+                c_mesh_info = geometry_group.MeshInfos[unit_index]
+                self.StreamInfoArray = Entry.LoadedData.StreamInfoArray
+                self.NumStreams = len(self.StreamInfoArray)
+                for i, mesh_info_item in enumerate(self.MeshInfoArray):
+                    mesh_index = c_mesh_info.Meshes.index(mesh_info_item.UnitID)
+                    c_mesh_info_item = c_mesh_info.MeshInfoItems[mesh_index]
+                    mesh_info_item.StreamIndex      = c_mesh_info_item.MeshLayoutIdx
+                    mesh_info_item.NumMaterials     = c_mesh_info_item.NumMaterials
+                    mesh_info_item.MaterialOffset   = c_mesh_info_item.MaterialsOffset + 0x50
+                    mesh_info_item.Sections         = c_mesh_info_item.Groups
+                    mesh_info_item.MaterialIDs      = c_mesh_info_item.Materials
+                    mesh_info_item.SectionsOffset   = c_mesh_info_item.GroupsOffset + 0x50
+                    mesh_info_item.NumSections      = c_mesh_info_item.NumGroups
+                self.StreamInfoOffset = 1
+                gpu = Entry.LoadedData.GpuData
+            else:
+                raise Exception(f"Composite mesh file {self.CompositeRef} could not be found")
+
+
         # Materials
         if f.IsReading(): f.seek(self.MaterialsOffset)
         else            : self.MaterialsOffset = f.tell()
@@ -2702,6 +3256,17 @@ class StingrayMeshFile:
             self.MaterialIDs = [0]*self.NumMaterials
         self.SectionsIDs = [f.uint32(ID) for ID in self.SectionsIDs]
         self.MaterialIDs = [f.uint64(ID) for ID in self.MaterialIDs]
+        if f.IsReading() and self.LoadMaterialSlotNames:
+            global Global_MaterialSlotNames
+            id = str(self.NameHash)
+            if id not in Global_MaterialSlotNames:
+                Global_MaterialSlotNames[id] = {}
+            for i in range(self.NumMaterials):
+                if self.MaterialIDs[i] not in Global_MaterialSlotNames[id]: # probably going to have to save material slot names per LOD/mesh
+                    Global_MaterialSlotNames[id][self.MaterialIDs[i]] = []
+                PrettyPrint(f"Saving material slot name {self.SectionsIDs[i]} for material {self.MaterialIDs[i]}")
+                if self.SectionsIDs[i] not in Global_MaterialSlotNames[id][self.MaterialIDs[i]]:
+                    Global_MaterialSlotNames[id][self.MaterialIDs[i]].append(self.SectionsIDs[i])
 
         # Unreversed Data
         if f.IsReading(): UnreversedData2Size = self.EndingOffset-f.tell()
@@ -2713,15 +3278,15 @@ class StingrayMeshFile:
             return self
 
         # Serialize Data
-        self.SerializeGpuData(gpu);
+        self.SerializeGpuData(gpu, Global_TocManager)
 
         # TODO: update offsets only instead of re-writing entire file
         if f.IsWriting() and not redo_offsets:
             f.seek(0)
-            self.Serialize(f, gpu, True)
+            self.Serialize(f, gpu, Global_TocManager, True)
         return self
 
-    def SerializeGpuData(self, gpu: MemoryStream):
+    def SerializeGpuData(self, gpu: MemoryStream, Global_TocManager):
         PrettyPrint("SerializeGpuData")
         # Init Raw Meshes If Reading
         if gpu.IsReading():
@@ -2736,15 +3301,16 @@ class StingrayMeshFile:
         for stream_idx in range(len(OrderedMeshes)):
             Stream_Info = self.StreamInfoArray[stream_idx]
             if gpu.IsReading():
-                self.SerializeIndexBuffer(gpu, Stream_Info, stream_idx, OrderedMeshes)
+                self.SerializeIndexBuffer(gpu, Stream_Info, stream_idx, OrderedMeshes, Global_TocManager)
                 self.SerializeVertexBuffer(gpu, Stream_Info, stream_idx, OrderedMeshes)
             else:
                 self.SerializeVertexBuffer(gpu, Stream_Info, stream_idx, OrderedMeshes)
-                self.SerializeIndexBuffer(gpu, Stream_Info, stream_idx, OrderedMeshes)
+                self.SerializeIndexBuffer(gpu, Stream_Info, stream_idx, OrderedMeshes, Global_TocManager)
 
-    def SerializeIndexBuffer(self, gpu: MemoryStream, Stream_Info, stream_idx, OrderedMeshes):
+    def SerializeIndexBuffer(self, gpu: MemoryStream, Stream_Info, stream_idx, OrderedMeshes, Global_TocManager):
         # get indices
         IndexOffset  = 0
+        CompiledIncorrectly = False
         if gpu.IsWriting():Stream_Info.IndexBufferOffset = gpu.tell()
         for mesh in OrderedMeshes[stream_idx][1]:
             Mesh_Info = self.MeshInfoArray[self.DEV_MeshInfoMap[mesh.MeshInfoIndex]]
@@ -2760,13 +3326,18 @@ class StingrayMeshFile:
                 IndexInt = gpu.uint32
 
             TotalIndex = 0
+            mat_count = {}
             for Section in Mesh_Info.Sections:
                 # Create mat info
                 if gpu.IsReading():
                     mat = RawMaterialClass()
                     if Section.ID in self.SectionsIDs:
                         mat_idx = self.SectionsIDs.index(Section.ID)
-                        mat.IDFromName(str(self.MaterialIDs[mat_idx]))
+                        mat.MatID = str(self.MaterialIDs[mat_idx])
+                        if mat.MatID not in mat_count:
+                            mat_count[mat.MatID] = -1
+                        mat_count[mat.MatID] += 1
+                        mat.IDFromName(str(self.NameHash), str(self.MaterialIDs[mat_idx]), mat_count[mat.MatID])
                         mat.MatID = str(self.MaterialIDs[mat_idx])
                         #mat.ShortID = self.SectionsIDs[mat_idx]
                         if bpy.context.scene.Hd2ToolPanelSettings.ImportMaterials:
@@ -2820,7 +3391,7 @@ class StingrayMeshFile:
                         Section.NumVertices = RealNumVerts
                     self.ReInitRawMeshVerts(mesh)
 
-    def SerializeVertexBuffer(self, gpu, Stream_Info, stream_idx, OrderedMeshes):
+    def SerializeVertexBuffer(self, gpu: MemoryStream, Stream_Info, stream_idx, OrderedMeshes):
         # Vertex Buffer
         VertexOffset = 0
         if gpu.IsWriting(): Stream_Info.VertexBufferOffset = gpu.tell()
@@ -2832,16 +3403,18 @@ class StingrayMeshFile:
                     Section.NumVertices  = len(mesh.VertexPositions)
                     PrettyPrint(f"Updated VertexOffset Offset: {Section.VertexOffset}")
             MainSection = Mesh_Info.Sections[0]
-
             # get vertices
             if gpu.IsReading(): gpu.seek(Stream_Info.VertexBufferOffset + (MainSection.VertexOffset*Stream_Info.VertexStride))
+            
             for vidx in range(len(mesh.VertexPositions)):
+                if gpu.IsReading():
+                    pass
                 vstart = gpu.tell()
 
                 for Component in Stream_Info.Components:
                     serialize_func = FUNCTION_LUTS.SERIALIZE_MESH_LUT[Component.Type]
                     serialize_func(gpu, mesh, Component, vidx)
-                    
+
                 gpu.seek(vstart + Stream_Info.VertexStride)
             VertexOffset += len(mesh.VertexPositions)
         # update stream info
@@ -2849,7 +3422,7 @@ class StingrayMeshFile:
             gpu.seek(ceil(float(gpu.tell())/16)*16)
             Stream_Info.VertexBufferSize    = gpu.tell() - Stream_Info.VertexBufferOffset
             Stream_Info.NumVertices         = VertexOffset
-
+            
     def CreateOrderedMeshList(self):
         # re-order the meshes to match the vertex order (this is mainly for writing)
         meshes_ordered_by_vert = [
@@ -2878,17 +3451,17 @@ class StingrayMeshFile:
         for n in range(len(self.MeshInfoArray)):
             NewMesh     = RawMeshClass()
             Mesh_Info   = self.MeshInfoArray[n]
-            # print("Num: ", len(self.StreamInfoArray), " Index: ", Mesh_Info.StreamIndex)
+
             indexerror = Mesh_Info.StreamIndex >= len(self.StreamInfoArray)
             messageerror = "ERROR" if indexerror else "INFO"
             message = "Stream index out of bounds" if indexerror else ""
             PrettyPrint(f"Num: {len(self.StreamInfoArray)} Index: {Mesh_Info.StreamIndex}    {message}", messageerror)
             if indexerror: continue
-            
+
             Stream_Info = self.StreamInfoArray[Mesh_Info.StreamIndex]
             NewMesh.MeshInfoIndex = n
-            NewMesh.MeshID = Mesh_Info.MeshID
-            NewMesh.DEV_Transform = self.TransformInfo.Transforms[Mesh_Info.TransformIndex]
+            NewMesh.UnitID = Mesh_Info.UnitID
+            NewMesh.DEV_Transform = self.TransformInfo.TransformMatrices[Mesh_Info.TransformIndex]
             try:
                 NewMesh.DEV_BoneInfo  = self.BoneInfoArray[Mesh_Info.LodIndex]
             except: pass
@@ -2927,8 +3500,8 @@ class StingrayMeshFile:
                 if len(mesh.VertexBoneIndices)> 0: IsSkinned     = True
                 if len(mesh.VertexUVs)   > NumUVs: NumUVs = len(mesh.VertexUVs)
                 if len(mesh.VertexBoneIndices) > NumBoneIndices: NumBoneIndices = len(mesh.VertexBoneIndices)
-            if NumUVs < 2 and bpy.context.scene.Hd2ToolPanelSettings.Force2UVs:
-                NumUVs = 2
+            if bpy.context.scene.Hd2ToolPanelSettings.Force2UVs:
+                NumUVs = max(3, NumUVs)
             if IsSkinned and NumBoneIndices > 1 and bpy.context.scene.Hd2ToolPanelSettings.Force1Group:
                 NumBoneIndices = 1
 
@@ -2968,37 +3541,45 @@ class StingrayMeshFile:
             for Component in Stream_Info.Components:
                 Stream_Info.VertexStride += Component.GetSize()
 
-def LoadStingrayMesh(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject):
+def LoadStingrayUnit(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject , LoadMaterialSlotNames=False):
     toc  = MemoryStream(TocData)
     gpu  = MemoryStream(GpuData)
-    StingrayMesh = StingrayMeshFile().Serialize(toc, gpu)
-    if MakeBlendObject: CreateModel(StingrayMesh.RawMeshes, str(ID), StingrayMesh.CustomizationInfo, StingrayMesh.BoneNames)
+    bones_entry = Global_TocManager.GetEntryByLoadArchive(int(ID), int(BoneID))
+    if bones_entry and not bones_entry.IsLoaded:
+        bones_entry.Load(False, False)
+    StingrayMesh = StingrayMeshFile()
+    StingrayMesh.NameHash = int(ID)
+    StingrayMesh.LoadMaterialSlotNames = LoadMaterialSlotNames
+    StingrayMesh.Serialize(toc, gpu, Global_TocManager)
+    if MakeBlendObject: CreateModel(StingrayMesh, str(ID), Global_BoneNames)
     return StingrayMesh
 
-def SaveStingrayMesh(ID, TocData, GpuData, StreamData, StingrayMesh):
-    model = GetObjectsMeshData()
-    FinalMeshes = [mesh for mesh in StingrayMesh.RawMeshes]
-    for mesh in model:
-        for n in range(len(StingrayMesh.RawMeshes)):
-            if StingrayMesh.RawMeshes[n].MeshInfoIndex == mesh.MeshInfoIndex:
-                FinalMeshes[n] = mesh
+def SaveStingrayMesh(self,ID, TocData, GpuData, StreamData, StingrayMesh):
+    # model = GetObjectsMeshData(Global_TocManager, Global_BoneNames)
+    # # print(f"模型：{model}")
+    # # raise Exception("停止")
+    # FinalMeshes = [mesh for mesh in StingrayMesh.RawMeshes]
+    # for mesh in model:
+    #     for n in range(len(StingrayMesh.RawMeshes)):
+    #         if StingrayMesh.RawMeshes[n].MeshInfoIndex == mesh.MeshInfoIndex:
+    #             FinalMeshes[n] = mesh
     if bpy.context.scene.Hd2ToolPanelSettings.AutoLods:
         lod0 = None
-        for mesh in FinalMeshes:
+        for mesh in StingrayMesh.RawMeshes:
             if mesh.LodIndex == 0:
                 lod0 = mesh
                 break
         # print(lod0)
         if lod0 != None:
-            for n in range(len(FinalMeshes)):
-                if FinalMeshes[n].IsLod():
+            for n in range(len(StingrayMesh.RawMeshes)):
+                if StingrayMesh.RawMeshes[n].IsLod():
                     newmesh = copy.copy(lod0)
-                    newmesh.MeshInfoIndex = FinalMeshes[n].MeshInfoIndex
-                    FinalMeshes[n] = newmesh
-    StingrayMesh.RawMeshes = FinalMeshes
+                    newmesh.MeshInfoIndex = StingrayMesh.RawMeshes[n].MeshInfoIndex
+                    StingrayMesh.RawMeshes[n] = newmesh
+    # StingrayMesh.RawMeshes = FinalMeshes
     toc  = MemoryStream(IOMode = "write")
     gpu  = MemoryStream(IOMode = "write")
-    StingrayMesh.Serialize(toc, gpu)
+    StingrayMesh.Serialize(toc, gpu, Global_TocManager)
     return [toc.Data, gpu.Data, b""]
 
 #endregion
@@ -3072,38 +3653,6 @@ class ButtonUpdateArchivelistCN(Operator):
         return {"FINISHED"}
 #endregion
 
-#region Operators: Context Menu
-class CopyArchiveIDOperator(Operator):
-    bl_label = "Copy Archive ID"
-    bl_idname = "helldiver2.copy_archive_id"
-    bl_description = "将活跃的 Archive ID 复制到剪贴板"
-
-    def execute(self, context):
-        if ArchivesNotLoaded(self):
-            return {'CANCELLED'}
-        archiveID = str(Global_TocManager.ActiveArchive.Name)
-        bpy.context.window_manager.clipboard = archiveID
-        self.report({'INFO'}, f"复制 Archive ID: {archiveID}")
-
-        return {'FINISHED'}
-
-class EntrySectionOperator(Operator):
-    bl_label = "Collapse Section"
-    bl_idname = "helldiver2.collapse_section"
-    bl_description = "折叠该区域"
-
-    type: StringProperty(default = "")
-
-    def execute(self, context):
-        global Global_Foldouts
-        for i in range(len(Global_Foldouts)):
-            if Global_Foldouts[i][0] == str(self.type):
-                Global_Foldouts[i][1] = not Global_Foldouts[i][1]
-                # PrettyPrint(f"Folding foldout: {Global_Foldouts[i]}")
-        return {'FINISHED'}
-
-#endregion
-
 #region Operators: Archives & Patches
 def ArchivesNotLoaded(self):
     if len(Global_TocManager.LoadedArchives) <= 0:
@@ -3111,7 +3660,20 @@ def ArchivesNotLoaded(self):
         return True
     else: 
         return False
+    
+def PatchesNotLoaded(self):
+    if len(Global_TocManager.Patches) <= 0:
+        self.report({'ERROR'}, "No Patches Currently Loaded")
+        return True
+    else:
+        return False
 
+def hex_to_decimal(hex_string):
+    try:
+        decimal_value = int(hex_string, 16)
+        return decimal_value
+    except ValueError:
+        PrettyPrint(f"Invalid hexadecimal string: {hex_string}")
 
 class DefaultLoadArchiveOperator(Operator):
     bl_label = "Default Archive"
@@ -3709,10 +4271,10 @@ class ImportStingrayMeshOperator(Operator):
         Errors = []
         for EntryID in EntriesIDs:
             if len(EntriesIDs) == 1:
-                Global_TocManager.Load(EntryID, MeshID)
+                Global_TocManager.Load(EntryID, UnitID)
             else:
                 try:
-                    Global_TocManager.Load(EntryID, MeshID)
+                    Global_TocManager.Load(EntryID, UnitID)
                 except Exception as error:
                     Errors.append([EntryID, error])
 
@@ -3730,11 +4292,26 @@ class SaveStingrayMeshOperator(Operator):
     bl_label  = "Save Mesh"
     bl_idname = "helldiver2.archive_mesh_save"
     bl_options = {'REGISTER', 'UNDO'} 
+    bl_description = "保存网格，必须选择一个网格物体"
+    
+    @classmethod
+    def poll(cls, context):
+        object = context.active_object
+        return object is not None and object.type == "MESH"
 
     object_id: StringProperty()
     def execute(self, context):
+        global Global_BoneNames
         addon_prefs = AQ_PublicClass.get_addon_prefs()
         object = bpy.context.active_object
+        # 检查Patch
+        has_patch =  Global_TocManager.CheckActivePatch()
+        if not has_patch:
+            self.report({'ERROR'}, f"没有激活的Patch，无法保存，请先创建一个Patch。")
+            return{'CANCELLED'}
+        if context.mode != 'OBJECT':
+            self.report({'ERROR'}, f"不在物体模式下，当前模式: {context.mode}，保存取消")
+            return {'CANCELLED'}
         if addon_prefs.SaveUseAutoSmooth:
             # 4.3 compatibility change
             if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
@@ -3746,6 +4323,8 @@ class SaveStingrayMeshOperator(Operator):
         if object == None:
             self.report({"ERROR"}, "没有物体被选中，必须先选择一个物体再点击保存")
             return {'CANCELLED'}
+        
+        
         try:
             ID = object["Z_ObjectID"]
         except:
@@ -3754,7 +4333,6 @@ class SaveStingrayMeshOperator(Operator):
         # 材质名称检查与修正
         for idx in range(len(object.material_slots)):
             CheckValidMaterial(object,idx)
-        
         
         # SwapID = ""
         SwapID_list = []
@@ -3777,9 +4355,31 @@ class SaveStingrayMeshOperator(Operator):
                     else:
                         self.report({"ERROR"}, f"Object: {object.name} 的转换ID: {object[key]} 不是纯数字.")
                         return {'CANCELLED'}
+                    
+        model = GetObjectsMeshData(Global_TocManager, Global_BoneNames)
+        Entry = Global_TocManager.GetEntryByLoadArchive(int(ID), UnitID)
+        if Entry is None:
+            self.report({'ERROR'},
+                f"存档中需要保存的条目没有载入. 找不到物体ID: {ID}")
+            return{'CANCELLED'}
+        if not Entry.IsLoaded: Entry.Load(True, False)
+        meshes = model[ID]
+        for mesh_index, mesh in meshes.items():
+            try:
+                if Entry.LoadedData.RawMeshes[mesh_index].DEV_BoneInfoIndex == -1 and mesh.DEV_BoneInfoIndex > -1:
+                    self.report({'ERROR'},
+                                f"尝试用有权重网格覆盖静态网格。请检查网格是否正确。")
+                    return{'CANCELLED'}
+                Entry.LoadedData.RawMeshes[mesh_index] = mesh
+            except IndexError:
+                excpectedLength = len(Entry.LoadedData.RawMeshes) - 1
+                self.report({'ERROR'}, f"MeshInfoIndex of {mesh_index} for {object.name} 超过了网格数量。预期最大 MeshInfoIndex 为: {excpectedLength}。请检查自定义属性是否匹配此值并重新保存网格。")
+                return{'CANCELLED'}
+
+            
         
         
-        # save方法会在保存结束后将原先选中物体取消选择，所以在每次迭代保存时应该重新让物体选中
+        # 转换ID检查与修正
         if SwapID_list:
             if ID in SwapID_list:
                 if SwapID_list.count(ID) > 1:
@@ -3790,36 +4390,74 @@ class SaveStingrayMeshOperator(Operator):
                 #将其放到末尾
                 SwapID_list.append(ID)
 
+            wasSaved = Entry.Save()
+            
+            if not wasSaved:
+                self.report({"ERROR"}, f"保存失败 unit {bpy.context.selected_objects[0].name}.")
+                return{'CANCELLED'}
+            
             for SwapID in SwapID_list:
-                object.select_set(True)
-                Global_TocManager.Save(int(ID), MeshID)
-                Entry = Global_TocManager.GetPatchEntry_B(int(ID), MeshID)
+
+                if not Global_TocManager.IsInPatch(Entry):
+                    Global_TocManager.AddEntryToPatch(int(ID), UnitID)
+                        # bpy.ops.helldiver2.archive_addtopatch(object_id = str(ID),object_typeid = str(UnitID))
+
+                Entry_In_patch = Global_TocManager.GetPatchEntry(Entry)
                 if SwapID != ID:
                     self.report({'INFO'}, f"转移 Entry ID: {Entry.FileID} to: {SwapID}")
-                    Global_TocManager.RemoveEntryFromPatch(int(SwapID), MeshID)
-                    Entry.FileID = int(SwapID)
+                    Global_TocManager.RemoveEntryFromPatch(int(SwapID), UnitID)
+                    Entry_In_patch.FileID = int(SwapID)
                 else:
                     self.report({'INFO'}, f"Entry ID: {Entry.FileID} 保持自身")
 
                 
         
         else:
-            Global_TocManager.Save(int(self.object_id), MeshID)
-        
-        # if SwapID != "" and SwapID.isnumeric():
-        #     self.report({'INFO'}, f"转移 Entry ID: {Entry.FileID} to: {SwapID}")
-        #     Global_TocManager.RemoveEntryFromPatch(int(SwapID), MeshID)
-        #     Entry.FileID = int(SwapID)
+            # Global_TocManager.Save(int(self.object_id), UnitID)
+            wasSaved = Entry.Save()
+            if wasSaved:
+                if not Global_TocManager.IsInPatch(Entry):
+                    Entry = Global_TocManager.AddEntryToPatch(int(ID), UnitID)
+            else:
+                self.report({"ERROR"}, f"保存失败 unit {bpy.context.selected_objects[0].name}.")
+                return{'CANCELLED'}
+            self.report({'INFO'}, f"已保存 Unit Object ID: {self.object_id}")
+
         
         return{'FINISHED'}
 
 class BatchSaveStingrayMeshOperator(Operator):
     bl_label  = "Save Meshes"
     bl_idname = "helldiver2.archive_mesh_batchsave"
+    bl_description = "批量保存选中的网格"
+
+    @classmethod
+    def poll(cls, context):
+        return len(context.selected_objects) > 0
+
 
     def execute(self, context):
+        start = time.time()
+        errors = False
         objects = bpy.context.selected_objects
         addon_prefs = AQ_PublicClass.get_addon_prefs()
+        
+        # 检查Patch
+        has_patch =  Global_TocManager.CheckActivePatch()
+        if not has_patch:
+            self.report({'ERROR'}, f"没有激活的Patch，无法保存，请先创建一个Patch。")
+            return{'CANCELLED'}
+        if context.mode != 'OBJECT':
+            self.report({'ERROR'}, f"不在物体模式下，当前模式: {context.mode}，保存取消")
+            return {'CANCELLED'}
+        
+        mesh_obj = []
+        for i in objects:
+            if i.type == "MESH":
+                mesh_obj.append(i)
+        num_initially_selected = len(mesh_obj)
+        num_meshes = num_initially_selected
+        
         if addon_prefs.SaveUseAutoSmooth:
             for i in objects:
                 if i.type == "MESH":
@@ -3829,7 +4467,7 @@ class BatchSaveStingrayMeshOperator(Operator):
                     else:
                         i.data.use_auto_smooth = True
                         i.data.auto_smooth_angle = 3.14159
-        bpy.ops.object.select_all(action='DESELECT')
+        # bpy.ops.object.select_all(action='DESELECT')
         
         IDs = []
         for object in objects:
@@ -3866,46 +4504,108 @@ class BatchSaveStingrayMeshOperator(Operator):
             except:
                 pass
 
+
+        entries = []
         for IDitem in IDs:
             ID = IDitem[0]
-            SwapID_list = IDitem[1]
-            valid_object_list = []
-            for object in objects:
-                try:
-                    if object["Z_ObjectID"] == ID:
-                        valid_object_list.append(object)
-                        # object.select_set(True)
-                except: pass
+            # SwapID_list = IDitem[1]
+            Entry = Global_TocManager.GetEntryByLoadArchive(int(ID), UnitID)
+            if Entry is None:
+                self.report({'ERROR'}, f"保存的网格对应的档案未加载。无法找到 ID: {ID} 的自定义属性对象。")
+                errors = True
+                num_meshes -= len(MeshData[ID])
+                entries.append(None)
+                continue
+            if not Entry.IsLoaded: Entry.Load(True, False, True)
+            entries.append(Entry)
 
-            # Global_TocManager.Save(int(ID), MeshID)
+        MeshData = GetObjectsMeshData(Global_TocManager, Global_BoneNames)    
+        for i, IDitem in enumerate(IDs):
+            ID = IDitem[0]
+            SwapID_list = IDitem[1]
+            Entry = entries[i]
+            if Entry is None:
+                continue
+            
+            MeshList = MeshData[ID]
             
             if SwapID_list:
+                # 预先检查是否有自身ID,有就放到末尾
                 if ID in SwapID_list:
                     if SwapID_list.count(ID) > 1:
-                        self.report({"ERROR"}, f"Object: {object.name} 的转换ID栏最多只能填一次自身ID.")
+                        self.report({"ERROR"}, f"Object ID 为 {ID} 的转换ID栏最多只能填一次自身ID.")
                         return {'CANCELLED'}
 
                     SwapID_list.remove(ID)
                     #将其放到末尾
                     SwapID_list.append(ID)
-                    
+                
+                for mesh_index, mesh in MeshList.items():
+                    try:
+                        if Entry.LoadedData.RawMeshes[mesh_index].DEV_BoneInfoIndex == -1 and mesh.DEV_BoneInfoIndex > -1:
+                            self.report({'ERROR'},
+                                        f"尝试用有权重网格覆盖静态网格，请检查网格是否正确。")
+                            return{'CANCELLED'}
+                        Entry.LoadedData.RawMeshes[mesh_index] = mesh
+                    except IndexError:
+                        excpectedLength = len(Entry.LoadedData.RawMeshes) - 1
+                        self.report({'ERROR'},f"MeshInfoIndex of {mesh_index} 超过了网格数量。预期最大 MeshInfoIndex 为: {excpectedLength}。请检查自定义属性是否匹配此值并重新保存网格。")
+                        errors = True
+                        num_meshes -= 1
+    
+                wasSaved = Entry.Save()
+                if not wasSaved:
+                    self.report({"ERROR"}, f"Object ID 为 {ID} 的物体保存失败 ")
+                    num_meshes -= len(MeshData[ID])
+                    # return{'CANCELLED'}
+                
                 for SwapID in SwapID_list:
                     
-                    for valid_obj in valid_object_list:
-                        valid_obj.select_set(True)
+                    if not Global_TocManager.IsInPatch(Entry):
+                        Global_TocManager.AddEntryToPatch(int(ID), UnitID)
+                        print(f"Add Entry ID: {Entry.FileID} to Patch")
+
+                    Entry_In_patch = Global_TocManager.GetPatchEntry_B(int(ID), UnitID)
                     
-                    Global_TocManager.Save(int(ID), MeshID)
-                    
-                    Entry = Global_TocManager.GetPatchEntry_B(int(ID), MeshID)
                     if SwapID != ID:
-                        Global_TocManager.RemoveEntryFromPatch(int(SwapID), MeshID)
-                        Entry.FileID = int(SwapID)
+                        self.report({'INFO'}, f"转移 Entry ID: {Entry_In_patch.FileID} to: {SwapID}")
+                        
+                        Global_TocManager.RemoveEntryFromPatch(int(SwapID), UnitID)
+                        Entry_In_patch.FileID = int(SwapID)
+                        # print(f"is in patch: {Global_TocManager.IsInPatch(Entry)}")
+                    else:
+                        self.report({'INFO'}, f"Entry ID: {Entry.FileID} 保持自身")
+                        
             
             else:
-                for valid_obj in valid_object_list:
-                    valid_obj.select_set(True)
+                for mesh_index, mesh in MeshList.items():
+                    try:
+                        if Entry.LoadedData.RawMeshes[mesh_index].DEV_BoneInfoIndex == -1 and mesh.DEV_BoneInfoIndex > -1:
+                            self.report({'ERROR'},
+                                        f"尝试用有权重网格覆盖静态网格，请检查网格是否正确。")
+                            return{'CANCELLED'}
+                        Entry.LoadedData.RawMeshes[mesh_index] = mesh
+                    except IndexError:
+                        excpectedLength = len(Entry.LoadedData.RawMeshes) - 1
+                        self.report({'ERROR'},f"MeshInfoIndex of {mesh_index} 超过了网格数量。预期最大 MeshInfoIndex 为: {excpectedLength}。请检查自定义属性是否匹配此值并重新保存网格。")
+                        errors = True
+                        num_meshes -= 1
+                        
+                wasSaved = Entry.Save()
+                if wasSaved:
+                    if not Global_TocManager.IsInPatch(Entry):
+                        Entry = Global_TocManager.AddEntryToPatch(int(ID), UnitID)
+                else:
+                    self.report({"ERROR"}, f"Object ID 为 {ID} 的物体保存失败 ")
+                    num_meshes -= len(MeshData[ID])
+                # for valid_obj in valid_object_list:
+                #     valid_obj.select_set(True)
                     
-                Global_TocManager.Save(int(ID), MeshID)
+                # Global_TocManager.Save(int(ID), UnitID)
+        self.report({'INFO'}, f"成功保存 {num_meshes}/{num_initially_selected} 个网格。")
+        if errors:
+            self.report({'ERROR'}, f"保存网格时发生错误。请点击这里查看。")
+        PrettyPrint(f"保存网格耗时: {time.time()-start}")
                 
         return{'FINISHED'}
 
@@ -4033,9 +4733,16 @@ class SaveTextureFromDDSOperator(Operator, ImportHelper):
 class SaveMaterialOperator(Operator):
     bl_label = "Save Material"
     bl_idname = "helldiver2.material_save"
+    bl_description = "保存材质"
 
     object_id: StringProperty()
     def execute(self, context):
+        # 检查Patch
+        has_patch =  Global_TocManager.CheckActivePatch()
+        if not has_patch:
+            self.report({'ERROR'}, f"没有激活的Patch，无法保存，请先创建一个Patch。")
+            return{'CANCELLED'}
+        
         EntriesIDs = IDsFromString(self.object_id)
         for EntryID in EntriesIDs:
             Global_TocManager.Save(int(EntryID), MaterialID)
@@ -4055,33 +4762,23 @@ class ImportMaterialOperator(Operator):
 class AddMaterialOperator(Operator):
     bl_label = "Add Material"
     bl_idname = "helldiver2.material_add"
+    bl_description = "添加材质,需要激活一个Patch"
+    
+    @classmethod
+    def poll(cls, context):
+        has_patch =  Global_TocManager.CheckActivePatch()
+        return has_patch
 
-    materials = (
-        ("bloom", "Bloom", "A bloom material with two color, normal map which does not render in the UI"),
-        ("original", "Original", "The original template used for all mods uploaded to Nexus prior to the addon's public release, which is bloated with additional unnecessary textures. Sourced from a terminid."),
-        ("advanced_no_emi", "Advanced 无光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),   
-        ("advanced_orange", "Advanced 橙光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
-        ("advanced_yellow", "Advanced 黄光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
-        ("advanced_red", "Advanced 红光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
-        ("advanced_pink", "Advanced 粉光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
-        ("advanced_purple", "Advanced 紫光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
-        ("advanced_dark-blue", "Advanced 深蓝光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
-        ("advanced_blue", "Advanced 蓝光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
-        ("advanced_light-blue", "Advanced 浅蓝光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
-        ("advanced_blue-green", "Advanced 蓝绿光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
-        ("advanced_green", "Advanced 绿光", "A more comlpicated material, that is color, normal, emission and PBR capable which renders in the UI. Sourced from the Illuminate Overseer."),
-
-        ("flowing","流光","光能电塔的流光材质，材质参数中切换uv空间改成负的就是从上往下，正的是从下往上"),
-        ("glass", "透明玻璃", "透明玻璃，不知道能干嘛，自己猜()"),
-        ("basic+Fixed", "Basic+", "A basic material with a color, normal, and PBR map which renders in the UI, Sourced from a SEAF NPC"),
-        ("basic", "Basic", "A basic material with a color, normal, and PBR map. Sourced from a trash bag prop."),
-        ("emissive", "Emissive", "A basic material with a color, normal, and emission map. Sourced from a vending machine."),
-        ("alphaclip", "Alpha Clip", "金属度在颜色贴图的alpha通道，A material that supports an alpha mask which does not render in the UI. Sourced from a skeleton pile")
-    )
-
-    selected_material: EnumProperty(items=materials, name="Template", default=1)
+    global Global_Materials
+    selected_material: EnumProperty(items=Global_Materials, name="Template", default=1)
 
     def execute(self, context):
+                # 检查Patch
+        has_patch =  Global_TocManager.CheckActivePatch()
+        if not has_patch:
+            self.report({'ERROR'}, f"没有激活的Patch，无法创建，请先创建一个Patch。")
+            return{'CANCELLED'}
+        
         Entry = TocEntry()
         Entry.FileID = r.randint(1, 0xffffffffffffffff)
         Entry.TypeID = MaterialID
@@ -4094,6 +4791,9 @@ class AddMaterialOperator(Operator):
 
         Global_TocManager.AddNewEntryToPatch(Entry)
 
+        # debug_print_id
+        # mat_id = GetEntryParentMaterialID(Entry)
+        # self.report({"INFO"}, f"Material {self.selected_material} Parent ID: {mat_id}")
         # Redraw
         for area in context.screen.areas:
             if area.type == "VIEW_3D": area.tag_redraw()
@@ -4198,6 +4898,98 @@ class SetMaterialTexture(Operator, ImportHelper):
         
 
 #endregion
+
+#region Operators : Animation
+class ImportStingrayAnimationOperator(Operator):
+    bl_label = "Import Animation"
+    bl_idname = "helldiver2.archive_animation_import"
+    bl_description = "导入动画到场景中，必须选择一个骨架"
+    
+    @classmethod
+    def poll(cls, context):
+        object = context.active_object
+        return object is not None and object.type == "ARMATURE"
+    
+    
+    object_id: StringProperty()
+    def execute(self, context):
+        # check if armature selected
+        armature = context.active_object
+        if armature.type != "ARMATURE":
+            self.report({'ERROR'}, "Please select an armature to import the animation to")
+            return {'CANCELLED'}
+        animation_id = self.object_id
+        try:
+            Global_TocManager.Load(int(animation_id), AnimationID)
+        except AnimationException as e:
+            self.report({'ERROR'}, f"{e}")
+            return {'CANCELLED'}
+        except Exception as error:
+            PrettyPrint(f"Encountered unknown animation error: {error}", 'error')
+            self.report({'ERROR'}, f"Encountered an error whilst importing animation. See Console for more info.")
+            return {'CANCELLED'}
+        return{'FINISHED'}
+        
+class SaveStingrayAnimationOperator(Operator):
+    bl_label  = "Save Animation"
+    bl_idname = "helldiver2.archive_animation_save"
+    bl_description = "保存动画，必须选择一个骨架"
+    
+    @classmethod
+    def poll(cls, context):
+        object = context.active_object
+        return object is not None and object.type == "ARMATURE"
+    
+    
+    def execute(self, context):
+        if PatchesNotLoaded(self):
+            return{'CANCELLED'}
+        object = bpy.context.active_object
+        if object.animation_data is None or object.animation_data.action is None:
+            self.report({'ERROR'}, "Armature has no active action!")
+            return {'CANCELLED'}
+        if object == None or object.type != "ARMATURE":
+            self.report({'ERROR'}, "Please select an armature")
+            return {'CANCELLED'}
+        action_name = object.animation_data.action.name
+        if len(object.animation_data.action.fcurves) == 0:
+            self.report({'ERROR'}, f"Action: {action_name} has no keyframe data! Make sure your animation has at least an initial keyframe with a recorded pose.")
+            return {'CANCELLED'}
+        entry_id = action_name.split(" ")[0].split("_")[0].split(".")[0]
+        if entry_id.startswith("0x"):
+            entry_id = hex_to_decimal(entry_id)
+        try:
+            bones_id = object['BonesID']
+        except Exception as e:
+            PrettyPrint(f"Encountered animation error: {e}", 'error')
+            self.report({'ERROR'}, f"Armature: {object.name} is missing HD2 custom property: BonesID")
+            return{'CANCELLED'}
+        PrettyPrint(f"Getting Animation Entry: {entry_id}")
+        animation_entry = Global_TocManager.GetEntryByLoadArchive(int(entry_id), AnimationID)
+        if not animation_entry:
+            self.report({'ERROR'}, f"Could not find animation entry for Action: {action_name} as EntryID: {entry_id}. Assure your action name starts with a valid ID for the animation entry.")
+            return{'CANCELLED'}
+        if not animation_entry.IsLoaded: animation_entry.Load(True, False)
+        bones_entry = Global_TocManager.GetEntryByLoadArchive(int(bones_id), BoneID)
+        bones_data = bones_entry.TocData
+        try:
+            animation_entry.LoadedData.load_from_armature(context, object, bones_data)
+        except AnimationException as e:
+            self.report({'ERROR'}, str(e))
+            return {'CANCELLED'}
+        wasSaved = animation_entry.Save()
+        if wasSaved:
+            if not Global_TocManager.IsInPatch(animation_entry):
+                animation_entry = Global_TocManager.AddEntryToPatch(int(entry_id), AnimationID)
+            else:
+                Global_TocManager.RemoveEntryFromPatch(int(entry_id), AnimationID)
+                animation_entry = Global_TocManager.AddEntryToPatch(int(entry_id), AnimationID)
+        else:
+            self.report({"ERROR"}, f"Failed to save animation for armature {bpy.context.selected_objects[0].name}.")
+            return{'CANCELLED'}
+        self.report({'INFO'}, f"Saved Animation")
+        return {'FINISHED'}
+
 
 #region Operators: Clipboard Functionality
 
@@ -4348,11 +5140,11 @@ class SetEntryFriendlyNameOperator(Operator):
         layout = self.layout; row = layout.row()
         row.prop(self, "NewFriendlyName", icon='COPY_ID')
         row = layout.row()
-        if Hash64(str(self.NewFriendlyName)) == int(self.object_id):
+        if murmur64_hash(str(self.NewFriendlyName).encode()) == int(self.object_id):
             row.label(text="Hash is correct")
         else:
             row.label(text="Hash is incorrect")
-        row.label(text=str(Hash64(str(self.NewFriendlyName))))
+        row.label(text=str(murmur64_hash(str(self.NewFriendlyName).encode())))
 
     object_id: StringProperty()
     def execute(self, context):
@@ -4397,6 +5189,132 @@ class ArchiveSpreadsheetOperator(Operator):
 
 #endregion
 
+#region Operators: Context Menu
+
+def CopyToClipboard(txt):
+    cmd='echo '+txt.strip()+'|clip'
+    return subprocess.check_call(cmd, shell=True)
+
+class CopyArchiveIDOperator(Operator):
+    bl_label = "Copy Archive ID"
+    bl_idname = "helldiver2.copy_archive_id"
+    bl_description = "将活跃的 Archive ID 复制到剪贴板"
+
+    def execute(self, context):
+        if ArchivesNotLoaded(self):
+            return {'CANCELLED'}
+        archiveID = str(Global_TocManager.ActiveArchive.Name)
+        CopyToClipboard(archiveID)
+        self.report({'INFO'}, f"复制 Archive ID: {archiveID}")
+
+        return {'FINISHED'}
+
+class EntrySectionOperator(Operator):
+    bl_label = "Collapse Section"
+    bl_idname = "helldiver2.collapse_section"
+    bl_description = "折叠该区域"
+
+    type: StringProperty(default = "")
+
+    def execute(self, context):
+        global Global_Foldouts
+        for i in range(len(Global_Foldouts)):
+            if Global_Foldouts[i][0] == str(self.type):
+                Global_Foldouts[i][1] = not Global_Foldouts[i][1]
+                # PrettyPrint(f"Folding foldout: {Global_Foldouts[i]}")
+        return {'FINISHED'}
+
+stored_custom_properties = {}
+class CopyCustomPropertyOperator(Operator):
+    bl_label = "Copy HD2 Properties"
+    bl_idname = "helldiver2.copy_custom_properties"
+    bl_description = "复制绝地潜兵2网格的自定义属性"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        global stored_custom_properties
+        
+        selectedObjects = context.selected_objects
+        if len(selectedObjects) == 0:
+            self.report({'WARNING'}, "没有选中的网格")
+            return {'CANCELLED'}
+        PrettyPrint(selectedObjects)
+
+        obj = context.active_object
+        stored_custom_properties.clear()
+        for key, value in obj.items():
+            if key not in obj.bl_rna.properties:  # Skip built-in properties
+                stored_custom_properties[key] = value
+
+        self.report({'INFO'}, f"复制了 {len(stored_custom_properties)} 个自定义属性")
+        return {'FINISHED'}
+
+class PasteCustomPropertyOperator(Operator):
+    bl_label = "Paste HD2 Properties"
+    bl_idname = "helldiver2.paste_custom_properties"
+    bl_description = "粘贴绝地潜兵2网格的自定义属性"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        global stored_custom_properties
+
+        selectedObjects = context.selected_objects
+        if len(selectedObjects) == 0:
+            self.report({'WARNING'}, "没有选中的网格")
+            return {'CANCELLED'}
+
+        obj = context.active_object
+        if not stored_custom_properties:
+            self.report({'WARNING'}, "没有可粘贴的自定义属性")
+            return {'CANCELLED'}
+
+        for key, value in stored_custom_properties.items():
+            obj[key] = value
+
+        for area in bpy.context.screen.areas:
+            area.tag_redraw()
+
+        self.report({'INFO'}, f"粘贴了 {len(stored_custom_properties)} 个自定义属性")
+        return {'FINISHED'}
+    
+class CopyDecimalIDOperator(Operator):
+    bl_label = "Copy ID"
+    bl_idname = "helldiver2.copy_decimal_id"
+    bl_description = "复制所选网格的物体ID"
+
+    def execute(self, context):
+        object = context.active_object
+        if not object:
+            self.report({"ERROR"}, "没有选中的网格")
+        try:
+            ID = str(object["Z_ObjectID"])
+        except:
+            self.report({'ERROR'}, f"网格: {object.name} 没有 Helldivers 属性 ID")
+            return {'CANCELLED'}
+        
+        CopyToClipboard(ID)
+        self.report({'INFO'}, f"复制了 {object.name} 的物体 {ID}")
+        return {'FINISHED'}
+    
+    
+    
+def CustomPropertyContext(self, context):
+    layout = self.layout
+    layout.separator()
+    layout.label(text=Global_SectionHeader)
+    layout.separator()
+    # layout.operator("helldiver2.copy_hex_id", icon='COPY_ID')
+    layout.operator("helldiver2.copy_decimal_id", icon='COPY_ID')
+    layout.separator()
+    layout.operator("helldiver2.copy_custom_properties", icon= 'COPYDOWN')
+    layout.operator("helldiver2.paste_custom_properties", icon= 'PASTEDOWN')
+    layout.separator()
+    layout.operator("helldiver2.archive_animation_save", icon='ARMATURE_DATA')
+    layout.operator("helldiver2.archive_mesh_batchsave", icon= 'FILE_BLEND')
+        
+#endregion
+
+
 #region Menus and Panels
 
 def LoadedArchives_callback(scene, context):
@@ -4409,7 +5327,7 @@ def Patches_callback(scene, context):
 class Hd2ToolPanelSettings(PropertyGroup):
     # Patches
     Patches   : EnumProperty(name="Patches", items=Patches_callback)
-    PatchOnly : BoolProperty(name="Show Patch Entries Only", description = "Filter list to entries present in current patch", default = False)
+    PatchOnly : BoolProperty(name="Show Patch Entries Only", description = "仅显示当前补丁中存在的条目", default = False)
     # Archive
     ContentsExpanded : BoolProperty(default = True)
     LoadedArchives   : EnumProperty(name="LoadedArchives", items=LoadedArchives_callback)
@@ -4418,18 +5336,25 @@ class Hd2ToolPanelSettings(PropertyGroup):
     ShowMeshes       : BoolProperty(name="Meshes", description = "Show Meshes", default = True)
     ShowTextures     : BoolProperty(name="Textures", description = "Show Textures", default = True)
     ShowMaterials    : BoolProperty(name="Materials", description = "Show Materials", default = True)
+    # ShowAnimations   : BoolProperty(name="Animations", description = "Show Animations", default = False)
     ShowOthers       : BoolProperty(name="Other", description = "Show All Else", default = False)
-    ImportMaterials  : BoolProperty(name="Import Materials", description = "Fully import materials by appending the textures utilized, otherwise create placeholders", default = True)
-    ImportLods       : BoolProperty(name="Import LODs", description = "Import LODs", default = False)
-    ImportGroup0     : BoolProperty(name="Import Group 0 Only", description = "Only import the first vertex group, ignore others", default = True)
-    ImportPhysics    : BoolProperty(name="Import Physics", description = "Import Physics Bodies", default = False)
-    # ImportStatic     : BoolProperty(name="Import Static Meshes", description = "Import Static Meshes", default = False)
-    MakeCollections  : BoolProperty(name="Make Collections", description = "Make new collection when importing meshes", default = True)
-    Force2UVs        : BoolProperty(name="Force 2 UV Sets", description = "Force at least 2 UV sets, some materials require this", default = True)
-    Force1Group      : BoolProperty(name="Force 1 Group", description = "Force mesh to only have 1 vertex group", default = True)
-    AutoLods         : BoolProperty(name="Auto LODs", description = "Automatically generate LOD entries based on LOD0, does not actually reduce the quality of the mesh", default = True)
-    RemoveGoreMeshes : BoolProperty(name="Remove Gore Meshes", description = "Automatically delete all of the verticies with the gore material when loading a model", default = True)
+    ImportMaterials  : BoolProperty(name="Import Materials", description = "完全导入材质,通过附加利用的纹理,否则创建占位符", default = True)
+    ImportLods       : BoolProperty(name="Import LODs", description = "导入LODs", default = False)
+    ImportGroup0     : BoolProperty(name="Import Group 0 Only", description = "仅导入第一个顶点组,忽略其他组", default = True)
+    ImportPhysics    : BoolProperty(name="Import Physics", description = "导入物理体", default = False)
+    # ImportStatic     : BoolProperty(name="Import Static Meshes", description = "导入静态网格", default = False)
+    # MakeCollections  : BoolProperty(name="Make Collections", description = "Make new collection when importing meshes", default = True)
+    Force2UVs        : BoolProperty(name="Force 2 UV Sets", description = "强制至少2个UV集,某些材质需要此设置", default = True)
+    Force1Group      : BoolProperty(name="Force 1 Group", description = "强制网格仅包含1个顶点组", default = True)
+    AutoLods         : BoolProperty(name="Auto LODs", description = "根据LOD0自动生成LOD条目,不会实际减少网格质量", default = True)
+    SaveBonePositions: BoolProperty(name="Save Animation Bone Positions", description = "保存动画中的骨骼位置 (可能会与添加动画冲突)", default = True)
+    ImportArmature   : BoolProperty(name="Import Armatures", description = "导入网格的Armature", default = True)
+    MergeArmatures   : BoolProperty(name="Merge Armatures", description = "将导入的Armature合并到选中的Armature", default = True)
+    ParentArmature   : BoolProperty(name="Parent Armatures", description = "将导入的Armature设置为导入的网格的父对象", default = True)
+    RemoveGoreMeshes : BoolProperty(name="Remove Gore Meshes", description = "自动删除所有使用断肢材质的顶点", default = True)
     shadervariablesUI : BoolProperty(name="Shader Variables UI", description = "显示着色器变量参数UI", default = True)
+    LegacyWeightNames     : BoolProperty(name="Legacy Weight Names", description="使用旧版顶点组权重名称", default = False)
+
     # ShadeSmooth      : BoolProperty(name="Shade Smooth", description = "导入模型时平滑着色,开启此项将关闭自动平滑", default = True)
     # Search
     SearchField : StringProperty(default = "")
@@ -4471,7 +5396,7 @@ class HellDivers2ToolsPanel(Panel):
                 # row.label(text="材质参数栏",icon='OPTIONS')
                 row.prop(scene.Hd2ToolPanelSettings, "shadervariablesUI",
                 icon="DOWNARROW_HLT" if scene.Hd2ToolPanelSettings.shadervariablesUI else "RIGHTARROW",
-                icon_only=True, emboss=False, text="着色器变量参数栏")
+                icon_only=True, emboss=False, text=f"着色器变量参数栏 | 材质模板：{Entry.MaterialTemplate if Entry.MaterialTemplate != None else '无'}")
                 if scene.Hd2ToolPanelSettings.shadervariablesUI:
                     row.prop(addon_prefs, "ShowshaderVariables_CN",text="")
                 #=====
@@ -4507,7 +5432,7 @@ class HellDivers2ToolsPanel(Panel):
 
     def draw_entry_buttons(self, box, row, Entry, PatchOnly):
         addon_prefs = AQ_PublicClass.get_addon_prefs()
-        if Entry.TypeID == MeshID:
+        if Entry.TypeID == UnitID:
             row.operator("helldiver2.archive_mesh_save", icon='FILE_BLEND', text="").object_id = str(Entry.FileID)
             row.operator("helldiver2.archive_mesh_import", icon='IMPORT', text="").object_id = str(Entry.FileID)
             if Global_TocManager.IsInPatch(Entry) and addon_prefs.DisplayRenameButton:
@@ -4522,6 +5447,10 @@ class HellDivers2ToolsPanel(Panel):
             row.operator("helldiver2.material_import", icon='IMPORT', text="").object_id = str(Entry.FileID)
             row.operator("helldiver2.material_showeditor", icon='MOD_LINEART', text="").object_id = str(Entry.FileID)
             self.draw_material_editor(Entry, box, row)
+        elif Entry.TypeID == AnimationID:
+            row.operator("helldiver2.archive_animation_save",icon='FILE_BLEND', text="")
+            row.operator("helldiver2.archive_animation_import", icon="IMPORT", text="").object_id = str(Entry.FileID)
+            
         if Global_TocManager.IsInPatch(Entry):
             props = row.operator("helldiver2.archive_removefrompatch", icon='FAKE_USER_ON', text="")
             props.object_id     = str(Entry.FileID)
@@ -4553,30 +5482,38 @@ class HellDivers2ToolsPanel(Panel):
         row.operator("helldiver2.archive_spreadsheet", icon='INFO', text="")
         if scene.Hd2ToolPanelSettings.MenuExpanded:
             row = layout.row(); row.separator(); row.label(text="显示设置"); box = row.box(); row = box.grid_flow(columns=1)
-            row.prop(scene.Hd2ToolPanelSettings, "ShowMeshes")
-            row.prop(scene.Hd2ToolPanelSettings, "ShowTextures")
-            row.prop(scene.Hd2ToolPanelSettings, "ShowMaterials")
-            row.prop(scene.Hd2ToolPanelSettings, "ShowOthers")
+            row.prop(scene.Hd2ToolPanelSettings, "ShowMeshes",text="显示网格")
+            row.prop(scene.Hd2ToolPanelSettings, "ShowTextures",text="显示纹理")
+            row.prop(scene.Hd2ToolPanelSettings, "ShowMaterials",text="显示材质")
+            row.prop(addon_prefs, "ShowAnimations",text="显示动画")
+            row.prop(scene.Hd2ToolPanelSettings, "ShowOthers",text="显示其他")
             row.prop(addon_prefs, "ShowArchivePatchPath",text="实时显示Archive和Patch路径")
             row.prop(addon_prefs,"Layout_search_New",text="显示搜索已知Archive为主的布局")
+            row.prop(addon_prefs, "ShowQuickSwitch",text="显示快捷设置按钮")
             row = layout.row(); row.separator(); row.label(text="导入设置"); box = row.box(); row = box.grid_flow(columns=1)
             row.prop(scene.Hd2ToolPanelSettings, "ImportMaterials",text="导入材质")
             row.prop(scene.Hd2ToolPanelSettings, "ImportLods",text="导入Lods")
             row.prop(scene.Hd2ToolPanelSettings, "ImportGroup0",text="只导入Group 0")
-            row.prop(scene.Hd2ToolPanelSettings, "MakeCollections",text="为每个物体创建集合")
+            row.prop(addon_prefs, "MakeCollections",text="为每个物体创建集合")
             row.prop(scene.Hd2ToolPanelSettings, "ImportPhysics",text="导入物理")
             row.prop(addon_prefs, "ImportStatic",text="导入静态网格（无权重）")
             row.prop(scene.Hd2ToolPanelSettings, "RemoveGoreMeshes",text="删除断肢网格")
             row.prop(addon_prefs, "ShadeSmooth",text="导入模型时平滑着色")
             row.prop(addon_prefs, "tga_Tex_Import_Switch",text="开启TGA纹理导入")
             row.prop(addon_prefs, "png_Tex_Import_Switch",text="开启PNG纹理导入")
-            row = layout.row(); row.separator(); row.label(text="Export Options"); box = row.box(); row = box.grid_flow(columns=1)
-            row.prop(scene.Hd2ToolPanelSettings, "Force2UVs")
-            row.prop(scene.Hd2ToolPanelSettings, "Force1Group")
-            row.prop(scene.Hd2ToolPanelSettings, "AutoLods")
+            row.prop(scene.Hd2ToolPanelSettings, "ParentArmature",text="父级Armature")
+            row.prop(scene.Hd2ToolPanelSettings, "ImportArmature",text="导入Armature")
+            row = layout.row(); row.separator(); row.label(text="导出设置"); box = row.box(); row = box.grid_flow(columns=1)
+            row.prop(scene.Hd2ToolPanelSettings, "Force2UVs",text="强制使用2个UV通道")
+            row.prop(scene.Hd2ToolPanelSettings, "Force1Group",text="强制使用1个权重组")
+            row.prop(scene.Hd2ToolPanelSettings, "AutoLods",text="自动Lods")
+            row.prop(scene.Hd2ToolPanelSettings, "SaveBonePositions",text="保存动画骨骼位置")
             row.prop(addon_prefs,"SaveUseAutoSmooth",text="保存网格时开启自动平滑")
             row.prop(addon_prefs,"ShowZipPatchButton",text="显示打包Patch为Zip功能")
             row.prop(addon_prefs,"DisplayRenameButton",text="显示重命名按钮")
+            row = layout.row(); row.separator(); row.label(text="其他设置"); box = row.box(); row = box.grid_flow(columns=1)
+            row.prop(scene.Hd2ToolPanelSettings, "LegacyWeightNames",text="旧权重名称")
+            row.prop(scene.Hd2ToolPanelSettings, "MergeArmatures",text="合并Armature")
             
             row = layout.row()
             row.separator()
@@ -4593,6 +5530,15 @@ class HellDivers2ToolsPanel(Panel):
             row = layout.row(); row.separator(); row.label(text="一键添加转移ID属性"); row = row.grid_flow(columns=1)
             row.operator("helldiver2.add_swaps_id_prop", text="添加转移自定义ID属性", icon='ADD')
         # Draw Archive Import/Export Buttons
+        if addon_prefs.ShowQuickSwitch:
+            row = layout.row(); row = layout.row()
+            row.alignment = 'CENTER'
+            row.label(text="快捷设置")
+            row = layout.row()
+            row.prop(scene.Hd2ToolPanelSettings, "ImportLods",text="导入Lods")
+            row.prop(addon_prefs, "ImportStatic",text="导入静态网格（无权重）")
+            row.prop(scene.Hd2ToolPanelSettings, "AutoLods",text="自动Lods")
+            
         row = layout.row(); row = layout.row()
         row.operator("helldiver2.archive_import_default", icon= 'SOLO_ON', text="")
         if addon_prefs.Layout_search_New:
@@ -4734,7 +5680,7 @@ class HellDivers2ToolsPanel(Panel):
                 type_icon = 'FILE'
                 show = None
                 global Global_Foldouts
-                if Type.TypeID == MeshID:
+                if Type.TypeID == UnitID:
                     type_icon = 'FILE_3D'
                     if not scene.Hd2ToolPanelSettings.ShowMeshes: continue
                 elif Type.TypeID == TexID:
@@ -4743,7 +5689,21 @@ class HellDivers2ToolsPanel(Panel):
                 elif Type.TypeID == MaterialID:
                     type_icon = 'MATERIAL'
                     if not scene.Hd2ToolPanelSettings.ShowMaterials: continue
-                elif not scene.Hd2ToolPanelSettings.ShowOthers: continue
+                elif Type.TypeID == AnimationID:  # 添加显示动画条目
+                    type_icon = 'ARMATURE_DATA'
+                    if not addon_prefs.ShowAnimations: continue
+                elif scene.Hd2ToolPanelSettings.ShowOthers: 
+                    if Type.TypeID == BoneID: type_icon = 'BONE_DATA'
+                    elif Type.TypeID == ParticleID:type_icon = 'PARTICLES'
+                    elif Type.TypeID == WwiseBankID:  type_icon = 'OUTLINER_DATA_SPEAKER'
+                    elif Type.TypeID == WwiseDepID: type_icon = 'OUTLINER_DATA_SPEAKER'
+                    elif Type.TypeID == WwiseStreamID:  type_icon = 'OUTLINER_DATA_SPEAKER'
+                    elif Type.TypeID == WwiseMetaDataID: type_icon = 'OUTLINER_DATA_SPEAKER'
+                    elif Type.TypeID == StateMachineID: type_icon = 'DRIVER'
+                    elif Type.TypeID == StringID: type_icon = 'WORDWRAP_ON'
+                    elif Type.TypeID == PhysicsID: type_icon = 'PHYSICS'
+                else:
+                    continue
 
                 for section in Global_Foldouts:
                     if section[0] == str(Type.TypeID):
@@ -4751,7 +5711,7 @@ class HellDivers2ToolsPanel(Panel):
                         break
                 if show == None:
                     fold = False
-                    if Type.TypeID == MaterialID or Type.TypeID == TexID or Type.TypeID == MeshID: fold = True
+                    if Type.TypeID == MaterialID or Type.TypeID == TexID or Type.TypeID == UnitID: fold = True
                     foldout = [str(Type.TypeID), fold]
                     Global_Foldouts.append(foldout)
                     PrettyPrint(f"Adding Foldout ID: {foldout}")
@@ -4761,6 +5721,7 @@ class HellDivers2ToolsPanel(Panel):
                 box = layout.box(); row = box.row()
                 typeName = GetTypeNameFromID(Type.TypeID)
                 split = row.split()
+                
                 sub = split.row(align=True)
                 sub.operator("helldiver2.collapse_section", text=f"{typeName}: {str(Type.TypeID)}", icon=fold_icon, emboss=False).type = str(Type.TypeID)
                 # Skip drawling entries if section hidden
@@ -4830,7 +5791,7 @@ class WM_MT_button_context(Menu):
         if len(Global_TocManager.SelectedEntries) > 1:
             SingleEntry = False
         for SelectedEntry in Global_TocManager.SelectedEntries:
-            if SelectedEntry.TypeID == MeshID:
+            if SelectedEntry.TypeID == UnitID:
                 AreAllTextures = False
                 AreAllMaterials = False
             elif SelectedEntry.TypeID == TexID:
@@ -4944,6 +5905,8 @@ classes = (
     PatchArchiveOperator,
     ImportStingrayMeshOperator,
     SaveStingrayMeshOperator,
+    ImportStingrayAnimationOperator,
+    SaveStingrayAnimationOperator,
     ImportMaterialOperator,
     ImportTextureOperator,
     ExportTextureOperator,
@@ -4991,26 +5954,28 @@ classes = (
     ButtonAQGitHub,
     UnloadPatchesOperator,
     AddSwapsID_property,
-    
+    CopyCustomPropertyOperator,
+    PasteCustomPropertyOperator,
+    CopyDecimalIDOperator,
 )
 
 Global_TocManager = TocManager()
 
 def register():
-    if Global_CPPHelper == None: raise Exception("HDTool_Helper is required by the addon but failed to load!")
-    LoadNormalPalette(Global_palettepath)
     LoadTypeHashes()
     LoadNameHashes()
-    LoadShaderVariables()
-    LoadShaderVariables_CN()
+    LoadShaderVariables(Global_variablespath)
+    LoadShaderVariables_CN(Global_variablesCNpath)
     LoadUpdateArchiveList_CN()
     InitializeConfig()
+    LoadBoneHashes(Global_bonehashpath, Global_BoneNames)
     for cls in classes:
         bpy.utils.register_class(cls)
     Scene.Hd2ToolPanelSettings = PointerProperty(type=Hd2ToolPanelSettings)
     bpy.utils.register_class(WM_MT_button_context)
     addonPreferences.register()
     addon_updater_ops.register(bl_info)
+    bpy.types.VIEW3D_MT_object_context_menu.append(CustomPropertyContext)
 
 def unregister():
     bpy.utils.unregister_class(WM_MT_button_context)
@@ -5019,6 +5984,7 @@ def unregister():
         bpy.utils.unregister_class(cls)
     addonPreferences.unregister()
     addon_updater_ops.unregister()
+    bpy.types.VIEW3D_MT_object_context_menu.remove(CustomPropertyContext)
 
 if __name__=="__main__":
     register()
