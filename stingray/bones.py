@@ -1,5 +1,5 @@
-from ..logger import PrettyPrint
-from ..memoryStream import MemoryStream
+from ..utils.logger import PrettyPrint
+from ..utils.memoryStream import MemoryStream
 
 class StingrayBones:
     def __init__(self, Global_BoneNames):

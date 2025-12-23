@@ -2,8 +2,8 @@ import bpy, bpy_types
 from math import ceil, sqrt, isnan, floor #type: ignore
 import mathutils
 
-from ..logger import PrettyPrint
-from ..memoryStream import MemoryStream
+from ..utils.logger import PrettyPrint
+from ..utils.memoryStream import MemoryStream
 
 class AnimationException(Exception):
     pass

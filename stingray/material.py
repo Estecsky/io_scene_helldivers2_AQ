@@ -1,5 +1,5 @@
 import os
-from ..memoryStream import MemoryStream
+from ..utils.memoryStream import MemoryStream
 
 Global_ShaderVariables = {}
 Global_ShaderVariables_CN = {}

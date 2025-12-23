@@ -1,7 +1,7 @@
 import os
 import subprocess
 import tempfile
-from ..memoryStream import MemoryStream
+from ..utils.memoryStream import MemoryStream
 
 class StingrayMipmapInfo:
     def __init__(self):

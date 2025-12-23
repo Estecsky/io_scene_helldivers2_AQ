@@ -32,9 +32,9 @@ from .stingray.texture import StingrayTexture
 
 # Local
 # NOTE: Not bothering to do importlib reloading shit because these modules are unlikely to be modified frequently enough to warrant testing without Blender restarts
-from .math import MakeTenBitUnsigned, TenBitUnsigned
-from .memoryStream import MemoryStream
-from .logger import PrettyPrint
+from .utils.math import MakeTenBitUnsigned, TenBitUnsigned
+from .utils.memoryStream import MemoryStream
+from .utils.logger import PrettyPrint
 from .AQ_Prefs_HD2 import AQ_PublicClass
 
 import zipfile
