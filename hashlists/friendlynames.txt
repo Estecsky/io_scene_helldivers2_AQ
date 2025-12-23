@@ -4823,7 +4823,6 @@
 12279528435724053588 content/fac_helldivers/equipment/sidearm_weapons/plasma_pistol/plasma_pistol
 6912088101323449320 content/fac_helldivers/equipment/primary_weapons/battle_rifle/battle_rifle
 5972955417680186543 content/fac_helldivers/equipment/sidearm_weapons/grenade_pistol/grenade_pistol
-1892480894983787169 P-113裁决
 17623191861664038783 content/fac_helldivers/equipment/primary_weapons/crossbow_greyfax/crossbow_greyfax
 12100643055971655455 content/fac_helldivers/equipment/primary_weapons/assault_rifle_patriot/assault_rifle_patriot
 17283952461205890046 content/fac_helldivers/equipment/primary_weapons/plasma_rifle_charge/plasma_rifle_charge
@@ -4833,6 +4832,7 @@
 421324886246020354 content/fac_helldivers/equipment/primary_weapons/pump_shotgun_plasma/pump_shotgun_plasma
 6047980762772154079 content/fac_helldivers/equipment/primary_weapons/pump_shotgun_slug/pump_shotgun_slug
 13361269385325929572 content/fac_helldivers/equipment/sidearm_weapons/revolver_pistol/revolver_speedloader
+1892480894983787169 P-113裁决
 685817687590585291 roof_solar_panel_5x5_01
 2905571548111627985 abs_ventilation_roof_05
 3230743807044598365 abs_ventilation_roof_06
@@ -7192,3 +7192,9 @@
 4046732776742447255 S-11矛枪
 17446537956247465852 S-11矛枪的矛
 7483912604024319283 肉瘤体
+12877445900026273694 EAT-700消耗性凝固汽油弹
+12201875276601049603 AR/GL-21
+201944147320653301 幺二的下挂榴弹发射器
+6061479068752966788 幺二的弹匣
+8869063222391656748 幺二的枪口配件
+15622846233925959454 武器枪管
