@@ -35,6 +35,7 @@ from .stingray.texture import StingrayTexture
 from .utils.math import MakeTenBitUnsigned, TenBitUnsigned
 from .utils.memoryStream import MemoryStream
 from .utils.logger import PrettyPrint
+from .utils.slim import is_slim_version, load_package, get_package_toc, slim_init
 from .AQ_Prefs_HD2 import AQ_PublicClass
 
 import zipfile
@@ -51,22 +52,23 @@ from . import get_update_archivelistCN
 AddonPath = os.path.dirname(__file__)
 BlenderAddonsPath = os.path.dirname(AddonPath)
 
-Global_texconvpath         = f"{AddonPath}\\deps\\texconv.exe"
-Global_palettepath         = f"{AddonPath}\\deps\\NormalPalette.dat"
-Global_materialpath        = f"{AddonPath}\\materials"
-Global_typehashpath        = f"{AddonPath}\\hashlists\\typehash.txt"
-Global_filehashpath        = f"{AddonPath}\\hashlists\\filehash.txt"
-Global_friendlynamespath   = f"{AddonPath}\\hashlists\\friendlynames.txt"
-Global_variablespath       = f"{AddonPath}\\hashlists\\shadervariables.txt"
-Global_bonehashpath      = f"{AddonPath}\\hashlists\\bonehash.txt"
+Global_texconvpath         = f"{AddonPath}/deps/texconv.exe"
+Global_palettepath         = f"{AddonPath}/deps/NormalPalette.dat"
+Global_materialpath        = f"{AddonPath}/materials"
+Global_typehashpath        = f"{AddonPath}/hashlists/typehash.txt"
+Global_filehashpath        = f"{AddonPath}/hashlists/filehash.txt"
+Global_friendlynamespath   = f"{AddonPath}/hashlists/friendlynames.txt"
+Global_variablespath       = f"{AddonPath}/hashlists/shadervariables.txt"
+Global_bonehashpath      = f"{AddonPath}/hashlists/bonehash.txt"
 
-Global_variablesCNpath     = f"{AddonPath}\\hashlists\\shadervariables_combine_CN.txt"
-Global_updatearchivelistCNpath = f"{AddonPath}\\hashlists\\update_archive_listCN.txt"
+Global_variablesCNpath     = f"{AddonPath}/hashlists/shadervariables_combine_CN.txt"
+Global_updatearchivelistCNpath = f"{AddonPath}/hashlists/update_archive_listCN.txt"
 
-Global_configpath          = f"{BlenderAddonsPath}\\io_scene_helldivers2_AQ.ini"
-Global_defaultgamepath     = "C:\Program Files (x86)\Steam\steamapps\common\Helldivers 2\data\ "
+Global_configpath          = f"{BlenderAddonsPath}/io_scene_helldivers2_AQ.ini"
+Global_defaultgamepath     = r"C:\Program Files (x86)\Steam\steamapps\common\Helldivers 2\data\ "
 Global_defaultgamepath     = Global_defaultgamepath[:len(Global_defaultgamepath) - 1]
 Global_gamepath            = ""
+Global_gamepathIsValid = False
 
 Global_BoneNames = {}
 
@@ -1284,7 +1286,7 @@ def GetEntryParentMaterialID(entry):
 #region Configuration
 
 def InitializeConfig():
-    global Global_gamepath, Global_configpath
+    global Global_gamepath, Global_configpath, Global_gamepathIsValid
     if os.path.exists(Global_configpath):
         config = configparser.ConfigParser()
         config.read(Global_configpath, encoding='utf-8')
@@ -1292,7 +1294,14 @@ def InitializeConfig():
             Global_gamepath = config['DEFAULT']['filepath']
         except:
             UpdateConfig()
-        PrettyPrint(f"Loaded Data Folder: {Global_gamepath}")
+            
+        if os.path.exists(Global_gamepath):
+            PrettyPrint(f"Loaded Data Folder: {Global_gamepath}")
+            slim_init(Global_gamepath)
+            Global_gamepathIsValid = True
+        else:
+            PrettyPrint(f"Game path: {Global_gamepath} is not a valid directory", 'ERROR')
+            Global_gamepathIsValid = False
 
     else:
         UpdateConfig()
@@ -1334,12 +1343,14 @@ def get_helldivers2_path():
     return None
     
 def UpdateConfig():
-    global Global_gamepath, Global_defaultgamepath
+    global Global_gamepath, Global_defaultgamepath, Global_gamepathIsValid
     if Global_gamepath == "":
         if get_helldivers2_path():
             Global_gamepath = get_helldivers2_path()
         else:
             Global_gamepath = Global_defaultgamepath
+    if Global_gamepathIsValid: 
+        slim_init(Global_gamepath)
     config = configparser.ConfigParser()
     config['DEFAULT'] = {'filepath' : Global_gamepath}
     with open(Global_configpath, 'w') as configfile:
