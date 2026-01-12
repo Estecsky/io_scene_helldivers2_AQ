@@ -1,5 +1,5 @@
 from math import ceil
-from ..utils import MemoryStream
+from ..utils.memoryStream import MemoryStream
 from .unit import StreamInfo, MeshSectionInfo
 
 
