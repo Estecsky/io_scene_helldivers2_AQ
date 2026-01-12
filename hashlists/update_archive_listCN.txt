@@ -1,5 +1,4 @@
-本地更新时间：2025-12-04 19:16:51.684
-000d250a449ecle8#已无法搜索#None
+本地更新时间：2026-01-07 01:15:41.659
 0089bbe3e284fcaa#战备#榴弹发射器
 009da023c64d178d#大概环境物体#有虫子地形常见的发光蘑菇
 00c928ec7e330f9e#大概环境物体#None
@@ -7,7 +6,7 @@
 0121fd0e8370a1dc#头盔#DP-53
 0149ef7d2ee3efca#大概环境物体#有一个撤离点八边形平台（终结族15min守卫战平台）
 016734d92587ac5c#未知#None
-01710ddcfcdc9e8f#未知#s'y'ku
+01710ddcfcdc9e8f#未知#None
 0216c0b325d4039b#大概环境物体#有一个撤离点八边形平台
 02582f3da1f8daf5#音频#科研人员语音？
 025e32620d233f8c#大概环境物体,没有导入确认#None
@@ -209,7 +208,7 @@ None#None#None
 1a1062c29bb676b3#大概环境物体#None
 1a20439a63b5f95c#未知,导入失败#None
 1a2b693335713f6f#大概环境物体#None
-1a3dc966179bd5a4#大概环境物体#坦克残骸
+1a3dc966179bd5a4#敌人#铁幕坦克
 1a5927c566f85b91#未知#None
 1a5935b920948b1d#大概环境物体#None
 1a61913f7f81ade2#无网格,大概环境物体#植物
@@ -472,7 +471,7 @@ None#None#None
 3e98cd4b147320f3#枪配件#解放者短弹匣
 3eb6814b0372b732#大概环境物体#机器人地雷（非游戏内载入？）
 3ee85c0f44ad92cc#头盔,其他#（又一个初始头盔）
-3ef47bda90179542#None#只有贴图
+3ef47bda90179542#未知#只有贴图
 3f0122ea0f823433#大概环境物体#None
 3f461921484335b5#大概环境物体#None
 3f82b158dd9aab2a#大概环境物体#None
@@ -515,9 +514,9 @@ None#None#None
 444559b6719a9148#大概环境物体#None
 4455a25d3592019c#大概环境物体#橙色样本，还有一把铲子
 446d0f6ddb3d5318#无网格#None
-44979660df44ea4f#None#None
-44b615d2747a10ae#None#None
-44ef0a30eba50de3#None#None
+44979660df44ea4f#大概环境物体#None
+44b615d2747a10ae#未知#None
+44ef0a30eba50de3#未知#None
 453c6def93940335#头盔#FS-05 Marksman “神射手”
 454d93bf86c4b435#None#None
 4555c6743ced97e3#敌人#None
@@ -556,8 +555,7 @@ None#None#None
 495cd5b6043a104d#未知#None
 49875503e219e80d#战备#机炮背包
 499591b12328acbd#敌人#无畏者
-49a12647de21d1b5#None#None
-49f6f56ca1a74741#None#None
+49a12647de21d1b5#其他#橙色晶体样本
 4a375d7153b383ed#None#None
 4a4962cd74f4752b#None#None
 4a4f7191ea295024#大概环境物体#None
@@ -591,19 +589,16 @@ None#None#None
 4f1aeae93aeb9527#战备,枪配件,枪、装备#光能更新后改的焦土的电池
 4f2ac109b7ad817a#导入失败#None
 4f3d304001614b38#敌人,建筑#机器人指挥碉堡（修改这个）
-4f4f8daa88bfa817#未知,导入失败#大概是舰船上的东西
+4f4f8daa88bfa817#未知#某种微缩模型
 4f5b8d953aee8704#None#None
 4fce1fd89df84f34#未知#None
-4fe8daed70460f7d#None#None
+4fe8daed70460f7d#战备,其他#核弹摧毁虫巢任务装置
 4ff64273030e87d6#战备#加特林哨戒炮台
 501b113721d6faf0#其他#样本
-5038358f85c78631#None#None
-505946056f612280#None#None
-505ab151619626f5#None#None
-506c14a317462d2b#None#None
-507f6c287affd8bc#None#None
-509346580e199b91#已无法搜索#（已搜索不到该文件）
-50a05aa87e78b7f5#None#None
+5038358f85c78631#大概环境物体#None
+505ab151619626f5#无网格#None
+506c14a317462d2b#无网格#None
+507f6c287affd8bc#无网格#None
 50f76f68268c9f30#音频#环境音效（爆炸，设备声音
 50fa45b011b04cc8#敌人,建筑#炮舰塔（修改这个）
 50fcacc7ff8bb138#大概环境物体#一些碎片
@@ -619,7 +614,7 @@ None#None#None
 51c7def49ec9f6bf#无网格#None
 51d38d61924be3f7#未知#None
 51e38e05f9569a36#视频#None
-51f3fc8aaf106a19#None#None
+51f3fc8aaf106a19#无网格#None
 520604a3e480c057#已无法搜索#（已搜索不到该文件）
 52198ad2ab882751#None#None
 522b16fd978137da#未知#None
@@ -767,18 +762,15 @@ None#None#None
 6369816737a36a40#无网格#None
 63a534dd4757fe92#盔甲#SC-15 Drone Master “无人机大师”sc15
 641457f8ecb6bd56#其他#None
-64220836bcff780a#None#None
 647308cc007f32ae#敌人#虫族指挥官
 64a1d63e15f3e423#None#样本?
-64acc71b70b16d94#None#None
 64f56a84b883af7d#枪配件#垂直握把(无手电)
 6503ba302215120b#大概环境物体#None
-65313597b3d3b6f0#None#None
-655763804676be83#None#None
-6558f1944ee74629#None#None
-6559e27d6bf115df#None#None
-6576cc8ffbf33413#None#None
-65bbe8427d89d2c2#None#None
+65313597b3d3b6f0#大概环境物体#嘟嘟哒嘟嘟哒,骷髅骨头
+655763804676be83#大概环境物体#None
+6558f1944ee74629#大概环境物体#虫卵
+6559e27d6bf115df#大概环境物体#None
+65bbe8427d89d2c2#未知#None
 66045dafe630c1bf#战备,其他#野生地狱火
 661c5c71cc017b97#其他#None
 662a9d42f834777e#未知#None
@@ -811,20 +803,16 @@ None#None#None
 68bb1ac0b0ca836c#None#None
 68e80476c1c602f5#战备#重机枪部署支架
 68e8fc7fb638b2f7#大概环境物体#None
-69475c238657515d#None#None
 694fd557b59d8c82#敌人#无畏合集
-6975ea25a4d0687d#None#None
 69a0588d8634765b#大概环境物体#None
 69a76a5729cc160a#None#None
 69af2f609e15d3db#视频#None
 69c66efe95decaf0#敌人#None
-69f1bad849d3999c#敌人#某个坦克的底盘
+69f1bad849d3999c#敌人#机器人残骸合集
 69fe01efbf8eab01#None#None
 6a1ceba3a8c5bebb#披风#猎暴人
 6a9026cd7318c9bd#枪、装备#emp手雷
-6ab0cc0092072a25#None#None
-6ac709cabc02ed1b#None#None
-6ad613152bc63630#None#None
+6ac709cabc02ed1b#未知#None
 6ad7cc21015a5f85#战备#机炮
 6aedc8963a6c1eae#枪配件#消焰器
 6aeebfbdb87d1d5f#枪配件#补偿器
@@ -842,7 +830,6 @@ None#None#None
 6d076131b95b9133#大概环境物体#None
 6d4ab1d0aaef275a#大概环境物体#None
 6d74cfb3e6cf4ce4#None#None
-6d9475931d42489e#None#None
 6db0c562c2bc10b3#枪、装备#镰刀（实际载入）
 6dc27197ab4e26e6#None#None
 6ddbda9cb572b4cd#None#None
@@ -882,7 +869,6 @@ None#None#None
 71d22171a3e96edc#未知#None
 71da7b69dd726112#披风#后族怀恩披风
 71ef8d93bd802871#音频#舰桥广告音频
-72094aff222d5a72#已无法搜索#None
 724a90dbd91f95a1#None#None
 7250460fb46d9802#None#None
 725f6b941eadb2a8#None#None
@@ -940,7 +926,6 @@ None#None#None
 78fa5d856381eb74#枪配件#None
 79154576f2e5778b#None#None
 79219a4244b09ed8#大概环境物体,其他#冻肉休眠仓
-7927a9d2e11d1d47#已无法搜索#某个坦克的底盘
 797c11ddf1dc1be6#敌人,大概环境物体#机器人的一些环境物体（爆炸桶、弹药箱等）
 79824e3387ef323f#None#None
 79be564c92f3141e#敌人,建筑#炮舰塔
@@ -949,7 +934,6 @@ None#None#None
 79ef16bc51c8a6c1#None#None
 7a079a9af72362ba#None#None
 7a088b8e45e12ed6#敌人#小跳虫
-7a0eada96669cea3#已无法搜索#（已搜索不到该文件）
 7a1767f323dd5836#无网格,没有导入确认,未知#None
 7a8ede61a5d379fd#敌人#喷火旅通用杂兵
 7ab08367885cd2e3#大概环境物体#None
@@ -1012,10 +996,10 @@ None#None#None
 8147abf24c4a0e20#视频#None
 815c335a24f7ab0f#None#None
 8170c56f0fb8f970#None#None
-8179c65722c3f0ee#None#None
+8179c65722c3f0ee#未知#None
 819483496ce2b53d#None#None
-819bb56e51ac28c8#None#None
-819cd3a0e4787780#None#None
+819bb56e51ac28c8#其他#单个治疗针补给
+819cd3a0e4787780#其他#环境贴图-植物
 81a2e6726f605220#None#None
 81d6b071a9601eb8#建筑,大概环境物体#孢子树？
 81dc337fb87adf74#None#None
@@ -1510,7 +1494,7 @@ c2d0b4b442f5d956#大概环境物体#空弹壳堆
 c338edf13e39ab51#其他#可能是什么光源贴图
 c36804055f07fe3c#大概环境物体#碎片
 c3a3a15602ecb906#大概环境物体#各种兴趣点物品
-c3d655637c83e37d#大概环境物体#植物温室（逆天四材质槽）
+c3d655637c83e37d#大概环境物体#植物温室
 c401ab1695b4ea3c#大概环境物体#None
 c468aaaac0585281#其他#未知贴图
 c46cf24278594a7d#枪、装备#AR23A解放者卡宾枪
@@ -1885,25 +1869,24 @@ f4d2aaa95e3aa16e#None#None
 f4dc2361985c3026#None#None
 f4e0db8bf11269ea#None#None
 f50d407a0949ff94#大概环境物体#None
-f51342b25542a582#None#None
+f51342b25542a582#未知#None
 f5142161602a58af#枪配件#None
-f566863b0a9249d4#None#None
+f566863b0a9249d4#大概环境物体#超级地球大炮炮弹架
 f5b39497b7558f7c#敌人,其他#一些机器人小兵模型
 f628c65c70559e26#无网格#日语dlc文件
-f63b281a7f5400dd#None#None
-f664073a0915f747#None#None
+f63b281a7f5400dd#未知#None
+f664073a0915f747#大概环境物体#None
 f684a08f07d67b9d#音频#日语舰桥语音（民主官，船员，舰桥广播
 f6b59d283df68ad0#其他#机器人样本？
 f6c5246727ad78a5#视频#日语dlc文件
-f6ed2061460fa33f#None#None
+f6ed2061460fa33f#未知#None
 f6fb08cc02d24255#其他,音频#空降仓和盖子（只对落地后的空降仓生效），载具运输鹈鹕，SOS信标，撤离信标
-f6fb3cb126c467fd#None#None
-f705425626fa4c04#None#None
+f6fb3cb126c467fd#大概环境物体#一些样本
+f705425626fa4c04#大概环境物体#None
 f70996775c6430a9#战备,其他#飞鹰——500kg、空袭、燃烧通用导弹
-f71bc359a0699cea#None#None
+f71bc359a0699cea#未知#None
 f7646e79610c124d#战备#空爆火箭弹发射器
 f76547e27a0e3617#枪配件#None
-f77776c40f8e2a12#None#None
 f7b9c03fff72ffd3#无网格#None
 f7c061e0194ee6e9#未知#None
 f85a77eace8afa7a#头盔,其他#（疑似SC-34复用素材，如有需请搜索984f）
@@ -2038,7 +2021,7 @@ b186eae3f2b61509#盔甲#SR-64 “煤渣砖”
 186e33e335212da9#未知#None
 18c73c17704cecd5#大概环境物体#光能环境
 1c1fd6c37796ba98#大概环境物体#光能环境
-1d187c6408409deb#大概环境物体,已无法搜索#None
+1d187c6408409deb#已无法搜索#None
 1f30fa35a3db9042#披风#更新光能后的披风（检具者的荣耀）
 22633206544fc985#大概环境物体#光能环境，墙
 233b6d4238458309#大概环境物体#光能环境，集装箱，围栏
@@ -2824,7 +2807,7 @@ c5e272869f1386b6#头盔#AD-49 “阿波罗神”
 9ceed8ae1331d7bf#枪、装备#VG-70 变数
 ddcea5fdd4071767#枪、装备#G-31“电弧”手榴弹
 68f670405a504f68#战备#LIFT-182 传送背包
-a7b23b55209766ae#战备,音频#PLAS-45 纪元（需要全载lod）
+a7b23b55209766ae#战备#PLAS-45 纪元（需要全载lod）
 36313bf684c1fd79#战备#A/LAS-98 激光戒哨炮
 None#None#None
 031c90406564341b#敌人#战争纵步者
@@ -3050,7 +3033,6 @@ fc54494a4e3ccc25#建筑#移动雷达
 6523b9ec911aa8c3#大概环境物体#None
 67c8ef71fba5eeb8#无网格#神秘贴图
 6ff86f5a83667dc4#大概环境物体#None
-None#None#None
 7128fa1356cd6e65#大概环境物体#None
 78151f5325a10f04#无网格#好像是什么天气贴图
 7858476999abfcad#大概环境物体#None
@@ -3058,13 +3040,11 @@ None#None#None
 8191edbf2438d1f6#大概环境物体#None
 83a5c0926330fb5b#无网格#神秘贴图
 863836403dfd5744#大概环境物体#None
-None#None#None
 8c826f9f8c4e1f05#未知#None
 8e690a16aedb4731#未知#None
 8fd87a5553550af5#大概环境物体#None
 903d7a82d692f8ce#大概环境物体#None
 913a0e5000086747#大概环境物体#None
-None#None#None
 9b1e1a49f75975fa#大概环境物体#None
 9c72aa6f61f921b2#大概环境物体#None
 9d05a4cc2f0a999a#未知#None
@@ -3078,7 +3058,6 @@ ac6cb426bd99bf82#大概环境物体#None
 ac84e68a6b9d1389#披风#未知
 ad32bb3d8d5896a7#大概环境物体#None
 b01f1a6dd78e21b4#大概环境物体#None
-None#None#None
 b7fb3e5ac6f836b0#大概环境物体#None
 b8bc4d1697939999#大概环境物体#None
 bb7be5fa2ec55103#大概环境物体#None
@@ -3092,7 +3071,6 @@ cbc7b9d7eb4bb3ce#大概环境物体#None
 cd3eb6124f0dbfb9#大概环境物体#None
 d0b7a123e50f7d36#披风#“正当占领者”
 d216b0b060fe8549#无网格#None
-None#None#None
 db0138009928a180#大概环境物体#None
 dc3b76868143fe75#大概环境物体#None
 e1981e17d1113045#未知#None
@@ -3103,7 +3081,6 @@ f0b32805220020db#建筑#虫卵
 f0e0c823c0a155ee#未知#None
 f7afe3d03de64ed5#大概环境物体#None
 fb9f1d0fd1c976b9#大概环境物体#None
-None#None#None
 fde696e561f40771#大概环境物体#None
 fe772af391d504bf#未知#None
 2025.10.24更新#None#None
@@ -3242,7 +3219,7 @@ e60cceadd539b1d2#披风#某个新债券披风？
 e6fe19ed475797cf#大概环境物体#一个低lod的机器人样本
 e76052227742574f#大概环境物体#里面有个低lod机炮和无后座以及潜兵的下半身
 eea14762648d98af#建筑,大概环境物体#机器人的围墙，里面有个防空炮台
-f2b6fce59b619737#敌人,建筑#夺取高价值铂金砖任务 环境物品
+f2b6fce59b619737#敌人,建筑#没收财产任务 环境物品
 f34cd99463f5b406#大概环境物体#机器人的吊机什么的，大量环境物品
 f3c65eaab75f1fc2#枪、装备#电棍
 f5014993c8402d87#枪、装备#砍刀
@@ -3270,7 +3247,7 @@ None#None#None
 0dc8fcabdb02111d#None#None
 0ebec817a4c0f520#None#None
 0f86e5a5be344c5a#None#None
-25839eed0400603b#None#None
+25839eed0400603b#披风#破除暴瘴
 267d17bd2752ba0f#披风#None
 2fb7e2047582c324#None#None
 3d0a1ee58d460be7#None#None
@@ -3278,7 +3255,7 @@ None#None#None
 5376c170b48b1750#大概环境物体#None
 5c6fc63f37af3e27#None#None
 61514342605716d4#None#None
-61f85b8c1bf97b03#披风#None
+61f85b8c1bf97b03#披风#披风-缚暴印记
 658a124d94194083#None#None
 6adcfaf574f098c3#None#None
 6e990d86d43dfe8b#None#None
@@ -3288,7 +3265,7 @@ None#None#None
 7e081bf5ff19da35#大概环境物体#有一个光能眼球塔
 85830504ababfb61#大概环境物体#None
 8c2abe1c65afcfb5#None#None
-8ca53afa7fb23710#None#None
+8ca53afa7fb23710#披风#披风-伐木工帆布
 8cec9459c880aa2c#披风#None
 92eb02cb50cc5dd8#None#None
 9b5caff5ffb2c451#None#None
@@ -3318,4 +3295,27 @@ e7f4ddf4b6784088#None#None
 e8c1e1b138a29e3a#None#None
 eb9e359dea4b619c#None#None
 f7fb2e532967729f#None#None
-fd679c4070acb043#None#None
+fd679c4070acb043#披风#披风-敌分四裂
+fe2d2c41eccc0c2f#未知#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
