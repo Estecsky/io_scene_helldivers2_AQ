@@ -1,5 +1,7 @@
 import os
 from ..utils.memoryStream import MemoryStream
+import random as r
+import bpy
 
 Global_ShaderVariables = {}
 Global_ShaderVariables_CN = {}
@@ -92,3 +94,10 @@ def LoadShaderVariables_CN(path):
     with open(path, 'r', encoding='utf-8') as f:
         for line in f.readlines():
             Global_ShaderVariables_CN[line.split()[1]] = line.split()[0]
+            
+def AddMaterialToBlend_EMPTY(ID):
+    try:
+        bpy.data.materials[str(ID)]
+    except:
+        mat = bpy.data.materials.new(str(ID)); mat.name = str(ID)
+        mat.diffuse_color = (r.random(), r.random(), r.random(), 1)
