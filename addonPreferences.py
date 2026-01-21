@@ -55,6 +55,7 @@ class HD2_AddonPreferences(bpy.types.AddonPreferences):
     ImportStatic : BoolProperty(name="ImportStatic",default = False,description = "导入静态网格（无权重）")
     DisplayRenameButton : BoolProperty(name="DisplayRenameButton",default = True,description = "网格条目中显示重命名按钮")
     ShowshaderVariables_CN : BoolProperty(name="DisplayRenameButton",default = True,description = "显示着色器参数中文翻译")
+    CustomGamePath : bpy.props.BoolProperty(name="CustomGamePath",default = False,description = "自定义游戏文件目录，如果你只是将游戏文件完整复制到其他位置，可以使用此选项来解除限制，不会强制检查steamapp目录")
     def draw(self, context):
 
         # layout = self.layout
@@ -66,6 +67,7 @@ class HD2_AddonPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "Layout_search_New",text="显示搜索已知Archive为主的布局")
         layout.prop(self, "ShowQuickSwitch",text="显示快捷设置按钮")
         layout.prop(self, "SaveUseAutoSmooth",text="保存网格时开启自动平滑")
+        layout.prop(self,"CustomGamePath",text="开启自定义游戏文件目录")
         addon_updater_ops.update_settings_ui(self, context)
 
 def register():
