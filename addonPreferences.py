@@ -41,6 +41,19 @@ class HD2_AddonPreferences(bpy.types.AddonPreferences):
         min=0,
         max=59,
     )  # type: ignore
+    adv_decompress_path : bpy.props.StringProperty(
+        name="adv_decompress_path",
+        description = "自定义解压导出路径，留空则使用默认缓存路径",
+        default = "",
+        subtype='DIR_PATH'
+    )
+    adv_full_package_list_export_path : bpy.props.StringProperty(
+        name="adv_full_package_list_export_path",
+        description="自定义完整Package列表导出路径",
+        default="",
+        subtype="FILE_PATH"
+    )
+    
     
     MakeCollections  : BoolProperty(name="Make Collections", description = "Make new collection when importing meshes", default = False)
     ShowAnimations   : BoolProperty(name="Animations", description = "Show Animations", default = False)
@@ -56,6 +69,7 @@ class HD2_AddonPreferences(bpy.types.AddonPreferences):
     DisplayRenameButton : BoolProperty(name="DisplayRenameButton",default = True,description = "网格条目中显示重命名按钮")
     ShowshaderVariables_CN : BoolProperty(name="DisplayRenameButton",default = True,description = "显示着色器参数中文翻译")
     CustomGamePath : bpy.props.BoolProperty(name="CustomGamePath",default = False,description = "自定义游戏文件目录，如果你只是将游戏文件完整复制到其他位置，可以使用此选项来解除限制，不会强制检查steamapp目录")
+    advanced_mode : BoolProperty(name="Advanced Mode", description = "显示高级选项", default = False)
     def draw(self, context):
 
         # layout = self.layout
@@ -68,6 +82,7 @@ class HD2_AddonPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "ShowQuickSwitch",text="显示快捷设置按钮")
         layout.prop(self, "SaveUseAutoSmooth",text="保存网格时开启自动平滑")
         layout.prop(self,"CustomGamePath",text="开启自定义游戏文件目录")
+        layout.prop(self, "advanced_mode",text="开启高级选项")
         addon_updater_ops.update_settings_ui(self, context)
 
 def register():
