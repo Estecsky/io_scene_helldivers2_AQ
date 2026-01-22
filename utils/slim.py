@@ -317,6 +317,10 @@ def reconstruct_package_from_bundles(package_name: str):
         package_data[item.original_archive_offset:item.original_archive_offset+len(combined_data)] = combined_data
     return package_data
 
+def get_full_package_list():
+    global package_contents
+    return list(package_contents.keys())
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: <game data folder> <package name> [<output folder>]")
