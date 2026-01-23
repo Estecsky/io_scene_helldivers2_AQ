@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (2, 0, 0),
+    "version": (2, 2, 0),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -38,7 +38,7 @@ from .constants import *
 from .utils.math import MakeTenBitUnsigned, TenBitUnsigned
 from .utils.memoryStream import MemoryStream
 from .utils.logger import PrettyPrint
-from .utils.slim import is_slim_version, load_package, get_package_toc, slim_init
+from .utils.slim import is_slim_version, load_package, get_package_toc, slim_init,reconstruct_package_from_bundles ,get_full_package_list
 from .AQ_Prefs_HD2 import AQ_PublicClass
 
 import zipfile
@@ -790,6 +790,7 @@ class TocFileType:
 class SearchToc:
     def __init__(self):
         self.TocEntries = {}
+        self.fileIDs = []
         self.Path = ""
         self.Name = ""
 
@@ -1518,20 +1519,6 @@ def LoadStingrayCompositeUnit(ID, TocData, GpuData, StreamData, Reload, MakeBlen
 
 #region Classes and Functions: Stingray Meshes
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def LoadStingrayUnit(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject , LoadMaterialSlotNames=False):
     toc  = MemoryStream(TocData)
     gpu  = MemoryStream(GpuData)
@@ -1672,8 +1659,8 @@ class DefaultLoadArchiveOperator(Operator):
     bl_idname = "helldiver2.archive_import_default"
 
     def execute(self, context):
-        path = Global_gamepath + "9ba626afa44a3aa3"
-        if not os.path.exists(path):
+        path = Global_gamepath + BaseArchiveHexID
+        if not os.path.exists(Global_gamepath):
             self.report({'ERROR'}, "Current Filepath is Invalid. Change this in the Settings")
             context.scene.Hd2ToolPanelSettings.MenuExpanded = True
             return{'CANCELLED'}
@@ -1890,13 +1877,15 @@ class ChangeFilepathOperator(Operator, ImportHelper):
         
     def execute(self, context):
         global Global_gamepath
+        addon_prefs = AQ_PublicClass.get_addon_prefs()
         filepath = self.filepath
-        steamapps = "steamapps"
-        if steamapps in filepath:
-            filepath = f"{filepath.partition(steamapps)[0]}steamapps/common/Helldivers 2/data/ "[:-1]
-        else:
-            self.report({'ERROR'}, f"无法在此目录下找到steamapps文件夹: {filepath}")
-            return{'CANCELLED'}
+        if not addon_prefs.CustomGamePath: # 自定义游戏文件目录，不检查steamapp目录
+            steamapps = "steamapps"
+            if steamapps in filepath:
+                filepath = f"{filepath.partition(steamapps)[0]}steamapps/common/Helldivers 2/data/ "[:-1]
+            else:
+                self.report({'ERROR'}, f"无法在此目录下找到steamapps文件夹: {filepath}，如果你单独复制了游戏文件目录，请在设置中启用自定义游戏文件目录选项")
+                return{'CANCELLED'}
         Global_gamepath = filepath
         UpdateConfig()
         PrettyPrint(f"Changed Game File Path: {Global_gamepath}")
@@ -2775,7 +2764,7 @@ class AddMaterialOperator(Operator):
         Entry.TypeID = MaterialID
         Entry.MaterialTemplate = self.selected_material
         Entry.IsCreated = True
-        with open(f"{Global_materialpath}\\{self.selected_material}.material", 'r+b') as f:
+        with open(f"{Global_materialpath}/{self.selected_material}.material", 'r+b') as f:
             data = f.read()
         Entry.TocData_OLD   = data
         Entry.TocData       = data
@@ -3032,14 +3021,157 @@ class LoadArchivesOperator(Operator):
     paths_str: StringProperty(name="paths_str")
     def execute(self, context):
         global Global_TocManager
-        paths = self.paths_str.split(',')
-        for path in paths:
-            if path != "" and os.path.exists(path):
-                Global_TocManager.LoadArchive(path)
-                id = self.paths_str.replace(Global_gamepath, "")
-                name = f"{GetArchiveNameFromID(id)} {id}"
-                self.report({'INFO'}, f"载入 {name}")
-        self.paths = []
+        # paths = self.paths_str.split(',')
+        # for path in paths:
+        if self.paths_str != "" and (os.path.exists(self.paths_str) or is_slim_version()):
+            Global_TocManager.LoadArchive(self.paths_str)
+            id = self.paths_str.replace(Global_gamepath, "")
+            name = f"{GetArchiveNameFromID(id)} {id}"
+            self.report({'INFO'}, f"载入 {name}")
+        # self.paths = []
+            return{'FINISHED'}
+        else:
+            message = "Archive 载入失败"
+            if not os.path.exists(self.paths_str):
+                message = "当前文件路径无效，请在设置中更改"
+            self.report({'ERROR'}, message )
+            return{'CANCELLED'}
+        
+    
+class ManuallyLoadArchivesOperator(Operator):
+    bl_label = "Load Archive By ID"
+    bl_idname = "helldiver2.archives_import_manual"
+    bl_description = "通过Archive ID手动加载Archive"
+
+    archive_id: StringProperty(name="Archive ID")
+    
+
+    
+    def execute(self, context):
+        global Global_TocManager
+
+        if self.archive_id == "":
+            return{'CANCELLED'}
+
+
+        ID = self.archive_id
+        if ID.startswith("0x"):
+            ID = hex_to_decimal(self.archive_id)
+
+        path = os.path.join(Global_gamepath, ID)
+
+        if path != "" and (os.path.exists(path) or is_slim_version()):
+            Global_TocManager.LoadArchive(path)
+            name = f"{GetArchiveNameFromID(ID)} {ID}"
+            self.report({'INFO'}, f"载入 {name}")
+            return{'FINISHED'}
+        else:
+            message = "Archive Failed to Load"
+            if not os.path.exists(self.paths_str):
+                message = "Current Filepath is Invalid. Change This in Settings"
+            self.report({'ERROR'}, message )
+            return{'CANCELLED'}
+    
+    def invoke(self, context, event):
+        self.archive_id = ""
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "archive_id")
+
+
+class DecompressSlimPackage(Operator):
+    bl_label = "Decompress Slim Package"
+    bl_idname = "helldiver2.decompress_slim_archive"
+    bl_description = "通过Archive ID从精简版中解压导出Archive"
+
+    archive_id: StringProperty(name="Archive ID")
+    
+    def execute(self, context):
+        global Global_TocManager
+        addon_prefs = AQ_PublicClass.get_addon_prefs()
+
+        if self.archive_id == "":
+            return{'CANCELLED'}
+
+        ID = self.archive_id
+        if ID.startswith("0x"):
+            ID = hex_to_decimal(self.archive_id)
+
+        path = os.path.join(Global_gamepath, ID)
+
+        package_name = ID
+
+        output_folder = addon_prefs.adv_decompress_path
+        if not output_folder:
+            tempdir = tempfile.gettempdir()
+            output_folder = tempdir
+        
+        if path != "" and (os.path.exists(path) or is_slim_version()):
+            # slim_init(game_data_folder)
+            content = reconstruct_package_from_bundles(package_name)
+            if content:
+                with open(os.path.join(output_folder, package_name), 'wb') as f:
+                    f.write(content)
+
+            content = reconstruct_package_from_bundles(f"{package_name}.gpu_resources")
+            if content:
+                with open(os.path.join(output_folder, f"{package_name}.gpu_resources"), 'wb') as f:
+                    f.write(content)
+
+            content = reconstruct_package_from_bundles(f"{package_name}.stream")
+            if content:
+                with open(os.path.join(output_folder, f"{package_name}.stream"), 'wb') as f:
+                    f.write(content)
+                    
+            name = f"{GetArchiveNameFromID(ID)} {ID}"
+            self.report({'INFO'}, f"解压导出 {name} 到 {output_folder}")
+            
+            
+            return{'FINISHED'}
+        
+        
+        else:
+            message = "Archive Failed to Decompress"
+            if not os.path.exists(self.paths_str):
+                message = "Current Filepath is Invalid. Change This in Settings"
+            self.report({'ERROR'}, message )
+            return{'CANCELLED'}
+    
+    
+    
+    def invoke(self, context, event):
+        self.archive_id = ""
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "archive_id")
+
+class ExportArchiveListOperator(Operator):
+    bl_idname = "helldiver2.export_archive_list"
+    bl_label = "Export Archive List"
+    bl_description = "从精简版游戏数据中导出完整的Archive列表到文本文件"
+    
+    @classmethod
+    def poll(cls, context):
+        addon_prefs = AQ_PublicClass.get_addon_prefs()
+        return is_slim_version() and addon_prefs.adv_full_package_list_export_path
+    
+    def execute(self, context):
+        addon_prefs = AQ_PublicClass.get_addon_prefs()
+        
+        output_folder = addon_prefs.adv_full_package_list_export_path
+        
+        file_name = "full_archive_list.txt"
+        
+        with open(os.path.join(output_folder, file_name), 'w', encoding='utf-8') as log_file:
+            for key in get_full_package_list():
+                log_file.write(f"{key}\n")
+
+        self.report({'INFO'}, f"完整Archive列表已导出到 {os.path.join(output_folder, file_name)}")
+
         return{'FINISHED'}
 
 class SearchArchivesOperator(Operator):
@@ -3092,7 +3224,7 @@ class SearchArchivesOperator(Operator):
                 row = box.row()
                 row.label(text=str(Archive[0]).strip("[").strip("]")+": "+ Archive[1], icon='GROUP')
                 row.scale_x = 1.5
-                row.operator("helldiver2.archives_import", icon= 'FILE_NEW', text="").paths_str = Global_gamepath + str(Archive[2])
+                row.operator("helldiver2.archives_import", icon= 'FILE_NEW', text="").paths_str = os.path.join(Global_gamepath, Archive[2])
 
     def execute(self, context):
         return {'FINISHED'}
@@ -3332,7 +3464,7 @@ class Hd2ToolPanelSettings(PropertyGroup):
     ImportMaterials  : BoolProperty(name="Import Materials", description = "完全导入材质,通过附加利用的纹理,否则创建占位符", default = True)
     ImportLods       : BoolProperty(name="Import LODs", description = "导入LODs", default = False)
     ImportGroup0     : BoolProperty(name="Import Group 0 Only", description = "仅导入第一个顶点组,忽略其他组", default = True)
-    ImportPhysics    : BoolProperty(name="Import Physics", description = "导入物理体", default = False)
+    ImportCulling    : BoolProperty(name="Import Culling", description = "导入剔除网格", default = False)
     # ImportStatic     : BoolProperty(name="Import Static Meshes", description = "导入静态网格", default = False)
     # MakeCollections  : BoolProperty(name="Make Collections", description = "Make new collection when importing meshes", default = True)
     Force2UVs        : BoolProperty(name="Force 2 UV Sets", description = "强制至少2个UV集,某些材质需要此设置", default = True)
@@ -3358,7 +3490,7 @@ class Hd2ToolPanelSettings(PropertyGroup):
     IsZipPatch : BoolProperty(name="ZipPatch",default = False,description = "压缩patch")
 
 class HellDivers2ToolsPanel(Panel):
-    bl_label = f"Helldivers 2 AQ Modified{bl_info['version']}"
+    bl_label = f"Helldivers 2 AQ Modified {bl_info['version'][0]}.{bl_info['version'][1]}.{bl_info['version'][2]}"
     bl_idname = "SF_PT_Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -3468,8 +3600,7 @@ class HellDivers2ToolsPanel(Panel):
         row.prop(scene.Hd2ToolPanelSettings, "MenuExpanded",
             icon="DOWNARROW_HLT" if scene.Hd2ToolPanelSettings.MenuExpanded else "RIGHTARROW",
             icon_only=True, emboss=False, text="Settings")
-        if scene.Hd2ToolPanelSettings.MenuExpanded:
-            row.operator("helldiver2.aq_githubweb", icon='URL', text="")
+        row.operator("helldiver2.aq_githubweb", icon='URL', text="")
         row.operator("helldiver2.archive_spreadsheet", icon='INFO', text="")
         if scene.Hd2ToolPanelSettings.MenuExpanded:
             row = layout.row(); row.separator(); row.label(text="显示设置"); box = row.box(); row = box.grid_flow(columns=1)
@@ -3486,7 +3617,7 @@ class HellDivers2ToolsPanel(Panel):
             row.prop(scene.Hd2ToolPanelSettings, "ImportLods",text="导入Lods")
             row.prop(scene.Hd2ToolPanelSettings, "ImportGroup0",text="只导入Group 0")
             row.prop(addon_prefs, "MakeCollections",text="为每个物体创建集合")
-            row.prop(scene.Hd2ToolPanelSettings, "ImportPhysics",text="导入物理")
+            row.prop(scene.Hd2ToolPanelSettings, "ImportCulling",text="导入剔除网格")
             row.prop(addon_prefs, "ImportStatic",text="导入静态网格（无权重）")
             row.prop(scene.Hd2ToolPanelSettings, "RemoveGoreMeshes",text="删除断肢网格")
             row.prop(addon_prefs, "ShadeSmooth",text="导入模型时平滑着色")
@@ -3505,6 +3636,8 @@ class HellDivers2ToolsPanel(Panel):
             row = layout.row(); row.separator(); row.label(text="其他设置"); box = row.box(); row = box.grid_flow(columns=1)
             row.prop(scene.Hd2ToolPanelSettings, "LegacyWeightNames",text="旧权重名称")
             row.prop(scene.Hd2ToolPanelSettings, "MergeArmatures",text="合并Armature")
+            row.prop(addon_prefs, "CustomGamePath",text="自定义游戏文件目录")
+            row.prop(addon_prefs, "advanced_mode",text="附加功能")
             
             row = layout.row()
             row.separator()
@@ -3520,6 +3653,21 @@ class HellDivers2ToolsPanel(Panel):
             row.operator("helldiver2.update_archivelist_cn", text="更新已知资产列表", icon='FILE_REFRESH')
             row = layout.row(); row.separator(); row.label(text="一键添加转移ID属性"); row = row.grid_flow(columns=1)
             row.operator("helldiver2.add_swaps_id_prop", text="添加转移自定义ID属性", icon='ADD')
+            if addon_prefs.advanced_mode:
+                row = layout.row(); row.alignment = 'CENTER';row.label(text="附加功能")
+                row = layout.row(); 
+                row.separator(); 
+                row.label(text="解压导出Archive"); box = row.box(); row = box.grid_flow(columns=1)
+                row.label(text="解压导出路径")
+                row.prop(addon_prefs, "adv_decompress_path", text="")
+                row.label(text="解压提取单个Archive")
+                row.operator("helldiver2.decompress_slim_archive",text="解压导出单个Archive",icon="EXPORT")
+                row = layout.row(); row.separator(); row.label(text="Archive列表导出"); box = row.box(); row = box.grid_flow(columns=1)
+                row.label(text="Archive列表导出路径")
+                row.prop(addon_prefs, "adv_full_package_list_export_path", text="")
+                row.label(text="Archive列表导出路径")
+                row.operator("helldiver2.export_archive_list",text="导出完整Archive列表",icon="EXPORT")
+                
         # Draw Archive Import/Export Buttons
         if addon_prefs.ShowQuickSwitch:
             row = layout.row(); row = layout.row()
@@ -3536,11 +3684,12 @@ class HellDivers2ToolsPanel(Panel):
             row.operator("helldiver2.search_archives", icon= 'VIEWZOOM', text="搜索已知Archive")
         else:
             row.operator("helldiver2.archive_import", icon= 'IMPORT',text="载入Archive").is_patch = False
-            
+
         row.operator("helldiver2.archive_unloadall", icon= 'FILE_REFRESH', text="")
         row = layout.row()
         row.prop(scene.Hd2ToolPanelSettings, "LoadedArchives", text="Archives")
         
+        row.operator("helldiver2.archives_import_manual", icon= 'VIEWZOOM', text= "")
         if addon_prefs.Layout_search_New:
             row.operator("helldiver2.archive_import", icon= 'FILE_FOLDER',text="").is_patch = False
         else:
@@ -3913,6 +4062,9 @@ classes = (
     SetMaterialTexture,
     SearchArchivesOperator,
     LoadArchivesOperator,
+    ManuallyLoadArchivesOperator,
+    DecompressSlimPackage,
+    ExportArchiveListOperator,
     CopyArchiveEntryOperator,
     PasteArchiveEntryOperator,
     ClearClipboardOperator,
