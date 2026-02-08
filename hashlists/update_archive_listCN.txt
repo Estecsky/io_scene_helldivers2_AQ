@@ -1,9 +1,9 @@
-本地更新时间：2026-01-22 22:13:41.060
+本地更新时间：2026-02-08 14:06:16.438
 0089bbe3e284fcaa#战备#榴弹发射器
 009da023c64d178d#大概环境物体#有虫子地形常见的发光蘑菇
 00c928ec7e330f9e#大概环境物体#None
 0a6b0137a1f79d45#大概环境物体#路灯
-0121fd0e8370a1dc#头盔#DP-53
+0121fd0e8370a1dc#头盔#DP-53 “自由救星”
 0149ef7d2ee3efca#大概环境物体#有一个撤离点八边形平台（终结族15min守卫战平台）
 016734d92587ac5c#未知#None
 01710ddcfcdc9e8f#未知#None
@@ -269,7 +269,7 @@ None#None#None
 218cf6382ed2058e#大概环境物体#人类尸体
 21c70d31b2b22d4c#大概环境物体#虫巢
 21c7df711827fba2#大概环境物体#孢子或飞龙巢
-21e90918df69eff7#枪、装备#摔炮、冲击雷
+21e90918df69eff7#枪、装备#G-16 冲击弹/G-89 烟幕
 21ee12b03c7599b3#大概环境物体#None
 2208443d4aa7bcfd#无网格#None
 22427242698f51a0#枪配件#破裂者弹匣
@@ -807,7 +807,7 @@ None#None#None
 69a0588d8634765b#大概环境物体#None
 69a76a5729cc160a#None#None
 69af2f609e15d3db#视频#None
-69c66efe95decaf0#敌人#None
+69c66efe95decaf0#敌人#机枪小兵武器
 69f1bad849d3999c#敌人#机器人残骸合集
 69fe01efbf8eab01#None#None
 6a1ceba3a8c5bebb#披风#猎暴人
@@ -990,7 +990,7 @@ None#None#None
 8079db396fbfd31c#盔甲#CE-67“泰坦“（手雷轻甲）
 80a672d46ef280c0#已无法搜索#None
 80f8e300f67850e9#头盔#CE-74 Breaker “破裂者”
-80fea3c0a4b22ffb#其他#地图弹药包？
+80fea3c0a4b22ffb#其他#地图野生弹药盒
 8104b5115de2614c#None#None
 813da450b8029cb2#盔甲#FS-38根除者（防爆轻）
 8147abf24c4a0e20#视频#None
@@ -1198,7 +1198,7 @@ None#其他#None
 9a535325c359784d#大概环境物体,敌人#铁丝网和一些环境物品（铁丝网修改失败，可能不是游戏内读取的）
 9a83ff94864c6a42#None#None
 9aac8a3a538ce3b7#其他#撤离鹈鹕船
-9b09c29b50048fbc#其他#飞鹰
+9b09c29b50048fbc#披风#独立先驱
 9b0d37f93ba0ab03#None#None
 9b34eab1122f4f9f#无网格#None
 9b36859b569603f3#None#None
@@ -1226,7 +1226,7 @@ None#其他#None
 9e1aff164403bd66#None#None
 9e2bdd434ff59b31#None#None
 9e3e2d0d1127861b#None#None
-9e430d763af434c1#大概环境物体,敌人#机器人那边的，一堆环境物体，还有样本和铁丝网
+9e430d763af434c1#大概环境物体,敌人#坦克加农炮在这，机器人那边的，一堆环境物体，还有样本和铁丝网
 9e4b7e4e3c3e4eb8#None#None
 9e697751f7704085#大概环境物体#None
 9e8510106ee97ee1#None#None
@@ -1523,7 +1523,7 @@ c72998936b1d88a2#盔甲#投掷轻_军团士兵
 c74c6589adc37f7a#大概环境物体#None
 c75557a1cbbfebdf#其他#None
 c766ddd8a6875c02#其他#有个贴图丢失标识材质
-c7c05edbb2fe0b77#敌人#None
+c7c05edbb2fe0b77#敌人#绿胖n10
 c7c476fd54a7f2aa#未知#None
 c7db881e31fa6592#未知#None
 c7e225c1ad6aa956#未知#一个球
@@ -1644,7 +1644,7 @@ d85cf8192edbddc1#枪配件#防卫者弹匣
 d87885c7eaace597#战备,其他#暗流体背包与钻机
 d87ceb3e760a3129#大概环境物体#虫子核弹任务洞
 d88cc00669d53c0c#无网格#None
-d8cd425483086455#盔甲#PH-56 猎豹（中肘击甲
+d8cd425483086455#盔甲#PH-56 捷豹（中肘击甲
 d8ed4a8f31c4a1df#未知#None
 d908e3e880abdf1f#枪配件#机枪弹匣
 d951bb3a7cf9e4e6#其他#超大地图模型
@@ -1925,8 +1925,8 @@ fcbae1c64f1d0b81#大概环境物体#None
 fcdde1e7d58b06e2#大概环境物体#未知环境纹理
 fcf301a98aed1af2#大概环境物体#None
 fcf53f38451721ef#视频#None
-fd1028aaaa651c2f#头盔#SA-25 Steel Trooper “钢铁士兵”
-fd109bfeeed36726#头盔#None
+fd1028aaaa651c2f#头盔#SA-25 Steel Trooper “钢铁士兵”(受B01污染)
+fd109bfeeed36726#头盔#B-01 Tactical（初始头，游戏内第1个）以下头盔受其污染：（金鹰）+（模范公民）+（形象大使）+（钢铁士兵）
 fd21efed8f38f2d2#视频#None
 fd26c7b93257d7a6#其他#样本
 fd32e7cf303a5f0f#未知#None
@@ -2187,7 +2187,7 @@ a2f4121316ccdffc#头盔#IE-12 “义士”ie12
 d0de7721e4a47990#盔甲#IE-12 “义士”ie12
 37882724fe5a136e#头盔#IE-57 “奋不顾身”
 0a15a5b5d8695e47#盔甲#IE-57 “奋不顾身”
-d1a39b5edac646aa#头盔#B-22 “模范公民”（贴图在这）
+d1a39b5edac646aa#头盔#B-22 “模范公民”（贴图在这）(受B01污染)
 1120577ed1e095f8#盔甲#B-22 “模范公民”（贴图在这）
 7f927f50fa6c50e8#枪、装备#LAS-17 双刃镰刀
 b779a2f9d0928e03#枪、装备#GP-31 最后通牒
@@ -2611,7 +2611,7 @@ None#None#None
 99685c01cb905b75#大概环境物体#None
 9a58aa87e9da0172#枪配件#斗士扩容弹鼓
 9bdac09de7dd4b69#无网格,未知#只有贴图
-9c42c3028d67fb2a#敌人#刺魟（光能飞鹰）
+9c42c3028d67fb2a#敌人,其他#刺魟的音效（光能飞鹰）
 9cb4c6e1b179cb4a#无网格,未知#没有模型，只有材质和贴图
 9e21eb656ffabdc3#无网格,未知#没有模型，只有材质和贴图
 a0299db9b0c2f493#大概环境物体#None
@@ -3124,7 +3124,7 @@ fe772af391d504bf#未知#None
 4364418f4758b3aa#战备,其他#三号位摄影机
 4793471f8e8c4db3#大概环境物体#None
 48c991b3a39af447#其他#两个球体
-4a45ba0bf67fa055#披风#None
+4a45ba0bf67fa055#披风#披风-镀金羽毛笔
 4b34b7e4d302fb84#大概环境物体#None
 4cc4a04a53612a9f#大概环境物体#None
 4d1442f7745c2cd4#无网格#未知贴图
@@ -3134,8 +3134,8 @@ fe772af391d504bf#未知#None
 50d5d988721d775d#未知#None
 521b94ba00b18431#建筑#采油机
 560ad305d0503cd7#大概环境物体#None
-5c9f3500e7a2f03b#未知#None
-5efc6401e0f64e19#未知#None
+5c9f3500e7a2f03b#未知,无网格#None
+5efc6401e0f64e19#未知,无网格#None
 6109a910c6b0aa44#无网格#未知贴图
 61c29419f57085c2#披风#披风也有复用素材？
 631d232e29ea0ca5#敌人,建筑#大概是机器人新任务集装箱
@@ -3155,10 +3155,10 @@ fe772af391d504bf#未知#None
 7f76463558ffe625#大概环境物体#None
 7feca9195928174d#大概环境物体#None
 809daa92e2172b47#大概环境物体#None
-80da577a9f5e7e56#未知#None
+80da577a9f5e7e56#未知,无网格#None
 81bd472d5f0acc11#其他#大概是地形
 81da0125a3af89ee#战备#快速侦查载具
-827d4e20a7a81a56#未知#None
+827d4e20a7a81a56#未知#一个球体
 8673cfa6b928c9b6#未知,没有导入确认,导入失败#None
 8b80adc3fb2e8075#未知#空的？
 8da0c46a3fdd36df#未知#很大的东西？
@@ -3175,7 +3175,7 @@ a38824cd88a79b8b#无网格#可能是烟花贴图？
 a439e7f744d23326#大概环境物体,建筑#超级多的环境物体特别卡，城市大楼什么的
 ab58b061f0aec8e7#大概环境物体,建筑#机器人的环境建筑
 ac98ba597998c6cc#大概环境物体,建筑#一个逃生舱和一个喷射仓（可能是新支线的那个地底增援？
-acb713baebf37d9c#披风#新债券某个披风
+acb713baebf37d9c#披风#三角定位披纱
 ad2c45d4121fb2ac#未知,导入失败#None
 ade716a56fb95c15#大概环境物体,建筑#机器人营地的桥，旗子
 b1d0ba514070aae0#敌人#爆裂喷涌虫 （遁地绿胖）
@@ -3206,7 +3206,7 @@ e020ab2fe3b7ea49#无网格#神秘材质贴图（可能是个石头的
 e20fa419eae2e5c5#大概环境物体,建筑#环境物体，里面有个防空炮台
 e497bda4cda83a1d#未知,没有导入确认#空的？
 e5180e31dff06bff#未知,没有导入确认#空的？
-e60cceadd539b1d2#披风#某个新债券披风？
+e60cceadd539b1d2#披风#披风-深渊支柱
 e6fe19ed475797cf#大概环境物体#一个低lod的机器人样本
 e76052227742574f#大概环境物体#里面有个低lod机炮和无后座以及潜兵的下半身
 eea14762648d98af#建筑,大概环境物体#机器人的围墙，里面有个防空炮台
@@ -3217,7 +3217,7 @@ f5014993c8402d87#枪、装备#砍刀
 f7268fb7b51f55de#导入失败#无法导入
 f72ba408c2adf8b7#大概环境物体#大量的石头，环境物体
 f8341e62df4a951b#建筑#机器人新任务的大门和一个旗子
-2dee619ccdf63b39#其他#诱导地雷（但是没有权重，可能是废弃文件）
+2dee619ccdf63b39#其他#诱饵地雷（但是没有权重，可能是废弃文件）
 2025.12.2更新#None#None
 2c5f7890ce9b75b6#头盔#RS-20 “绞杀者”
 6d07f1a7176ae5d0#盔甲#RS-20 “绞杀者”
@@ -3288,7 +3288,7 @@ eb9e359dea4b619c#None#None
 f7fb2e532967729f#None#None
 fd679c4070acb043#披风#披风-敌分四裂
 fe2d2c41eccc0c2f#未知#None
-None#None#None
+该债券以及商店相关内容，在2025.10.24更新后就已实装到游戏中，为方便查看单独移动到此#None#None
 804e40c3115e9650#头盔#RS-89 “暗影典范”
 85d392768bf6a259#盔甲#RS-89 “暗影典范”
 b0db976d98b02a95#头盔#RS-67 “空密码”
@@ -3303,6 +3303,185 @@ bba76437a1c00c1e#战备#B/MD C4背包
 2026.1.22添加#None#None
 0102bf171412f94d#未知,导入失败#None
 7241667bb13d5414#未知#None
+2026.2.3添加#None#None
+0172558e98035282#None#None
+01f34d196bf1ac89#None#None
+031f5e7c5e88b473#None#None
+07bbea465419a765#None#None
+0af9bf86a79ecff8#None#None
+0ce24f92185e307b#披风#None
+0f7b7f07cb84ee26#None#None
+1005364dcb982708#None#None
+1342587cfe244533#None#None
+14060e113e41f4ab#盔甲#SA-8 身体
+174cc02ef209e849#None#None
+17ec2d364664c3e9#战备,其他#只有坦克本体
+184c510a7a3678f9#None#None
+198ae85574cef31e#None#None
+1d2c741bf07c5b9a#None#None
+1d7b76e11fb89705#None#None
+1e0b21d2b28d31d4#None#None
+1ee7b8d87f1a20de#None#None
+1f457a9cb3c4f7eb#None#None
+21bff0baa681d886#None#None
+227fbfe692a34f06#None#None
+2597f3fc7ef08e45#None#None
+2c96582e71c7756d#None#None
+2df11207baecfd82#None#None
+32477233bb20fed4#None#None
+32a28bb8f8152365#None#None
+349fd0b485a07d54#None#None
+3696e45916a24fd0#None#None
+39ddd2e6f131c873#战备#大铁锤
+3cd152eecf0888e8#None#None
+3dabc7ccea008f63#建筑#None
+4084df61b6054c47#None#None
+4420916dc066f8e2#披风#None
+44386a54311e4b2d#None#None
+4539f16979c3f579#None#None
+476ad64c8b719fe3#披风#马年披风
+48c6e60809d3d8a0#None#None
+4942eeb08faef34f#None#None
+4a34ffb212ba6b28#None#None
+4b8067cc23c51cff#None#None
+4dda37504f8d3549#None#None
+4e0970315a7ac217#None#None
+4e49163b1e62acbf#None#None
+51495ef660b55253#None#None
+5205607b0b4d9618#None#None
+5838b01a3e3980e7#None#None
+5877c2e0ec567763#None#None
+58f0e4b488e92183#None#None
+59d238094a164c88#头盔#DP-8 头
+5b8e9f92fa039467#None#None
+5c5f83dd7855131b#None#None
+5d03e9de78ac1833#None#None
+5e47518596f8175d#None#None
+61b9df78a136b21a#None#None
+62a507e6022796f2#None#None
+6380cac45037a9fb#None#None
+6530ed7ec71647d1#None#None
+68ebdce3f7498179#战备#TD-220 堡垒 XVI
+69b118d1578d19c6#None#None
+6c523eedf96de1e3#None#None
+719e9e75f790d580#头盔#SA-7 头
+71c6208b43c3bff6#None#None
+72b70ef69f6354ae#None#None
+75d7ca3a6d389121#None#None
+77b772d9afacd252#None#None
+787dcf61de8a5e6b#建筑#机器人建筑
+792ce171e36bfaae#None#None
+7adce595b1d70ca5#None#None
+7dbd35414d1f834a#None#None
+84320722596855ff#None#None
+84c64b4fa6838d5a#None#None
+8c6f78c92e25de02#None#None
+8dc554df6e27ea24#None#None
+95b48c9ff02e4707#None#None
+96ce6a754d318e12#None#None
+995a1b52a188bfa5#None#None
+99db4af09ae521bf#披风#None
+9a51e73f8fb18106#None#None
+9aeb8cd72e0fc2ee#None#None
+9bfa7eb1324c29a5#None#None
+9c3d59d7095b4c6a#None#None
+a1d89fa9124567dd#None#None
+a4213f3eafd09839#None#None
+a59996cb49640a91#None#None
+a5d19b174b0987bc#None#None
+a72abfe9616771df#头盔#SA-8 头
+a79229e674f9e2f5#None#None
+a93f651774645705#None#None
+a9b1ae94225358fc#None#None
+ac70d5087e638486#None#None
+ad12745415c2774e#None#None
+ae996db06c7b2ba7#None#None
+afb8729baf7741dd#None#None
+b125adf6a8c06d66#None#None
+b3694945bb1617ed#None#None
+b40ab529f6867396#None#None
+b6e07c2e62848d2c#None#None
+b71bb8a545fe1a19#None#None
+b790226862e5907f#披风#None
+b9a08b6ab841d83e#None#None
+bd65d57837267aca#None#None
+bf56135a75ac836c#None#None
+c320fc14846ce2bd#None#None
+c38aeb09bc59b2c4#None#None
+c42e3747effbfb33#None#None
+c97a3cbaf8372d4d#None#None
+cf1b36d0765b57a5#None#None
+d24568592064cc85#None#None
+d2fde496226be96f#盔甲#DP-8 身体
+d3a27ecf00945295#None#None
+d50f5106f6e0d72c#None#None
+d7c2e611770fa32f#None#None
+d85f80a0a0845f21#None#None
+d895f447d332c331#盔甲#SA-7 身体
+da2f9dd65748cb38#None#None
+df31604f1ad6d948#None#None
+df9310cc94cbb5d3#None#None
+e22ca63fcb2c9dc0#None#None
+e42c7fac5fdf9b1d#None#None
+e78aef69d40e8732#None#None
+e83d30672b3132b3#None#None
+ea88d6ae49bc6467#None#None
+eae526ed83444a7e#None#None
+ed61b820ab474201#None#None
+f04699947f70bb59#None#None
+f07a0d5d81a7e6d3#None#None
+f111fa26003c0de9#枪、装备#护盾手雷
+f24cfa612428175b#战备#背包榴弹发射器
+f2b39e8bb1940234#None#None
+f375feed31ce8344#None#None
+f5e8dbb1615b12d7#None#None
+f79b65e482594bef#枪、装备#三叉戟
+f7a964bf0feabb8a#None#None
+fa4e125186900b69#None#None
+fdd3fd435fa61541#None#None
+fde8230c79315087#战备#核弹次抛
+e42ed72ede8d43b0#音频#中配教程
+7848f5a1764b7fad#音频#中配潜兵一号位
+737d3e8f45b977d1#音频#中配视频语音
+4d76aa3ea6d88cda#音频#中配潜兵三号位
+928226dec7541759#音频#舰长，舰船民主官，技术人员（中配）
+2898104813c03bda#音频#任务调度员，飞鹰，民主官，鹈鹕（中配）
+04ae807d7645796b#音频#超级地球平民（中配）
+8fc1bf1ef588dc31#音频#超级地球平民（中配）
+39bcc0a878b5dec5#音频#SEAF+市民语音(中配)
+146ca4d77c5c2962#音频#中配潜兵四号位
+1088df18bc9c6aa4#音频#中配潜兵二号位
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
+None#None#None
 None#None#None
 None#None#None
 None#None#None
