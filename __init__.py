@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (2, 2, 1),
+    "version": (2, 2, 2),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -271,6 +271,12 @@ TextureTypeLookup = {
         "Alpha Mask: ",
         "Base Color/Metallic: "
     ),
+    "alphaclip+": (
+        "Normal/AO/Roughness: ",
+        "Emission: ",
+        "Base Color/Metallic: ",
+        "Alpha Mask: ",
+    ),
 
     
     
@@ -295,7 +301,9 @@ Global_Materials = (
         ("glass", "透明玻璃", "透明玻璃，不知道能干嘛，自己猜()"),
         ("basic+Fixed", "Basic+", "A basic material with a color, normal, and PBR map which renders in the UI, Sourced from a SEAF NPC"),
         ("basic", "Basic", "A basic material with a color, normal, and PBR map. Sourced from a trash bag prop."),
-        ("alphaclip", "Alpha Clip", "金属度在颜色贴图的alpha通道，A material that supports an alpha mask which does not render in the UI. Sourced from a skeleton pile")
+        ("alphaclip", "Alpha Clip", "金属度在颜色贴图的alpha通道，A material that supports an alpha mask which does not render in the UI. Sourced from a skeleton pile"),
+        ("alphaclip+", "Alpha Clip+", "一个支持alpha遮罩的材质，金属度在颜色贴图的alpha通道，带有额外的发光功能，来自机器人生物处理器"),
+
     )
 
 
