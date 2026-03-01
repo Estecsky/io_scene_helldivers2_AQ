@@ -8,7 +8,7 @@ import bmesh
 from ..utils.memoryStream import MemoryStream, MakeTenBitUnsigned, TenBitUnsigned
 from ..utils.logger import PrettyPrint
 from .hash import murmur32_hash
-from ..constants import *
+from ..utils.constants import *
 from ..AQ_Prefs_HD2 import AQ_PublicClass
 from .material import AddMaterialToBlend_EMPTY
 

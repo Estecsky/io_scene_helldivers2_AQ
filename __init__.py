@@ -30,7 +30,7 @@ from .stingray.composite_unit import StingrayCompositeUnit
 from .stingray.bones import LoadBoneHashes, StingrayBones
 from .stingray.unit import StingrayMeshFile , CreateModel, GetObjectsMeshData
 from .stingray.texture import StingrayTexture
-from .constants import *
+from .utils.constants import *
 
 
 # Local
