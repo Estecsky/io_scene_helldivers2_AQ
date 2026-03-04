@@ -1,5 +1,5 @@
 import bpy, bpy_types
-from math import ceil, sqrt, isnan, floor #type: ignore
+from math import ceil, sqrt, isnan, floor
 import mathutils
 
 from ..utils.logger import PrettyPrint
@@ -63,13 +63,13 @@ class AnimationEntry:
             elif subtype == 6:
                 # scale data (uncompressed)
                 data2 = tocFile.vec3_float(temp_arr)
+            elif subtype == 2: # triggers sounds?
+                data2 = bytearray()
             else:
                 PrettyPrint(f"Unknown type/subtype! {type}/{subtype}")
                 self.subtype = subtype
                 self.type = type
                 return
-            #elif subtype != 2:
-            #    pass
         self.data2 = data2
         self.data = data
         self.bone = bone
@@ -138,7 +138,7 @@ class AnimationEntry:
                 # scale data (uncompressed)
                 #data2 = tocFile.vec3_float(temp_arr)
                 tocFile.vec3_float(self.data2)
-            elif subtype != 2:
+            elif subtype == 2: # triggers sounds?
                 pass
  
     
@@ -307,7 +307,7 @@ class StingrayAnimation:
             tocFile.seek(tocFile.tell()-2)
             entry = AnimationEntry()
             entry.Serialize(tocFile)
-            if not (entry.type == 0 and entry.subtype not in [4, 5, 6]):
+            if not (entry.type == 0 and entry.subtype not in [2, 4, 5, 6]):
                 self.entries.append(entry)
         for initial_state in self.initial_bone_states:
             if initial_state.scale[0] == 0:
@@ -363,7 +363,8 @@ class StingrayAnimation:
                 for value in bone_state.rotation:
                     tocFile.float32(value)
             if bone_state.compress_scale:
-                tocFile.vec3_half(AnimationBoneInitialState.compress_scale(bone_state.scale))
+                for s in AnimationBoneInitialState.compress_scale(bone_state.scale):
+                    tocFile.uint16(s)
             else:
                 tocFile.vec3_float(bone_state.scale)
         for value in self.hashes_floats:
@@ -403,7 +404,8 @@ class StingrayAnimation:
                 for value in bone_state.rotation:
                     tocFile.float32(value)
             if bone_state.compress_scale:
-                tocFile.vec3_half(AnimationBoneInitialState.compress_scale(bone_state.scale))
+                for s in AnimationBoneInitialState.compress_scale(bone_state.scale):
+                    tocFile.uint16(s)
             else:
                 tocFile.vec3_float(bone_state.scale)
         for value in self.hashes_floats:
@@ -414,11 +416,42 @@ class StingrayAnimation:
             entry.Serialize(tocFile)
         tocFile.uint16(0x03)
         tocFile.uint32(size)
+        
+    def remove_bone(self, bone_index):
+        self.initial_bone_states.pop(bone_index)
+        self.bone_count -= 1
+        self.entries = [entry for entry in self.entries if entry.bone != bone_index]
+        for entry in self.entries:
+            if entry.bone > bone_index:
+                entry.bone -= 1
+        output_stream = MemoryStream(IOMode="write")
+        self.Serialize(output_stream)
+        self.file_size = len(output_stream.Data)
+        
+    def add_bone(self, bone):
+        initial_state = AnimationBoneInitialState()
+        initial_state.compress_position = 0
+        initial_state.compress_rotation = 0
+        initial_state.compress_scale = 0
+        if bone.parent:
+            translation, rotation, scale = (bone.parent.matrix.inverted() @ bone.matrix).decompose()
+        else:
+            translation, rotation, scale = bone.matrix.decompose()
+        initial_state.position = translation.to_tuple()
+        initial_state.rotation = [0, 0, 0, 1]
+        initial_state.scale = [1, 1, 1] if not self.is_additive_animation else [0, 0, 0]
+        self.initial_bone_states.append(initial_state)
+        self.bone_count += 1
+        output_stream = MemoryStream(IOMode="write")
+        self.Serialize(output_stream)
+        self.file_size = len(output_stream.Data)
 
     def load_from_armature(self, context, armature, bones_data):
-        if self.is_additive_animation:
-            raise AnimationException("Saving additive animations is not yet supported")
-        self.entries.clear()
+        #if self.is_additive_animation:
+        #    raise AnimationException("Saving additive animations is not yet supported")
+        #self.entries.clear()
+        self.entries = [entry for entry in self.entries if (entry.type == 0 and entry.subtype == 2)]
+        print(len(self.entries))
         self.initial_bone_states.clear()
         action = armature.animation_data.action
         idx = bones_data.index(b"StingrayEntityRoot")
@@ -438,10 +471,13 @@ class StingrayAnimation:
         # initial bone data = anim frame 0
         
         for bone in armature.pose.bones:
-            if bone.parent is not None:
-                mat = (bone.parent.matrix.inverted() @ bone.matrix)
+            if self.is_additive_animation:
+                mat = bone.matrix_basis
             else:
-                mat = bone.matrix
+                if bone.parent is not None:
+                    mat = (bone.parent.matrix.inverted() @ bone.matrix)
+                else:
+                    mat = bone.matrix
             position, rotation, scale = mat.decompose()
             rotation = (rotation[1], rotation[2], rotation[3], rotation[0])
             position = list(position)
@@ -457,7 +493,7 @@ class StingrayAnimation:
                 initial_state.compress_scale = 0
                 initial_state.position = bone['position']
                 initial_state.rotation = bone['rotation']
-                initial_state.scale = bone['scale']
+                initial_state.scale = [1, 1, 1] if not self.is_additive_animation else [0, 0, 0]
                 self.initial_bone_states.append(initial_state)
             except KeyError:
                 initial_state = AnimationBoneInitialState()
@@ -466,18 +502,21 @@ class StingrayAnimation:
                 initial_state.compress_scale = 0
                 initial_state.position = [0, 0, 0]
                 initial_state.rotation = [0, 0, 0, 1]
-                initial_state.scale = [1, 1, 1]
+                initial_state.scale = [1, 1, 1] if not self.is_additive_animation else [0, 0, 0]
                 self.initial_bone_states.append(initial_state)
 
-        for frame in range(1, ceil(end)):
+        for frame in range(1, ceil(end)+1):
             context.scene.frame_set(frame)
             for bone in armature.pose.bones:
                 if bone.name not in bone_names:
                     continue
-                if bone.parent:
-                    local_transform = bone.parent.matrix.inverted() @ bone.matrix
+                if self.is_additive_animation:
+                    local_transform = bone.matrix_basis
                 else:
-                    local_transform = bone.matrix
+                    if bone.parent:
+                        local_transform = bone.parent.matrix.inverted() @ bone.matrix
+                    else:
+                        local_transform = bone.matrix
                 translation, rotation, scale = local_transform.decompose()
                 
                 # save translation
@@ -510,7 +549,7 @@ class StingrayAnimation:
         self.Serialize(output_stream)
         self.file_size = len(output_stream.Data)
 
-    def to_action(self, context, armature, bones_data, animation_id):
+    def to_action(self, context, armature, bones_data, state_machine_data, animation_id):
         
         idx = bones_data.index(b"StingrayEntityRoot")
         temp = bones_data[idx:]
@@ -519,12 +558,24 @@ class StingrayAnimation:
         for item in splits:
             if item != b'':
                 bone_names.append(item.decode('utf-8'))
-        if len(self.initial_bone_states) != int.from_bytes(bones_data[0:4], "little"):
+        if int(animation_id) not in state_machine_data.animation_ids:
             raise AnimationException("This animation is not for this armature")
+        blend_mask_index = -1
+        layer_num = -1
+        for i, layer in enumerate(state_machine_data.layers):
+            for state in layer.states:
+                if int(animation_id) in state.animation_ids:
+                    blend_mask_index = state.blend_mask_index
+                    layer_num = i
+        #if len(self.initial_bone_states) != int.from_bytes(bones_data[0:4], "little"):
+        #    raise AnimationException("This animation is not for this armature")
+        action_name = f"{animation_id} (blend mask {blend_mask_index}) (layer {layer_num})"
+        if blend_mask_index == 0xFFFFFFFF:
+            action_name = f"{animation_id} (no blend mask) (layer {layer_num})"
         
         PrettyPrint(f"Creaing action with ID: {animation_id}")
         actions = bpy.data.actions
-        action = actions.new(str(animation_id))
+        action = actions.new(action_name)
         action.use_fake_user = True
         armature.animation_data.action = action
         bone_to_index = {bone: bone_names.index(bone) for bone in bone_names}
@@ -545,7 +596,7 @@ class StingrayAnimation:
             try:
                 bone = armature.pose.bones[bone_name]
             except KeyError:
-                PrettyPrint(f"Failed to find bone: {bone.name} in rig for animation. This may be intended", 'warn')
+                PrettyPrint(f"Failed to find bone: {bone_name} in rig for animation. This may be intended", 'warn')
                 continue
             translation = mathutils.Vector(initial_state.position)
             rotation = mathutils.Quaternion([initial_state.rotation[3], initial_state.rotation[0], initial_state.rotation[1], initial_state.rotation[2]])
