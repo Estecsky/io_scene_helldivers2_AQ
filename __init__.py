@@ -4,7 +4,7 @@ bl_info = {
     "category": "Import-Export",
     "author": "kboykboy2, AQ_Echoo",
     "warning": "此为修改版",
-    "version": (2, 2, 2),
+    "version": (2, 3, 0),
     "doc_url": "https://github.com/Estecsky/io_scene_helldivers2_AQ"
 }
 
@@ -30,6 +30,8 @@ from .stingray.composite_unit import StingrayCompositeUnit
 from .stingray.bones import LoadBoneHashes, StingrayBones
 from .stingray.unit import StingrayMeshFile , CreateModel, GetObjectsMeshData
 from .stingray.texture import StingrayTexture
+from .stingray.particle import StingrayParticles
+from .stingray.state_machine import StingrayStateMachine
 from .utils.constants import *
 
 
@@ -59,7 +61,6 @@ Global_texconvpath         = f"{AddonPath}/deps/texconv.exe"
 Global_palettepath         = f"{AddonPath}/deps/NormalPalette.dat"
 Global_materialpath        = f"{AddonPath}/materials"
 Global_typehashpath        = f"{AddonPath}/hashlists/typehash.txt"
-Global_filehashpath        = f"{AddonPath}/hashlists/filehash.txt"
 Global_friendlynamespath   = f"{AddonPath}/hashlists/friendlynames.txt"
 Global_variablespath       = f"{AddonPath}/hashlists/shadervariables.txt"
 Global_bonehashpath      = f"{AddonPath}/hashlists/bonehash.txt"
@@ -74,6 +75,8 @@ Global_gamepath            = ""
 Global_gamepathIsValid = False
 
 Global_BoneNames = {}
+
+Global_AnimationMapping = {}
 
 Global_SectionHeader = "---Helldivers 2 AQ魔改---"
 
@@ -457,16 +460,12 @@ def AddFriendlyName(ID, Name):
     for hash_info in Global_NameHashes:
         if int(ID) == hash_info[0]:
             hash_info[1] = str(Name)
+            SaveFriendlyNames()  # 更新已有ID的名称
             return
     Global_NameHashes.append([int(ID), str(Name)])
     SaveFriendlyNames()
 
 def SaveFriendlyNames():
-    with open(Global_filehashpath, 'w') as f:
-        for hash_info in Global_NameHashes:
-            if hash_info[1] != "" and int(hash_info[0]) == murmur64_hash(hash_info[1].encode()):
-                string = str(hash_info[0]) + " " + str(hash_info[1])
-                f.writelines(string+"\n")
     with open(Global_friendlynamespath, 'w') as f:
         for hash_info in Global_NameHashes:
             if hash_info[1] != "":
@@ -546,11 +545,6 @@ def LoadTypeHashes():
 Global_NameHashes = []
 def LoadNameHashes():
     Loaded = []
-    with open(Global_filehashpath, 'r') as f:
-        for line in f.readlines():
-            parts = line.split(" ")
-            Global_NameHashes.append([int(parts[0]), parts[1].replace("\n", "")])
-            Loaded.append(int(parts[0]))
     with open(Global_friendlynamespath, 'r') as f:
         for line in f.readlines():
             parts = line.split(" ")
@@ -750,10 +744,11 @@ class TocEntry:
         if self.TypeID == UnitID: callback = LoadStingrayUnit
         if self.TypeID == TexID: callback = LoadStingrayTexture
         if self.TypeID == MaterialID: callback = LoadStingrayMaterial
-        # if self.TypeID == ParticleID: callback = LoadStingrayParticle
+        if self.TypeID == ParticleID: callback = LoadStingrayParticle
         if self.TypeID == CompositeUnitID: callback = LoadStingrayCompositeUnit
         if self.TypeID == BoneID: callback = LoadStingrayBones
         if self.TypeID == AnimationID: callback = LoadStingrayAnimation
+        if self.TypeID == StateMachineID: callback = LoadStingrayStateMachine
         # if callback == None: callback = LoadStingrayDump
 
         if callback != None:
@@ -771,8 +766,10 @@ class TocEntry:
         if self.TypeID == UnitID: callback = SaveStingrayMesh
         if self.TypeID == TexID: callback = SaveStingrayTexture
         if self.TypeID == MaterialID: callback = SaveStingrayMaterial
-        # if self.TypeID == ParticleID: callback = SaveStingrayParticle
+        if self.TypeID == ParticleID: callback = SaveStingrayParticle
         if self.TypeID == AnimationID: callback = SaveStingrayAnimation
+        if self.TypeID == BoneID: callback = SaveStingrayBones
+        if self.TypeID == StateMachineID: callback = SaveStingrayStateMachine
         # if callback == None: callback = SaveStingrayDump
 
         if self.IsLoaded:
@@ -944,18 +941,6 @@ class StreamToc:
 
     def FromFile(self, path, SerializeData=True):
         self.UpdatePath(path)
-        # with open(path, 'r+b') as f:
-        #     self.TocFile = MemoryStream(f.read())
-
-        # self.GpuFile    = MemoryStream()
-        # self.StreamFile = MemoryStream()
-        # if SerializeData:
-        #     if os.path.isfile(path+".gpu_resources"):
-        #         with open(path+".gpu_resources", 'r+b') as f:
-        #             self.GpuFile = MemoryStream(f.read())
-        #     if os.path.isfile(path+".stream"):
-        #         with open(path+".stream", 'r+b') as f:
-        #             self.StreamFile = MemoryStream(f.read())
         toc_data, gpu_data, stream_data = load_package(path)
         self.TocFile = MemoryStream(toc_data)
         self.GpuFile = MemoryStream(gpu_data)
@@ -1048,8 +1033,24 @@ class TocManager():
                 return Archive
         archiveID = path.replace(Global_gamepath, '')
         archiveName = GetArchiveNameFromID(archiveID)
+        PrettyPrint(f"Loading Archive: {archiveID} {archiveName}")
         toc = StreamToc()
         toc.FromFile(path)
+    
+        # # add to global animation mapping:
+        # global Global_AnimationMapping
+        # if toc.TocDict.get(StateMachineID, None):
+        #     for state_machine in toc.TocDict[StateMachineID].values():
+        #         if not state_machine.IsLoaded:
+        #             state_machine.Load(False, False)
+        #         for animation_id in state_machine.LoadedData.animation_ids:
+        #             try:
+        #                 Global_AnimationMapping[animation_id].add(state_machine.FileID)
+        #             except KeyError:
+        #                 Global_AnimationMapping[animation_id] = set()
+        #                 Global_AnimationMapping[animation_id].add(state_machine.FileID)
+
+
         if SetActive and not IsPatch:
             self.LoadedArchives.append(toc)
             self.ActiveArchive = toc
@@ -1302,11 +1303,26 @@ def LoadStingrayAnimation(ID, TocData, GpuData, StreamData, Reload, MakeBlendObj
             bones_id = int(armature['BonesID'])
         except ValueError:
             raise Exception(f"\n\nCould not obtain custom property: BonesID from armature: {armature.name}. Please make sure this is a valid value")
-        bones_entry = Global_TocManager.GetEntryByLoadArchive(int(bones_id), BoneID)
+        try:
+            state_machine_id = int(armature['StateMachineID'])
+        except ValueError:
+            raise Exception(f"\n\nCould not obtain custom property: StateMachineID from armature: {armature.name}. Please make sure this is a valid value")
+        state_machine_entry = Global_TocManager.GetEntryByLoadArchive(int(state_machine_id), StateMachineID)
+        if not state_machine_entry:
+            raise AnimationException("This animation is not for this armature")
+        if not state_machine_entry.IsLoaded:
+            state_machine_entry.Load()
+        if int(ID) not in state_machine_entry.LoadedData.animation_ids:
+            raise AnimationException("This animation is not for this armature")
+        bones_entry = Global_TocManager.GetEntry(int(bones_id), BoneID, SearchAll=True, IgnorePatch=False)
         if not bones_entry.IsLoaded:
             bones_entry.Load()
         bones_data = bones_entry.TocData
-        animation.to_action(context, armature, bones_data, ID)
+        state_machine_entry = Global_TocManager.GetEntry(int(state_machine_id), StateMachineID, SearchAll=True, IgnorePatch=False)
+        if not state_machine_entry.IsLoaded:
+            state_machine_entry.Load()
+        state_machine_data = state_machine_entry.LoadedData
+        animation.to_action(context, armature, bones_data, state_machine_data, ID)
     return animation
     
 def SaveStingrayAnimation(self, ID, TocData, GpuData, StreamData, Animation):
@@ -1314,6 +1330,19 @@ def SaveStingrayAnimation(self, ID, TocData, GpuData, StreamData, Animation):
     Animation.Serialize(toc)
     return [toc.Data, b"", b""]
 
+#endregion
+
+#region Classes and Functions: Stingray State Machines
+def LoadStingrayStateMachine(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject):
+    toc = MemoryStream(TocData)
+    state_machine = StingrayStateMachine()
+    state_machine.Serialize(toc)
+    return state_machine
+    
+def SaveStingrayStateMachine(self, ID, TocData, GpuData, StreamData, StateMachine):
+    toc = MemoryStream(IOMode = "write")
+    StateMachine.Serialize(toc)
+    return [toc.Data, b"", b""]
 #endregion
 
 #region Classes and Functions: Stingray Materials
@@ -1512,6 +1541,10 @@ def LoadStingrayBones(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject)
     StingrayBonesData.Serialize(MemoryStream(TocData))
     return StingrayBonesData
 
+def SaveStingrayBones(self, ID, TocData, GpuData, StreamData, LoadedData):
+    f = MemoryStream(TocData, IOMode="write") # Load in original TocData before overwriting it
+    LoadedData.Serialize(f)
+    return [f.Data, b"", b""]
 
 #endregion
 
@@ -1527,17 +1560,23 @@ def LoadStingrayCompositeUnit(ID, TocData, GpuData, StreamData, Reload, MakeBlen
 
 #region Classes and Functions: Stingray Meshes
 
-def LoadStingrayUnit(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject , LoadMaterialSlotNames=False):
+def LoadStingrayUnit(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject, LoadMaterialSlotNames=False):
     toc  = MemoryStream(TocData)
     gpu  = MemoryStream(GpuData)
-    bones_entry = Global_TocManager.GetEntryByLoadArchive(int(ID), int(BoneID))
-    if bones_entry and not bones_entry.IsLoaded:
-        bones_entry.Load(False, False)
+        
+    
     StingrayMesh = StingrayMeshFile()
     StingrayMesh.NameHash = int(ID)
     StingrayMesh.LoadMaterialSlotNames = LoadMaterialSlotNames
     StingrayMesh.Serialize(toc, gpu, Global_TocManager)
-    if MakeBlendObject: CreateModel(StingrayMesh, str(ID), Global_BoneNames)
+    bones_entry = Global_TocManager.GetEntry(StingrayMesh.BonesRef, BoneID, SearchAll=True, IgnorePatch=False)
+    if bones_entry and not bones_entry.IsLoaded:
+        bones_entry.Load(False, False)
+    state_machine_entry = Global_TocManager.GetEntry(StingrayMesh.StateMachineRef, StateMachineID, SearchAll=True, IgnorePatch=False)
+    if state_machine_entry and not state_machine_entry.IsLoaded:
+        state_machine_entry.Load(False, False)
+    if MakeBlendObject and bones_entry and state_machine_entry: CreateModel(StingrayMesh, str(ID), Global_BoneNames, bones_entry.LoadedData, state_machine_entry.LoadedData)
+    elif MakeBlendObject: CreateModel(StingrayMesh, str(ID), Global_BoneNames, None, None)
     return StingrayMesh
 
 def SaveStingrayMesh(self,ID, TocData, GpuData, StreamData, StingrayMesh):
@@ -1569,6 +1608,21 @@ def SaveStingrayMesh(self,ID, TocData, GpuData, StreamData, StingrayMesh):
     return [toc.Data, gpu.Data, b""]
 
 #endregion
+
+#region Classes and Functions: Stingray Particles
+def LoadStingrayParticle(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject):
+    f = MemoryStream(TocData)
+    Particle = StingrayParticles()
+    Particle.Serialize(f)
+    return Particle
+
+def SaveStingrayParticle(self, ID, TocData, GpuData, StreamData, LoadedData):
+    f = MemoryStream(TocData, IOMode="write") # Load in original TocData before overwriting it
+    LoadedData.Serialize(f)
+    return [f.Data, b"", b""]
+#endregion
+
+
 
 #region Operators: Panel Settings
 class ButtonOpenCacheDirectory(Operator):
@@ -3498,7 +3552,7 @@ class Hd2ToolPanelSettings(PropertyGroup):
     IsZipPatch : BoolProperty(name="ZipPatch",default = False,description = "压缩patch")
 
 class HellDivers2ToolsPanel(Panel):
-    bl_label = f"Helldivers 2 AQ Modified {bl_info['version'][0]}.{bl_info['version'][1]}.{bl_info['version'][2]}"
+    bl_label = f"Helldivers 2 AQ Modified {bl_info['version'][0]}.{bl_info['version'][1]}.{bl_info['version'][2]}_dev1"
     bl_idname = "SF_PT_Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
