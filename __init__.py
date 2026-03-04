@@ -3552,7 +3552,7 @@ class Hd2ToolPanelSettings(PropertyGroup):
     IsZipPatch : BoolProperty(name="ZipPatch",default = False,description = "压缩patch")
 
 class HellDivers2ToolsPanel(Panel):
-    bl_label = f"Helldivers 2 AQ Modified {bl_info['version'][0]}.{bl_info['version'][1]}.{bl_info['version'][2]}_dev1"
+    bl_label = f"Helldivers 2 AQ Modified {bl_info['version'][0]}.{bl_info['version'][1]}.{bl_info['version'][2]}"
     bl_idname = "SF_PT_Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
