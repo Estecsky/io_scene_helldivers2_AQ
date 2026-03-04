@@ -2,7 +2,7 @@ from math import ceil, sqrt # type: ignore
 
 import mathutils
 import bpy
-import random as r
+import random
 import bmesh
 
 from ..utils.memoryStream import MemoryStream, MakeTenBitUnsigned, TenBitUnsigned
@@ -30,11 +30,17 @@ class StingrayMeshFile:
         self.BoneNames = None
         self.UnreversedCustomizationData = bytearray()
         self.UnreversedConnectingBoneData = bytearray()
+        self.UnreversedLODGroupListData = bytearray()
+        self.UnreversedWwiseCallbackData = bytearray()
+        self.UnreversedPreLightListData = bytearray()
+        self.UnreversedLODGroupListDataOffset = 0
+        self.UnkHeaderData1 = bytearray()
+        self.StateMachineRef = self.UnkRef2 = self.LodGroupOffset = 0
         self.NameHash = 0
         self.LoadMaterialSlotNames = True
 
     # -- Serialize Mesh -- #
-    def Serialize(self, f, gpu, Global_TocManager, redo_offsets = False):
+    def Serialize(self, f: MemoryStream, gpu, Global_TocManager, redo_offsets = False):
         PrettyPrint("Serialize")
         if f.IsWriting() and not redo_offsets:
             # duplicate bone info sections if needed
@@ -92,7 +98,10 @@ class StingrayMeshFile:
         self.BonesRef           = f.uint64(self.BonesRef)
         if f.IsWriting():         f.uint64(0)
         else: self.CompositeRef = f.uint64(self.CompositeRef)
-        self.HeaderData1        = f.bytes(self.HeaderData1, 28)
+        self.UnkRef2            = f.uint64(self.UnkRef2)
+        self.StateMachineRef    = f.uint64(self.StateMachineRef)
+        self.HeaderData1        = f.uint64(self.HeaderData1)
+        self.UnreversedLODGroupListDataOffset = f.uint32(self.UnreversedLODGroupListDataOffset)
         self.TransformInfoOffset= f.uint32(self.TransformInfoOffset)
         self.HeaderData2        = f.bytes(self.HeaderData2, 20)
         self.CustomizationInfoOffset  = f.uint32(self.CustomizationInfoOffset)
@@ -110,17 +119,6 @@ class StingrayMeshFile:
 
         if f.IsReading() and (self.StreamInfoOffset == 0 and self.CompositeRef == 0):
             raise Exception("Unsupported Mesh Format (No buffer stream)")
-
-        # Get composite file
-        if f.IsReading() and self.CompositeRef != 0:
-            pass
-            #Entry = Global_TocManager.GetEntry(self.CompositeRef, CompositeUnitID)
-            #if Entry != None:
-            #    Global_TocManager.Load(Entry.FileID, Entry.TypeID)
-            #    self.StreamInfoArray = Entry.LoadedData.StreamInfoArray
-            #    gpu = Entry.LoadedData.GpuData
-            #else:
-            #    raise Exception(f"Composite mesh file {self.CompositeRef} could not be found")
 
         # Get bones file
         if f.IsReading() and self.BonesRef != 0:
@@ -283,7 +281,7 @@ class StingrayMeshFile:
             if f.IsReading(): f.seek(self.MeshInfoOffset+self.MeshInfoOffsets[mesh_idx])
             else            : self.MeshInfoOffsets[mesh_idx] = f.tell() - self.MeshInfoOffset
             self.MeshInfoArray[mesh_idx] = self.MeshInfoArray[mesh_idx].Serialize(f)
-
+            
         # Get geometry group
         if f.IsReading() and self.CompositeRef != 0:
             Entry = Global_TocManager.GetEntry(self.CompositeRef, CompositeUnitID)
@@ -308,7 +306,6 @@ class StingrayMeshFile:
                 gpu = Entry.LoadedData.GpuData
             else:
                 raise Exception(f"Composite mesh file {self.CompositeRef} could not be found")
-
 
         # Materials
         if f.IsReading(): f.seek(self.MaterialsOffset)
@@ -552,11 +549,13 @@ class StingrayMeshFile:
             HasTangents  = False
             HasBiTangents= False
             IsSkinned    = False
+            HasColors    = False
             NumUVs       = 0
             NumBoneIndices = 0
             # get total number of components
             for mesh in OrderedMeshes[stream_idx][0]:
                 if len(mesh.VertexPositions)  > 0: HasPositions  = True
+                if len(mesh.VertexColors)     > 0: HasColors     = True
                 if len(mesh.VertexNormals)    > 0: HasNormals    = True
                 if len(mesh.VertexTangents)   > 0: HasTangents   = True
                 if len(mesh.VertexBiTangents) > 0: HasBiTangents = True
@@ -573,6 +572,8 @@ class StingrayMeshFile:
                     raise Exception("bruh... your mesh doesn't have any vertices")
                 if HasNormals and not len(mesh.VertexNormals)    > 0:
                     mesh.VertexNormals = [[0,0,0] for n in mesh.VertexPositions]
+                if HasColors and not len(mesh.VertexColors) > 0:
+                    mesh.VertexColors = [[0, 0, 0, 0] for n in mesh.VertexColors]
                 if HasTangents and not len(mesh.VertexTangents)   > 0:
                     mesh.VertexTangents = [[0,0,0] for n in mesh.VertexPositions]
                 if HasBiTangents and not len(mesh.VertexBiTangents) > 0:
@@ -588,6 +589,7 @@ class StingrayMeshFile:
                         mesh.VertexUVs.append([[0,0] for n in mesh.VertexPositions])
             # make stream components
             Stream_Info.Components = []
+            if HasColors:     Stream_Info.Components.append(StreamComponentInfo("color", "rgba_r8g8b8a8"))
             if HasPositions:  Stream_Info.Components.append(StreamComponentInfo("position", "vec3_float"))
             if HasNormals:    Stream_Info.Components.append(StreamComponentInfo("normal", "unk_normal"))
             for n in range(NumUVs):
@@ -603,7 +605,8 @@ class StingrayMeshFile:
             Stream_Info.VertexStride = 0
             for Component in Stream_Info.Components:
                 Stream_Info.VertexStride += Component.GetSize()
-                
+            
+
 class BoneInfo:
     def __init__(self):
         self.NumBones = self.unk1 = self.RealIndicesOffset = self.FakeIndicesOffset = self.NumFakeIndices = self.FakeIndicesUnk = 0
@@ -699,7 +702,13 @@ class BoneInfo:
                     r.append(self.RealIndices.index(real_index))
                     self.RemapCounts[i] += 1
                 except ValueError:
-                    PrettyPrint(f"Bone '{bone}' does not exist in LOD bone info, skipping...")
+                    PrettyPrint(f"Bone '{bone}' does not exist in LOD bone info, adding...")
+                    self.RealIndices.append(real_index)
+                    r.append(len(self.RealIndices)-1)
+                    self.RemapCounts[i] += 1
+                    self.NumBones += 1
+                    self.Bones.append(None)
+                    
             self.Remaps.append(r)
             
         for i in range(1, self.NumRemaps):
@@ -816,6 +825,14 @@ class StingrayMatrix4x4: # Matrix4x4: https://help.autodesk.com/cloudhelp/ENU/St
     def Serialize(self, f: MemoryStream):
         self.v = [f.float32(value) for value in self.v]
         return self
+    def ToBlenderMatrix(self):
+        mat = mathutils.Matrix.Identity(4)
+        mat[0] = self.v[0:4]
+        mat[1] = self.v[4:8]
+        mat[2] = self.v[8:12]
+        mat[3] = self.v[12:16]
+        mat.transpose()
+        return mat
     def ToLocalTransform(self):
         matrix = mathutils.Matrix([
             [self.v[0], self.v[1], self.v[2], self.v[12]],
@@ -908,7 +925,6 @@ class TransformInfo: # READ ONLY
             self.TransformMatrices = [StingrayMatrix4x4().Serialize(f) for n in range(self.NumTransforms)]
             self.TransformEntries = [StingrayLocalTransform().SerializeTransformEntry(f) for n in range(self.NumTransforms)]
             self.NameHashes = [f.uint32(n) for n in range(self.NumTransforms)]
-            PrettyPrint(f"hashes: {self.NameHashes}")
         else:
             self.NumTransforms = f.uint32(self.NumTransforms)
             f.seek(f.tell()+12)
@@ -1022,32 +1038,6 @@ class StreamComponentInfo:
         except:
             raise Exception("Cannot serialize unknown vertex format: "+str(self.Format))
 
-class RawMaterialClass:
-    DefaultMaterialName    = "StingrayDefaultMaterial"
-    DefaultMaterialShortID = 155175220
-    def __init__(self):
-        self.MatID      = self.DefaultMaterialName
-        self.ShortID    = self.DefaultMaterialShortID
-        self.StartIndex = 0
-        self.NumIndices = 0
-        self.DEV_BoneInfoOverride = None
-    def IDFromName(self, unit_id, name, index):
-        if name.find(self.DefaultMaterialName) != -1:
-            self.MatID   = self.DefaultMaterialName
-            self.ShortID = self.DefaultMaterialShortID
-        else:
-            try:
-                self.MatID   = int(name)
-                # self.ShortID = r.randint(1, 0xffffffff)
-                
-                try:
-                    self.ShortID = Global_MaterialSlotNames[unit_id][self.MatID][index]
-                except (KeyError, IndexError):
-                    PrettyPrint(f"Unable to find material slot for material {name} with material count {index} for unit {unit_id}, using random material slot name")
-                    self.ShortID = r.randint(1, 0xffffffff)
-            except:
-                raise Exception("Material name must be a number")
-            
 class RawMeshClass:
     def __init__(self):
         self.MeshInfoIndex = 0
@@ -1115,8 +1105,87 @@ class RawMeshClass:
         for idx in range(numBoneIndices):
             self.VertexBoneIndices.append([[0,0,0,0] for n in range(numVertices)])
 
+class RawMaterialClass:
+    DefaultMaterialName    = "StingrayDefaultMaterial"
+    DefaultMaterialShortID = 155175220
+    def __init__(self):
+        self.MatID      = self.DefaultMaterialName
+        self.ShortID    = self.DefaultMaterialShortID
+        self.StartIndex = 0
+        self.NumIndices = 0
+        self.DEV_BoneInfoOverride = None
+
+    def IDFromName(self, unit_id, name, index):
+        if name.find(self.DefaultMaterialName) != -1:
+            self.MatID   = self.DefaultMaterialName
+            self.ShortID = self.DefaultMaterialShortID
+        else:
+            try:
+                self.MatID   = int(name)
+                try:
+                    self.ShortID = Global_MaterialSlotNames[unit_id][self.MatID][index]
+                except (KeyError, IndexError):
+                    PrettyPrint(f"Unable to find material slot for material {name} with material count {index} for unit {unit_id}, using random material slot name")
+                    self.ShortID = random.randint(1, 0xffffffff)
+            except:
+                raise Exception("Material name must be a number")
+
 class BoneIndexException(Exception):
     pass
+    
+class LightList:
+    
+    def __init__(self):
+        self.lights = []
+        self.light_count = 0
+        self.unk0 = [0, 0, 0]
+        
+    def Serialize(self, stream: MemoryStream):
+        self.light_count = stream.uint32(self.light_count)
+        self.unk0 = [stream.uint32(i) for i in self.unk0]
+        if stream.IsReading():
+            self.lights = [Light() for _ in range(self.light_count)]
+        for light in self.lights:
+            light.Serialize(stream)
+    
+class Light:
+    
+    OMNI = 0 # point in Blender
+    SPOT = 1 # spot
+    BOX = 2 # area?
+    DIRECTIONAL = 3 # sun
+    
+    CAST_SHADOW = 0x1
+    DISABLED = 0x2
+    INDIRECT_LIGHTING = 0x4
+    VOLUMETRIC_FOG = 0x10
+
+    def __init__(self):
+        self.name_hash = self.bone_index = self.falloff_start = self.falloff_end = self.start_angle = self.end_angle = self.unk0 = self.flags = self.light_type = 0
+        self.intensity = self.falloff_exp = 1
+        self.shadow_bias = 0.4
+        self.unk1 = [0] * 5
+        self.unk2 = bytearray(32)
+        self.color = [0, 0, 0]
+        
+    def Serialize(self, stream: MemoryStream):
+        self.name_hash = stream.uint32(self.name_hash)
+        self.bone_index = stream.uint32(self.bone_index)
+        self.color = [stream.float32(i) for i in self.color]
+        self.intensity = stream.float32(self.intensity)
+        self.falloff_start = stream.float32(self.falloff_start)
+        self.falloff_end = stream.float32(self.falloff_end)
+        self.falloff_exp = stream.float32(self.falloff_exp)
+        self.start_angle = stream.float32(self.start_angle)
+        self.end_angle = stream.float32(self.end_angle)
+        self.unk0 = stream.float32(self.unk0)
+        self.shadow_bias = stream.float32(self.shadow_bias)
+        self.unk1 = [stream.float32(i) for i in self.unk1]
+        self.flags = stream.uint8(self.flags)
+        for _ in range(3):
+            stream.uint8(0)
+        self.light_type = stream.uint32(self.light_type)
+        self.unk2 = stream.bytes(self.unk2, 32)
 
 def sign(n):
     if n >= 0:
@@ -1205,17 +1274,17 @@ class SerializeFunctions:
         
     def SerializeRGBA8888Component(f: MemoryStream, value):
         if f.IsReading():
+            value = f.vec4_uint8([0,0,0,0])
+            value[0] = min(1, float(value[0]/255))
+            value[1] = min(1, float(value[1]/255))
+            value[2] = min(1, float(value[2]/255))
+            value[3] = min(1, float(value[3]/255))
+        else:
             r = min(255, int(value[0]*255))
             g = min(255, int(value[1]*255))
             b = min(255, int(value[2]*255))
             a = min(255, int(value[3]*255))
             value = f.vec4_uint8([r,g,b,a])
-        else:
-            value = f.vec4_uint8([r,g,b,a])
-            value[0] = min(1, float(value[0]/255))
-            value[1] = min(1, float(value[1]/255))
-            value[2] = min(1, float(value[2]/255))
-            value[3] = min(1, float(value[3]/255))
         return value
         
     def SerializeVec4Uint32Component(f: MemoryStream, value):
@@ -1420,9 +1489,7 @@ def GetMeshData(og_object, Global_TocManager, Global_BoneNames):
                 texCoord[vert_idx] = [uvlayer.data[loop_idx].uv[0], uvlayer.data[loop_idx].uv[1]*-1 + 1]
         uvs.append(texCoord)
 
-    # get weights
-    vert_idx = 0
-    numInfluences = 4
+
     stingray_mesh_entry = Global_TocManager.GetEntry(int(og_object["Z_ObjectID"]), int(UnitID), IgnorePatch=False, SearchAll=True)
     if stingray_mesh_entry:
         if not stingray_mesh_entry.IsLoaded: stingray_mesh_entry.Load(True, False)
@@ -1432,7 +1499,218 @@ def GetMeshData(og_object, Global_TocManager, Global_BoneNames):
     bone_info = stingray_mesh_entry.BoneInfoArray
     transform_info = stingray_mesh_entry.TransformInfo
     lod_index = og_object["BoneInfoIndex"]
+    bone_entry = Global_TocManager.GetEntry(stingray_mesh_entry.BonesRef, BoneID, IgnorePatch=False, SearchAll=True)
+    modified_bone_entry = False
+    modified_state_machine = False
     bone_names = []
+    bone_data = None
+    state_machine_data = None
+    state_machine_entry = Global_TocManager.GetEntry(stingray_mesh_entry.StateMachineRef, StateMachineID, IgnorePatch=False, SearchAll=True)
+    if bone_entry is None:
+        PrettyPrint("This unit does not have any animated bone data, unable to edit bone animated state", "warn")
+    else:
+        if not Global_TocManager.IsInPatch(bone_entry):
+            bone_entry = Global_TocManager.AddEntryToPatch(bone_entry.FileID, BoneID)
+        if bone_entry:
+            if not bone_entry.IsLoaded:
+                bone_entry.Load()
+            bone_data = bone_entry.LoadedData
+    if state_machine_entry is None:
+        PrettyPrint("This unit does not have any state machine data, unable to edit bone animated state", "warn")
+    else:
+        if not Global_TocManager.IsInPatch(state_machine_entry):
+            state_machine_entry = Global_TocManager.AddEntryToPatch(state_machine_entry.FileID, StateMachineID)
+        if state_machine_entry:
+            if not state_machine_entry.IsLoaded:
+                state_machine_entry.Load()
+            state_machine_data = state_machine_entry.LoadedData
+
+        
+    # get armature object
+    prev_obj = bpy.context.view_layer.objects.active
+    prev_objs = bpy.context.selected_objects
+    prev_mode = prev_obj.mode
+    armature_obj = None
+    for modifier in og_object.modifiers:
+        if modifier.type == "ARMATURE":
+            armature_obj = modifier.object
+            break
+    if armature_obj is not None:
+        was_hidden = armature_obj.hide_get()
+        state_machine = armature_obj.get("StateMachineID", None)
+        armature_obj.hide_set(False)
+        bpy.context.view_layer.objects.active = armature_obj
+        bpy.ops.object.mode_set(mode='EDIT')
+        
+        # check if animated bones list has changed, and if it has, clear all modded animations for this armature
+        # but keep them in the patch
+        if bone_data:
+            old_bones = sorted(bone_data.BoneHashes)
+            new_bones = sorted([(int(bone.name) if bone.name.isdigit() else murmur32_hash(bone.name.encode("utf-8"))) for bone in armature_obj.data.edit_bones if bone.get('Animated')])
+            if old_bones != new_bones:
+                PrettyPrint("Changes made to animated bones, clearing saved animation data")
+                if state_machine_data:
+                    for animation in state_machine_data.animation_ids:
+                        animation_data = Global_TocManager.GetEntry(animation, AnimationID, IgnorePatch=False, SearchAll=True)
+                        if Global_TocManager.IsInPatch(animation_data):
+                            Global_TocManager.RemoveEntryFromPatch(animation, AnimationID)
+                        Global_TocManager.AddEntryToPatch(animation, AnimationID)
+        
+        for bone in armature_obj.data.edit_bones:
+            try:
+                name_hash = int(bone.name)
+            except ValueError:
+                name_hash = murmur32_hash(bone.name.encode("utf-8"))
+            try:
+                transform_index = transform_info.NameHashes.index(name_hash)
+            except ValueError:
+                # bone doesn't exist, add bone
+                transform_info.NameHashes.append(name_hash)
+                transform_info.TransformMatrices.append(None)
+                transform_info.Transforms.append(None)
+                l = StingrayLocalTransform()
+                l.Incriment = 1
+                l.ParentBone = 0
+                transform_info.TransformEntries.append(l)
+                transform_info.NumTransforms += 1
+                transform_index = len(transform_info.NameHashes) - 1
+            
+            # set animated
+            try:
+                animated = bone['Animated']
+                if animated and name_hash not in bone_data.BoneHashes:
+                    bone_data.BoneHashes.append(name_hash)
+                    bone_data.Names.append(bone.name)
+                    bone_data.NumNames += 1
+                    modified_bone_entry = True
+                    modified_state_machine = True
+                    for blend_mask in state_machine_data.blend_masks:
+                        blend_mask.bone_count += 1
+                        blend_mask.bone_weights.append(0.0)
+                    if state_machine_data:
+                        for animation in state_machine_data.animation_ids:
+                            animation_data = Global_TocManager.GetEntry(animation, AnimationID, IgnorePatch=False, SearchAll=True)
+                            if not animation_data.IsLoaded:
+                                animation_data.Load(False, False)
+                            animation_data.LoadedData.add_bone(bone)
+                            Global_TocManager.Save(animation, AnimationID)
+                if not animated and name_hash in bone_data.BoneHashes:
+                    list_index = bone_data.BoneHashes.index(name_hash)
+                    bone_data.BoneHashes.pop(list_index)
+                    bone_data.Names.pop(list_index)
+                    bone_data.NumNames -= 1
+                    modified_bone_entry = True
+                    modified_state_machine = True
+                    for blend_mask in state_machine_data.blend_masks:
+                        try:
+                            blend_mask.bone_weights.pop(list_index)
+                            blend_mask.bone_count -= 1
+                        except IndexError: # happens when removing a custom animated bone
+                            pass
+                    if state_machine_data:
+                        for animation in state_machine_data.animation_ids:
+                            animation_data = Global_TocManager.GetEntry(animation, AnimationID, IgnorePatch=False, SearchAll=True)
+                            if not animation_data.IsLoaded:
+                                animation_data.Load(False, False)
+                            try:
+                                animation_data.LoadedData.remove_bone(list_index)
+                            except IndexError: # happens when removing a custom animated bone
+                                pass
+                            Global_TocManager.Save(animation, AnimationID)
+                    else:
+                        raise Exception("No state machine property on armature, unable to automatically remove bone data from animations; please set a valid StateMachineID property.")
+            except (KeyError, AttributeError) as e:
+                print(e)
+                
+            # set ragdoll
+            '''
+            try:
+                bone_index = bone_data.BoneHashes.index(name_hash)
+                modified_state_machine = True
+                print(f"Setting jiggle bone for {bone.name}")
+                state_machine_data.remove_ragdoll(bone_index)
+                ragdoll = bone['Jiggle']
+                print(ragdoll)
+                weight = bone["Weight"]
+                gravity = bone["Gravity"]
+                param3 = bone["Param 3"]
+                param4 = bone["Param 4"]
+                param5 = bone["Param 5"]
+                param6 = bone["Param 6"]
+                param7 = bone["Param 7"]
+                param8 = bone["Param 8"]
+                param9 = bone["Param 9"]
+                params = [weight, gravity, param3, param4, param5, param6, param7, param8, param9]
+                if ragdoll:
+                    state_machine_data.set_ragdoll(bone_index, params)
+            except (KeyError, AttributeError) as e:
+                pass
+            except ValueError as e:
+                pass
+            '''
+            
+            # set bone matrix
+            loc, rot, scale = bone.matrix.decompose()
+            if transform_info.TransformMatrices[transform_index]:
+                scale = transform_info.TransformMatrices[transform_index].ToLocalTransform().scale
+            else:
+                scale = [1, 1, 1]
+            m = mathutils.Matrix.LocRotScale(loc, rot, mathutils.Vector(scale))
+            m.transpose()
+            transform_matrix = StingrayMatrix4x4()
+            transform_matrix.v = [
+                m[0][0], m[0][1], m[0][2], m[0][3],
+                m[1][0], m[1][1], m[1][2], m[1][3],
+                m[2][0], m[2][1], m[2][2], m[2][3],
+                m[3][0], m[3][1], m[3][2], m[3][3]
+            ]
+            
+            # set bone local transform
+            transform_info.TransformMatrices[transform_index] = transform_matrix
+            if bone.parent:
+                parent_matrix = bone.parent.matrix
+                local_transform_matrix = parent_matrix.inverted() @ bone.matrix
+                translation, rotation, _ = local_transform_matrix.decompose()
+                rotation = rotation.to_matrix()
+                transform_local = StingrayLocalTransform()
+                transform_local.rot.x = [rotation[0][0], rotation[1][0], rotation[2][0]]
+                transform_local.rot.y = [rotation[0][1], rotation[1][1], rotation[2][1]]
+                transform_local.rot.z = [rotation[0][2], rotation[1][2], rotation[2][2]]
+                transform_local.pos = translation
+                transform_local.scale = scale
+                transform_info.Transforms[transform_index] = transform_local
+            else:
+                transform_local = StingrayLocalTransform()
+                transform_info.Transforms[transform_index] = transform_local
+                
+            # set bone parent
+            if bone.parent:
+                try:
+                    parent_name_hash = int(bone.parent.name)
+                except ValueError:
+                    parent_name_hash = murmur32_hash(bone.parent.name.encode("utf-8"))
+                try:
+                    parent_transform_index = transform_info.NameHashes.index(parent_name_hash)
+                    transform_info.TransformEntries[transform_index].ParentBone = parent_transform_index
+                except ValueError:
+                    PrettyPrint(f"Failed to parent bone: {bone.name}.", 'warn')
+                    
+        armature_obj.hide_set(was_hidden)
+        for obj in prev_objs:
+            obj.select_set(True)
+        bpy.context.view_layer.objects.active = prev_obj
+        bpy.ops.object.mode_set(mode=prev_mode)
+        
+    if modified_bone_entry and bone_entry:
+        bone_entry.Save()
+        
+    if modified_state_machine and state_machine_entry:
+        state_machine_entry.Save()
+        
+        
+    # get weights
+    vert_idx = 0
+    numInfluences = 4                
     if not bpy.context.scene.Hd2ToolPanelSettings.LegacyWeightNames:
         if len(object.vertex_groups) > 0:
             for g in object.vertex_groups:
@@ -1507,36 +1785,17 @@ def GetMeshData(og_object, Global_TocManager, Global_BoneNames):
     else:
         boneIndices = []
         weights     = []
-        
-    #bpy.ops.object.mode_set(mode='POSE')
-    # check option for saving bones
-    # get armature object
-    prev_obj = bpy.context.view_layer.objects.active
-    prev_objs = bpy.context.selected_objects
-    prev_mode = prev_obj.mode
-    armature_obj = None
-    for modifier in og_object.modifiers:
-        if modifier.type == "ARMATURE":
-            armature_obj = modifier.object
-            break
-    if armature_obj is not None:
-        was_hidden = armature_obj.hide_get()
-        armature_obj.hide_set(False)
-        bpy.context.view_layer.objects.active = armature_obj
-        bpy.ops.object.mode_set(mode='EDIT')
-        for bone in armature_obj.data.edit_bones: # I'd like to use edit bones but it doesn't work for some reason
-            PrettyPrint(bone.name)
-            try:
-                name_hash = int(bone.name)
-            except ValueError:
-                name_hash = murmur32_hash(bone.name.encode("utf-8"))
-            try:
-                transform_index = transform_info.NameHashes.index(name_hash)
-            except ValueError:
-                PrettyPrint(f"Failed to write data for bone: {bone.name}. This may be intended", 'warn')
-                continue
-                
-            m = bone.matrix.transposed()
+    
+    # set bone matrices in bone index mappings
+    # matrices in bone_info are the inverted joint matrices (for some reason)
+    # and also relative to the mesh transform
+    if lod_index != -1:
+        mesh_info_index = og_object["MeshInfoIndex"]
+        mesh_info = stingray_mesh_entry.MeshInfoArray[mesh_info_index]
+        origin_transform_matrix = transform_info.TransformMatrices[mesh_info.TransformIndex].ToBlenderMatrix().inverted()
+        for i, transform_index in enumerate(bone_info[lod_index].RealIndices):
+            bone_matrix = transform_info.TransformMatrices[transform_index]
+            m = (origin_transform_matrix @ bone_matrix.ToBlenderMatrix()).inverted().transposed()
             transform_matrix = StingrayMatrix4x4()
             transform_matrix.v = [
                 m[0][0], m[0][1], m[0][2], m[0][3],
@@ -1544,50 +1803,8 @@ def GetMeshData(og_object, Global_TocManager, Global_BoneNames):
                 m[2][0], m[2][1], m[2][2], m[2][3],
                 m[3][0], m[3][1], m[3][2], m[3][3]
             ]
-            transform_info.TransformMatrices[transform_index] = transform_matrix
-            if bone.parent:
-                parent_matrix = bone.parent.matrix
-                local_transform_matrix = parent_matrix.inverted() @ bone.matrix
-                translation, rotation, scale = local_transform_matrix.decompose()
-                rotation = rotation.to_matrix()
-                transform_local = StingrayLocalTransform()
-                transform_local.rot.x = [rotation[0][0], rotation[1][0], rotation[2][0]]
-                transform_local.rot.y = [rotation[0][1], rotation[1][1], rotation[2][1]]
-                transform_local.rot.z = [rotation[0][2], rotation[1][2], rotation[2][2]]
-                transform_local.pos = translation
-                transform_local.scale = scale
-                transform_info.Transforms[transform_index] = transform_local
-            else:
-                transform_local = StingrayLocalTransform()
-                transform_info.Transforms[transform_index] = transform_local
-                
-            # matrices in bone_info are the inverted joint matrices (for some reason)
-            # and also relative to the mesh transform
-            mesh_info_index = og_object["MeshInfoIndex"]
-            mesh_info = stingray_mesh_entry.MeshInfoArray[mesh_info_index]
-            origin_transform = transform_info.TransformMatrices[mesh_info.TransformIndex].ToLocalTransform()
-            origin_transform_matrix = mathutils.Matrix.LocRotScale(origin_transform.pos, 
-            mathutils.Matrix([origin_transform.rot.x, origin_transform.rot.y, origin_transform.rot.z]), 
-            origin_transform.scale).inverted()
-            
-            for b in bone_info:
-                if transform_index in b.RealIndices:
-                    b_index = b.RealIndices.index(transform_index)
-                    m = (origin_transform_matrix @ bone.matrix).inverted().transposed()
-                    transform_matrix = StingrayMatrix4x4()
-                    transform_matrix.v = [
-                        m[0][0], m[0][1], m[0][2], m[0][3],
-                        m[1][0], m[1][1], m[1][2], m[1][3],
-                        m[2][0], m[2][1], m[2][2], m[2][3],
-                        m[3][0], m[3][1], m[3][2], m[3][3]
-                    ]
-                    b.Bones[b_index] = transform_matrix
+            bone_info[lod_index].Bones[i] = transform_matrix
 
-        armature_obj.hide_set(was_hidden)
-        for obj in prev_objs:
-            obj.select_set(True)
-        bpy.context.view_layer.objects.active = prev_obj
-        bpy.ops.object.mode_set(mode=prev_mode)
     #bpy.ops.object.mode_set(mode='OBJECT')
     # get faces
     temp_faces = [[] for n in range(len(object.material_slots))]
@@ -1640,7 +1857,6 @@ def GetObjectsMeshData(Global_TocManager, Global_BoneNames):
             data[ID] = {MeshData.MeshInfoIndex: MeshData}
     return data
 
-
 def NameFromMesh(mesh, id, customization_info, bone_names, use_sufix=True):
     # generate name
     name = str(id)
@@ -1664,7 +1880,7 @@ def NameFromMesh(mesh, id, customization_info, bone_names, use_sufix=True):
 
     return name
 
-def CreateModel(stingray_unit, id, Global_BoneNames):
+def CreateModel(stingray_unit, id, Global_BoneNames, bones_entry, state_machine_entry):
     addon_prefs = AQ_PublicClass.get_addon_prefs()
     model, customization_info, bone_names, transform_info, bone_info = stingray_unit.RawMeshes, stingray_unit.CustomizationInfo, stingray_unit.BoneNames, stingray_unit.TransformInfo, stingray_unit.BoneInfoArray
 
@@ -1801,9 +2017,9 @@ def CreateModel(stingray_unit, id, Global_BoneNames):
                 new_vertex_group = new_object.vertex_groups.new(name=str(bone))
                 
         # -- || ADD BONES || -- #
+        skeletonObj = None
+        armature = None
         if bpy.context.scene.Hd2ToolPanelSettings.ImportArmature and not bpy.context.scene.Hd2ToolPanelSettings.LegacyWeightNames:
-            skeletonObj = None
-            armature = None
             if len(bpy.context.selected_objects) > 0:
                 skeletonObj = bpy.context.selected_objects[0]
             if skeletonObj and skeletonObj.type == 'ARMATURE':
@@ -1817,6 +2033,7 @@ def CreateModel(stingray_unit, id, Global_BoneNames):
                 armature.show_names = False
                 skeletonObj = bpy.data.objects.new(f"{id}_rig", armature)
                 skeletonObj['BonesID'] = str(stingray_unit.BonesRef)
+                skeletonObj['StateMachineID'] = str(stingray_unit.StateMachineRef)
                 skeletonObj.show_in_front = True
                 
             if addon_prefs.MakeCollections:
@@ -1851,10 +2068,42 @@ def CreateModel(stingray_unit, id, Global_BoneNames):
                         boneName = Global_BoneNames[boneHash]
                     else:
                         boneName = str(boneHash)
+                    animated = False
+                    ragdoll = False
+                    ragdoll_params = []
+                    if bones_entry and boneName in bones_entry.Names:
+                        animated = True
+                        bone_index = bones_entry.Names.index(boneName)
+                        for r in state_machine_entry.ragdolls:
+                            if r.bone_index == bone_index:
+                                ragdoll = True
+                                ragdoll_params = r.params
+                                break
+                    try:
+                        b = int(boneName)
+                        if bones_entry and b in bones_entry.BoneHashes:
+                            animated = True
+                    except ValueError:
+                        pass
                     newBone = armature.edit_bones.get(boneName)
                     if newBone is None:
                         newBone = armature.edit_bones.new(boneName)
                         newBone.tail = 0, 0.05, 0
+                        if bones_entry: newBone['Animated'] = animated
+                        '''
+                        if bones_entry:
+                            newBone['Jiggle'] = ragdoll
+                            if ragdoll:
+                                newBone['Weight'] = ragdoll_params[0]
+                                newBone['Gravity'] = ragdoll_params[1]
+                                newBone['Param 3'] = ragdoll_params[2]
+                                newBone['Param 4'] = ragdoll_params[3]
+                                newBone['Param 5'] = ragdoll_params[4]
+                                newBone['Param 6'] = ragdoll_params[5]
+                                newBone['Param 7'] = ragdoll_params[6]
+                                newBone['Param 8'] = ragdoll_params[7]
+                                newBone['Param 9'] = ragdoll_params[8]
+                        '''
                         doPoseBone[newBone.name] = True
                     else:
                         doPoseBone[newBone.name] = False
@@ -1879,10 +2128,20 @@ def CreateModel(stingray_unit, id, Global_BoneNames):
                         boneName = Global_BoneNames[boneHash]
                     else:
                         boneName = str(boneHash)
+                    animated = False
+                    if bones_entry and boneName in bones_entry.Names:
+                        animated = True
+                    try:
+                        b = int(boneName)
+                        if bones_entry and b in bones_entry.BoneHashes:
+                            animated = True
+                    except ValueError:
+                        pass
                     newBone = armature.edit_bones.get(boneName)
                     if newBone is None:
                         newBone = armature.edit_bones.new(boneName)
                         newBone.tail = 0, 0.05, 0
+                        if bones_entry: newBone['Animated'] = animated
                         doPoseBone[newBone.name] = True
                     else:
                         doPoseBone[newBone.name] = False
