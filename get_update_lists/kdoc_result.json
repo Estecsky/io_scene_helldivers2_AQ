@@ -3,8 +3,8 @@
         "logs": [
             {
                 "filename": "<system>",
-                "timestamp": "16:20:17.057",
-                "unix_time": 1772353217057,
+                "timestamp": "22:29:15.497",
+                "unix_time": 1772893755497,
                 "level": "info",
                 "args": [
                     "脚本环境(2.0)初始化..."
@@ -12,8 +12,8 @@
             },
             {
                 "filename": "<system>",
-                "timestamp": "16:20:17.062",
-                "unix_time": 1772353217062,
+                "timestamp": "22:29:15.499",
+                "unix_time": 1772893755499,
                 "level": "info",
                 "args": [
                     "已开始执行"
@@ -21,8 +21,8 @@
             },
             {
                 "filename": "<system>",
-                "timestamp": "16:20:20.856",
-                "unix_time": 1772353220856,
+                "timestamp": "22:29:15.601",
+                "unix_time": 1772893755601,
                 "level": "info",
                 "args": [
                     "执行完毕"
@@ -17083,7 +17083,7 @@
             [
                 "b790226862e5907f",
                 "披风",
-                null
+                "解放之眼"
             ],
             [
                 "bd65d57837267aca",
