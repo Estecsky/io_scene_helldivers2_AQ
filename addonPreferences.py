@@ -57,6 +57,7 @@ class HD2_AddonPreferences(bpy.types.AddonPreferences):
     
     MakeCollections  : BoolProperty(name="Make Collections", description = "Make new collection when importing meshes", default = False)
     ShowAnimations   : BoolProperty(name="Animations", description = "Show Animations", default = False)
+    ShowParticles    : BoolProperty(name="Particles",description="显示粒子",default=True)
     tga_Tex_Import_Switch : BoolProperty(name="TGA_Tex_Import_Switch",default = False,description = "开启TGA纹理导入开关，tga会自动转换为dds,文件输出目录为软件缓存目录")
     png_Tex_Import_Switch : BoolProperty(name="PNG_Tex_Import_Switch",default = False,description = "开启PNG纹理导入开关，png会自动转换为dds,文件输出目录为软件缓存目录")
     ShowArchivePatchPath : BoolProperty(name="ShowArchivePatchPath",default = False,description = "实时显示活动Archive和Patch的路径")
