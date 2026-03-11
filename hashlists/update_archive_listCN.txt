@@ -1,4 +1,4 @@
-本地更新时间：2026-03-07 22:29:15.497
+本地更新时间：2026-03-09 23:10:33.766
 0089bbe3e284fcaa#战备#榴弹发射器
 009da023c64d178d#大概环境物体#有虫子地形常见的发光蘑菇
 00c928ec7e330f9e#大概环境物体#None
@@ -1232,7 +1232,7 @@ None#其他#None
 9e8510106ee97ee1#None#None
 9eac53e9071937f7#None#None
 9ec0b7185d844e4f#None#None
-9effc1c882578baf#枪、装备#忠诚者（等离子手枪）
+9effc1c882578baf#枪、装备#PLAS-15 忠诚者（等离子手枪）
 9f3daa53d223bd62#None#None
 9f3df936e668e0de#None#None
 9f4b9dbe6cfd636d#None#None
@@ -1956,7 +1956,7 @@ ffcad1f7ff9888d7#盔甲#CE-07 Demolition Specialist  “拆除专家”
 ffe5cf37358103ee#视频#None
 1683ee92e6aec3eb#盔甲#I-44 Salamander“火蜥”
 98d52b64727d362b#头盔#I-09 “热力追踪”
-49fd919a67a5db66#枪、装备#火炬手
+49fd919a67a5db66#枪、装备#FLAM-66 火炬手
 7af5df78217fd645#枪、装备#野炊（火喷）
 41ce78fe8f96bebe#枪、装备#P-72迅击
 57cebd7e5f985d45#盔甲#I-102龙行者i102

@@ -3,8 +3,8 @@
         "logs": [
             {
                 "filename": "<system>",
-                "timestamp": "22:29:15.497",
-                "unix_time": 1772893755497,
+                "timestamp": "23:10:33.766",
+                "unix_time": 1773069033766,
                 "level": "info",
                 "args": [
                     "脚本环境(2.0)初始化..."
@@ -12,8 +12,8 @@
             },
             {
                 "filename": "<system>",
-                "timestamp": "22:29:15.499",
-                "unix_time": 1772893755499,
+                "timestamp": "23:10:33.768",
+                "unix_time": 1773069033768,
                 "level": "info",
                 "args": [
                     "已开始执行"
@@ -21,8 +21,8 @@
             },
             {
                 "filename": "<system>",
-                "timestamp": "22:29:15.601",
-                "unix_time": 1772893755601,
+                "timestamp": "23:10:33.869",
+                "unix_time": 1773069033869,
                 "level": "info",
                 "args": [
                     "执行完毕"
@@ -6198,7 +6198,7 @@
             [
                 "9effc1c882578baf",
                 "枪、装备",
-                "忠诚者（等离子手枪）"
+                "PLAS-15 忠诚者（等离子手枪）"
             ],
             [
                 "9f3daa53d223bd62",
@@ -9818,7 +9818,7 @@
             [
                 "49fd919a67a5db66",
                 "枪、装备",
-                "火炬手"
+                "FLAM-66 火炬手"
             ],
             [
                 "7af5df78217fd645",
