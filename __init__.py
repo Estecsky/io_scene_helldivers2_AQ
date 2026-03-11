@@ -549,7 +549,7 @@ def LoadNameHashes():
         for line in f.readlines():
             parts = line.split(" ")
             if int(parts[0]) not in Loaded:
-                Global_NameHashes.append([int(parts[0]), parts[1].replace("\n", "")])
+                Global_NameHashes.append([int(parts[0]), " ".join(parts[1:]).replace("\n", "")])
                 Loaded.append(int(parts[0]))
 
 
@@ -875,6 +875,7 @@ class StreamToc:
         self.unk4Data   = bytearray(56)
         self.TocTypes   = []
         self.TocEntries = []
+        self.TocDict = {}
         self.Path = ""
         self.Name = ""
         self.LocalName = ""
@@ -899,7 +900,14 @@ class StreamToc:
         # serialize Entries in correct order
         self.TocTypes   = [Entry.Serialize(self.TocFile) for Entry in self.TocTypes]
         TocEntryStart   = self.TocFile.tell()
-        if self.TocFile.IsReading(): self.TocEntries = [Entry.Serialize(self.TocFile) for Entry in self.TocEntries]
+        if self.TocFile.IsReading(): 
+            self.TocEntries = [Entry.Serialize(self.TocFile) for Entry in self.TocEntries]
+            for entry in self.TocEntries:
+                try:
+                    self.TocDict[entry.TypeID][entry.FileID] = entry
+                except KeyError:
+                    self.TocDict[entry.TypeID] = {}
+                    self.TocDict[entry.TypeID][entry.FileID] = entry
         else:
             Index = 1
             for Type in self.TocTypes:
@@ -978,11 +986,20 @@ class StreamToc:
     def AddEntry(self, NewEntry):
         if self.GetEntry(NewEntry.FileID, NewEntry.TypeID) != None:
             raise Exception("Entry with same ID already exists")
+        try:
+            self.TocDict[NewEntry.TypeID][NewEntry.FileID] = NewEntry
+        except KeyError:
+            self.TocDict[NewEntry.TypeID] = {}
+            self.TocDict[NewEntry.TypeID][NewEntry.FileID] = NewEntry
         self.TocEntries.append(NewEntry)
         self.UpdateTypes()
     def RemoveEntry(self, FileID, TypeID):
         Entry = self.GetEntry(FileID, TypeID)
         if Entry != None:
+            try:
+                del self.TocDict[TypeID][FileID]
+            except KeyError:
+                pass
             self.TocEntries.remove(Entry)
             self.UpdateTypes()
 
@@ -1037,7 +1054,7 @@ class TocManager():
         toc = StreamToc()
         toc.FromFile(path)
     
-        # # add to global animation mapping:
+        # add to global animation mapping:
         # global Global_AnimationMapping
         # if toc.TocDict.get(StateMachineID, None):
         #     for state_machine in toc.TocDict[StateMachineID].values():
@@ -2208,12 +2225,65 @@ class DuplicateEntryOperator(Operator):
     object_id: StringProperty()
     object_typeid: StringProperty()
     def execute(self, context):
+        if self.NewFileID == "":
+            # 为空则随机生成一个ID，避免重复
+            self.NewFileID = str(r.randint(1, 0xffffffffffffffff))
         Global_TocManager.DuplicateEntry(int(self.object_id), int(self.object_typeid), int(self.NewFileID))
         return{'FINISHED'}
 
     def invoke(self, context, event):
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
+
+class DuplicateEntriesOperator(Operator):
+    bl_label = "Duplicate Entries"
+    bl_idname = "helldiver2.archive_duplicate_entries"
+    bl_description = "先选择场景中的多个物体，再选择一个条目来批量复制条目，条目名称会从选中的物体中获取材质名"
+    
+    @classmethod
+    def poll(cls, context):
+        if context.selected_objects != None:
+            for obj in context.selected_objects:
+                if obj.type != "MESH":
+                    return False
+            return True
+        else:
+            return False
+        
+    object_id: StringProperty()
+    object_typeid: StringProperty()
+    def execute(self, context):
+        NewFileID_list = []
+        selected_objs = context.selected_objects
+        if selected_objs:
+            for obj in selected_objs:
+                if obj.type == "MESH":
+                    if "Z_ObjectID" in obj.keys():
+                        if len(obj.material_slots) > 0  and obj["Z_ObjectID"] != None:
+                            for slot in obj.material_slots.keys():
+                                if slot.isnumeric():
+                                    NewFileID_list.append(slot)
+                                else:
+                                    self.report({"ERROR"}, f"物体{obj.name}的材质槽{slot}不是数字")
+                                    return {'CANCELLED'}
+                            
+                        else:
+                            self.report({'WARNING'}, f"物体{obj.name}没有材质槽，已跳过")
+                            continue
+                    else:
+                        self.report({'WARNING'}, f"物体{obj.name}没有Z_ObjectID，已跳过")
+                        continue
+            
+            New_set = set(NewFileID_list) # 去重
+            for NewFileID in New_set:
+                Global_TocManager.DuplicateEntry(int(self.object_id), int(self.object_typeid), int(NewFileID))
+            self.report({'INFO'}, f"已复制生成{len(New_set)}个条目")
+            
+            return {'FINISHED'}
+        else:
+            self.report({'ERROR'}, "没有选中任何物体")
+            return {'CANCELLED'}
+
 
 class RenamePatchEntryOperator(Operator):
     bl_label = "Rename Entry"
@@ -3509,8 +3579,26 @@ def CustomPropertyContext(self, context):
     layout.operator("helldiver2.paste_custom_properties", icon= 'PASTEDOWN')
     layout.separator()
     layout.operator("helldiver2.archive_animation_save", icon='ARMATURE_DATA')
+    # if bpy.context.object.type == "ARMATURE":
+    #     if bpy.context.object.get("StateMachineID", None) is not None:
+    #         layout.operator("helldiver2.search_animations", text="查找该骨架的动画", icon='VIEWZOOM').state_machine_id = bpy.context.object.get("StateMachineID")
+
     layout.operator("helldiver2.archive_mesh_batchsave", icon= 'FILE_BLEND')
-        
+       
+# class SearchArmatureAnimationsOperator(Operator):
+#     bl_label = "Search Animations"
+#     bl_idname = "helldiver2.search_animations"
+#     bl_description = "查找该骨架的动画"
+    
+#     state_machine_id: StringProperty(default="0")
+    
+#     def execute(self, context):
+#         context.scene.Hd2ToolPanelSettings.SearchField = self.state_machine_id
+#         global Global_Foldouts
+#         # print(Global_Foldouts)
+#         for key in Global_Foldouts:
+#             key[1] = (key[0] == str(AnimationID))
+#         return {"FINISHED"} 
 #endregion
 
 
@@ -4038,6 +4126,7 @@ class WM_MT_button_context(Menu):
         ImportMeshName = "Import Mesh" if SingleEntry else f"Import {NumSelected} Meshes"
         ImportTextureName = "Import Texture" if SingleEntry else f"Import {NumSelected} Textures"
         ImportMaterialName = "Import Material" if SingleEntry else f"Import {NumSelected} Materials"
+        ImportRawDumpName = "Import Raw Dump" if SingleEntry else f"Import {NumSelected} Raw Dumps"
         DumpObjectName = "Dump Object" if SingleEntry else f"Dump {NumSelected} Objects"
         SaveTextureName = "Save Blender Texture" if SingleEntry else f"Save Blender {NumSelected} Textures"
         SaveMaterialName = "Save Material" if SingleEntry else f"Save {NumSelected} Materials"
@@ -4058,6 +4147,9 @@ class WM_MT_button_context(Menu):
             row.operator("helldiver2.archive_clearclipboard", icon='TRASH', text="Clear Clipboard")
         if SingleEntry:
             props = row.operator("helldiver2.archive_duplicate", icon='DUPLICATE', text="Duplicate Entry")
+            props.object_id     = str(Entry.FileID)
+            props.object_typeid = str(Entry.TypeID)
+            props = row.operator("helldiver2.archive_duplicate_entries", icon='DUPLICATE', text="Duplicate Entries")
             props.object_id     = str(Entry.FileID)
             props.object_typeid = str(Entry.TypeID)
         
@@ -4085,7 +4177,7 @@ class WM_MT_button_context(Menu):
             row.operator("helldiver2.material_import", icon='IMPORT', text=ImportMaterialName).object_id = FileIDStr
         # Draw export buttons
         row.separator()
-        props = row.operator("helldiver2.archive_object_dump_import", icon='PACKAGE', text="Import Raw Dump")
+        props = row.operator("helldiver2.archive_object_dump_import", icon='PACKAGE', text=ImportRawDumpName)
         props.object_id     = FileIDStr
         props.object_typeid = TypeIDStr
         props = row.operator("helldiver2.archive_object_dump_export", icon='PACKAGE', text=DumpObjectName)
@@ -4177,6 +4269,7 @@ classes = (
     SelectAllOfTypeOperator,
     RenamePatchEntryOperator,
     DuplicateEntryOperator,
+    DuplicateEntriesOperator,
     SetEntryFriendlyNameOperator,
     MaterialShaderVariableEntryOperator,
     MaterialShaderVariableColorEntryOperator,
@@ -4195,6 +4288,7 @@ classes = (
     CopyCustomPropertyOperator,
     PasteCustomPropertyOperator,
     CopyDecimalIDOperator,
+    # SearchArmatureAnimationsOperator,
 )
 
 Global_TocManager = TocManager()
