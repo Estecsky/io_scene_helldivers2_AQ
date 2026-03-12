@@ -1,4 +1,4 @@
-本地更新时间：2026-03-09 23:10:33.766
+本地更新时间：2026-03-12 21:14:47.999
 0089bbe3e284fcaa#战备#榴弹发射器
 009da023c64d178d#大概环境物体#有虫子地形常见的发光蘑菇
 00c928ec7e330f9e#大概环境物体#None
@@ -2188,7 +2188,7 @@ d0de7721e4a47990#盔甲#IE-12 “义士”ie12
 d1a39b5edac646aa#头盔#B-22 “模范公民”（贴图在这）(受B01污染)
 1120577ed1e095f8#盔甲#B-22 “模范公民”（贴图在这）
 7f927f50fa6c50e8#枪、装备#LAS-17 双刃镰刀
-b779a2f9d0928e03#枪、装备#GP-31 最后通牒
+b779a2f9d0928e03#枪、装备#GP-20 最后通牒
 f590569dbbc6fe2d#枪、装备,音频#G-50 寻踪者
 346d785d6ca13ff4#战备#B-100 便携式地狱火炸弹
 49de16e1343250e4#枪、装备#堑壕工具
@@ -2491,7 +2491,7 @@ f3f0536e7e34ad11#敌人#龙息喷大盾
 f7eb45a4ebc21335#None#None
 f8be75b97be4df4c#未知#None
 faedbfbebb16d1d3#大概环境物体#机器人轨道炮相关
-5.13更新#None#None
+5.13更新。mod失效#None#None
 2fb07d7a9b9252aa#头盔#RE-1861 parade commander“阅兵指挥官”
 39fe1f0308f4514a#盔甲#RE-1861 “阅兵指挥官”parade commander
 b4d15b145b3f7677#头盔#RE-2310 honorary guard“荣誉卫队”
@@ -2798,7 +2798,7 @@ f4bf27b6edfdd763#None#None
 fdf06912d4548efb#None#None
 0c18afd4a45f68fe#披风#“自由支柱”
 8e9a5756930aeedd#披风#“民主之心捍卫者”
-7.15更新，mod爆炸#None#None
+7.15更新，mod失效#None#None
 be54826ac0d5f4db#头盔#AD-11 “生龙活虎”
 89395c2f8ce3d8a0#盔甲#AD-11 “生龙活虎”
 7cfc63f636fa5132#头盔#AD-26 “血刃科技”
@@ -2903,7 +2903,7 @@ None#None#None
 None#None#None
 1eee5c22038560e5#未知#None
 2383518de1150733#无网格#植物贴图
-8.26更新#None#None
+8.26更新。mod失效#None#None
 a856edff49cfdd95#头盔#A-9 “地狱伞兵”
 1d6dc4216e7ce52d#盔甲#A-9 “地狱伞兵”
 1a2fc86abd27bf5b#头盔#A-35 “侦察者”
@@ -3301,7 +3301,7 @@ bba76437a1c00c1e#战备#B/MD C4背包
 2026.1.22添加#None#None
 0102bf171412f94d#未知,导入失败#None
 7241667bb13d5414#未知#None
-2026.2.3添加#None#None
+2026.2.3更新，mod失效#None#None
 719e9e75f790d580#头盔#SA-7 “冲锋者”
 d895f447d332c331#盔甲#SA-7 “冲锋者”
 a72abfe9616771df#头盔#SA-8 “蛮焊”
