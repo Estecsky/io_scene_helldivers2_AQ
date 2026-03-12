@@ -2,26 +2,26 @@
 16537737171020264256 content/objectives/obj_common/oil_field/oil_field_plane
 16927169355845479754 content/objectives/obj_common/oil_pump/oil_pump
 17292442294508204737 content/audio/wep_grenade_launcher
-211331680192206384 content/fac_helldivers/equipment/support_weapons/grenade_launcher/grenade_launcher
+211331680192206384 GL-21 榴弹发射器
 11202044778487390708 content/objectives/obj_common/oil_pump/objective_oil_pump_terminal
 14538479844987431790 content/markers/exploration_markers/narrative/poi_text_tablet_overseer_01
 4179069540441354011 content/env_super_earth/habs/props/vending_machine_democracy_01
-12508512869271882154 content/env_shared/assets/samples/crystalized_e710_sample_01/crystalized_e710_sample_01
+12508512869271882154 稀有样本 E-710晶体
 7911125090997601213 content/objectives/obj_common/oil_pump/objective_oil_pump_valve
-1279722939363854678 content/fac_helldivers/equipment/support_weapons/machinegun/machinegun
+1279722939363854678 战备 MG-43 机枪
 14195043073648156734 content/objectives/obj_bugs/blocking_chunk/blocking_chunk
 5950303641766825438 content/objectives/obj_common/entities/gen_oilpump/gen_oilpump
 11691712792438096287 content/env_illuminate/samples/illuminate_enemy_sample_01
 15262893187433097986 content/env_super_earth/habs/vehicles/habs_forklift_01
 9045610600833071094 content/objectives/landing_zone
-8776671053425669033 content/fac_helldivers/discoverables/ammo_box_discoverable_01/ammo_box_discoverable_01
+8776671053425669033 弹药箱
 2325721028474622445 content/env_super_earth/habs/structures/habs_colony_building_ground_01_master
 12525242792979901983 content/env_super_earth/habs/props/habs_barrel_fuel
 13742248433727273223 content/env_super_earth/military_base/utilities/base_light_01_head
-13632525282499700070 content/env_shared/assets/samples/blacksaffron_sample_01/blacksaffron_sample_01
+13632525282499700070 稀有样本 黑色藏红花
 11333649286886241306 content/env_shared/assets/samples/super_uranium/super_uranium_sample_01
 18085197870419332847 content/audio/us/Mission_Civilian_VO
-12943291850073424771 content/env_shared/assets/samples/artifact_sample_01/artifact_sample_01
+12943291850073424771 常见样本 - 光能者立方体
 14173752171115250642 content/art_shared/textures/camera_dirt
 9827746234952595593 content/planet_desert_sandy/assets/terrain_materials/textures_packed/sandy_weathering_nar
 14201419134687365787 content/planet_desert_sandy/assets/terrain_materials/textures_packed/sandy_weathering_mask
@@ -53,7 +53,7 @@
 5801780707595001106 content/audio/vo_illuminate
 5825608113412082114 content/audio/foley_illuminate
 9585963490574707391 content/audio/weapons_illuminate
-16068287307180393021 content/env_shared/assets/samples/legendarium_sample_01/legendarium_sample_01
+16068287307180393021 稀有样本 传说矿物
 5744599939368375614 content/env_cyborg/gameplay/spawner_factory/cyborg_spawner_factory_conscript_standard
 11292646840963106502 content/audio/obj_carry_flag
 12408737814249412459 content/audio/obj_raise_flag
@@ -116,15 +116,15 @@
 12624110081651840123 content/markers/exploration_markers/narrative/poi_text_tablet_family_01
 6013996337686928124 content/markers/exploration_markers/narrative/poi_text_tablet_mail_01
 18158426597097774052 content/markers/exploration_markers/narrative/poi_text_tablet_permit_01
-15369542005276747891 content/fac_helldivers/equipment/support_weapons/laser_cannon/laser_cannon
+15369542005276747891 战备 LAS-98 激光大炮
 7223794220521538414 content/env_super_earth/habs/containers/smuggler_cache
-4155583896232633279 content/fac_helldivers/equipment/support_weapons/flamethrower/flamethrower
-13918995818598980231 content/fac_helldivers/equipment/primary_weapons/assault_shotgun_incendiary/assault_shotgun_incendiary
+4155583896232633279 战备 FLAM-40 火焰喷射器
+13918995818598980231 SG-225IE 高燃破裂者
 10427010750460978344 content/markers/exploration_markers/cache_loot_marker
-2714034314705433838 content/fac_helldivers/equipment/support_weapons/faf_missile_launcher/faf_missile_launcher
-10930013077329100956 content/fac_helldivers/discoverables/grenade_box_discoverable_01/grenade_box_discoverable_01
-13027308828300900709 content/fac_helldivers/discoverables/health_pack_discoverable_01/health_pack_discoverable_01
-9927421484392399367 content/fac_helldivers/equipment/support_weapons/sniper_rifle/sniper_rifle
+2714034314705433838 战备 FAF-14 飞矛
+10930013077329100956 手雷箱
+13027308828300900709 医疗针箱
+9927421484392399367 战备 APW-1 反器材步枪
 5559759717312999507 content/audio/bots_scoutwalker
 2159324961618377890 content/planet_desert_sandy/assets/terrain_materials/textures_packed/sandy_dirt_displacement.tga
 14594002806292477017 content/planet_desert_sandy/assets/terrain_materials/textures_packed/sandy_heavy_pebbles_displacement.tga
@@ -180,14 +180,14 @@
 17259437333005147504 content/fac_helldivers/hellpod/turret/gatling_turret
 7532632187257416932 content/env_super_earth/military_base/mechanical_bughole/mechanical_bughole
 5321902713564716286 content/env_super_earth/tutorial/door_01/door_light
-424716889947522210 content/fac_helldivers/equipment/sidearm_weapons/standard_pistol/standard_pistol
+424716889947522210 P-2 和平使者
 689263509684636332 content/objectives/obj_common/entities/tut_intro_mission/tut_intro_mission_segment/tut_intro_mission_segment
 16961153421843848802 content/entities/navmeshseedpoint
 10699906417599039617 content/env_super_earth/tutorial/cape_dispenser/cape_dispenser
 12628840167151644876 content/env_super_earth/tutorial/weapon_dispenser/weapon_dispenser
 12815336614061458907 content/objectives/obj_common/icbm_silo/icbm_silo
 9796573205647524202 content/fac_super_earth/tutorial/target_turret
-10845250369047350884 content/fac_helldivers/equipment/primary_weapons/assault_rifle/assault_rifle
+10845250369047350884 AR-23 解放者
 13399733575043728622 content/env_super_earth/habs/props/warning_lamp_01
 2390745754385977850 content/env_super_earth/military_base/utilities/door_01
 15805795754758043311 content/objectives/obj_common/cargo_container/cargo_container
@@ -200,8 +200,8 @@
 14561226814014948114 content/env_shared_forest/assets/weathering/forest_weathering_nar
 8881182940724313260 content/env_shared_forest/assets/weathering/forest_weathering_mask
 2279509978647120743 content/env_shared_forest/assets/weathering/forest_weathering_albedo_graded
-5771061903247604588 content/env_bugs/assets/samples/bug_sample_01
-11432560202897483622 content/objectives/obj_bugs/retrieve_larva/bug_larva_container_backpack
+5771061903247604588 常见样本 - 异星球茎（虫巢附近的样本）
+11432560202897483622 终结族幼虫
 16147921581624249384 content/level_generation_settings/env_shared/weather_settings/high_altitude_clouds/high_altitude_coverage_map2
 12064036665989730127 content/effects/textures/lens_flares/lens_flare_sun_01
 10619740896249204991 content/levels/lighting/editor_testing/reflection_probe_specular_bake
@@ -275,13 +275,13 @@
 14571812785558082826 content/env_super_earth/military_base/super_earth_cache/super_earth_cache_lid
 774288562714145417 content/env_super_earth/military_base/super_earth_cache/super_earth_cache
 16446751170506712804 content/markers/exploration_markers/narrative/poi_text_tablet_seaf_retreat_01
-5910727434981086692 content/fac_super_earth/equipment/support_weapons/shotgun_doublebarrel/shotgun_doublebarrel
+5910727434981086692 SG-88 中折式霰弹枪
 1706407062147702353 content/audio/obj_extract_civilians
 8994287548953596822 content/audio/foley_npcs
 9607281538809398295 content/audio/Mission_Civilian_Exertions
 18015484091265706637 content/audio/obj_communicationrelay
 4021120973472933563 content/fac_helldivers/hellpod/turret_machinegun_gpmg/turret_machinegun_gpmg
-9264801226655597011 content/fac_helldivers/equipment/support_weapons/lat_oneshot/lat_oneshot
+9264801226655597011 战备 EAT-17 一次性反坦克武器（次抛）
 2573049203504281649 content/levels/ship_hub-cubemaps/reflection_probe_specular_bake
 3642146030219634594 content/levels/ship_hub-cubemaps/reflection_probe_radiance_bake
 17675886342563737669 content/levels/ship_hub-cubemaps/reflection_probe_diffuse_bake
@@ -324,7 +324,7 @@
 6290687013549728522 content/env_super_earth/military_base/utilities/cache_button
 2412946532637084179 content/env_shared/assets/exploration_rewards/cache_interactable_box
 8783342891467425251 content/fac_helldivers/vehicles/combat_walker/combat_walker
-2877271129141764950 content/fac_helldivers/equipment/primary_weapons/laser_rifle/laser_rifle
+2877271129141764950 LAS-5 长柄镰
 15586954129831248040 content/objectives/obj_cyborgs/cyborg_landed_dropship/cyborg_landed_dropship
 14767523449115355633 content/objectives/obj_cyborgs/entities/cy_destroy_airbase/cy_destroy_airbase
 15466420969921261820 content/planet_forest_moor/assets/terrain_materials/textures_packed/moor_field_grass_01_displacement.tga
@@ -346,7 +346,7 @@
 1645565057553732869 content/audio/bugs_bilespewer
 10102056965302435169 content/env_bugs/assets/gameplay/bug_spawner_warrior
 17421195960715507203 content/objectives/obj_common/sam_site/sam_site_launcher_terminal
-12164217308285983839 content/fac_helldivers/equipment/support_weapons/automatic_cannon/automatic_cannon
+12164217308285983839 战备 AC-8 机炮
 13347714344522860215 content/objectives/obj_cyborgs/entities/cy_samsite/cy_samsite
 11654668915819557853 content/objectives/obj_common/sam_site/sam_site
 15890905443268450539 content/objectives/obj_common/sam_site/sam_site_foundation
@@ -375,14 +375,14 @@
 3361379816955777588 content/objectives/obj_common/gen_button
 13803685151943133100 content/objectives/obj_bugs/tcs/tcs_support_damageable
 1201994798374221065 content/objectives/obj_bugs/tcs/tcs_main_tower_02
-10871298989420119782 content/fac_helldivers/equipment/support_weapons/arc_thrower/arc_thrower
+10871298989420119782 战备 ARC-3 电弧发射器
 1649808155683745294 content/objectives/obj_bugs/tcs/tcs_support_pillar_01_static
 5452892418991605202 content/objectives/obj_bugs/entities/bug_tcs_02/bug_tcs_02
 1073243411930782369 content/env_super_earth/habs/corporation_props/blue_corp_tool_rack_01
 2550304950015172973 content/audio/bots_gunship
 4882226405607636345 content/objectives/obj_cyborgs/entities/cy_kill/cy_kill
-3358853937828503136 content/fac_helldivers/equipment/support_weapons/railgun/railgun
-17196401230144941076 content/fac_helldivers/equipment/primary_weapons/plasma_rifle/plasma_rifle
+3358853937828503136 战备 RS-422 磁轨炮
+17196401230144941076 PLAS-1 焦土
 1016693250774512036 content/objectives/obj_illuminate/entities/il_destroy_harvester/il_destroy_harvester
 11881991669617894885 content/objectives/obj_illuminate/il_harvester/il_harvester_weakspot
 13486456492332597201 content/objectives/obj_illuminate/il_harvester/il_harvester
@@ -457,10 +457,10 @@
 3306034378071258267 content/fac_super_earth/tutorial/stab_machine
 4083821917710944045 content/fac_super_earth/tutorial/cha_tutorial_bot_store
 12218137513893139416 content/fac_cyborgs/emplacements/cyborg_emplacement_hmg/cyborg_emplacement_hmg
-7256596000532615782 content/env_shared/assets/samples/bio_sample_01/bio_sample_01
+7256596000532615782 常见样本 - 尸殖虫（墓碑附近的样本）
 10897067899328555568 content/objectives/obj_cyborgs/cyborg_destroy_communication/objective_destroy_communication_terminal
 10988915095021253731 content/objectives/obj_cyborgs/entities/cy_destroy_communication/cy_destroy_communication
-12008625947668001407 content/fac_helldivers/equipment/primary_weapons/lmg_stalwart/lmg_stalwart
+12008625947668001407 战备 M-105 盟友
 14704299532448510191 content/fac_helldivers/discoverables/ammo_support_discoverable_box_01/ammo_support_discoverable_box_01
 17350595647090867816 content/objectives/obj_cyborgs/entities/cy_assassinate_devastator/cy_assassinate_devastator
 14709257759554793401 content/fac_helldivers/vehicles/frv/frv
@@ -541,7 +541,7 @@
 7425028294184430542 content/audio/obj_tcs_activate
 14218929801082577703 content/audio/wep_ar19_liberator
 17993939239392893728 content/audio/wep_recoilless_ap
-11493422068836852751 content/fac_helldivers/equipment/support_weapons/recoilless_rifle/recoilless_rifle
+11493422068836852751 战备 GR-8 无后坐力炮
 4660092418055292960 content/audio/env_forest
 9724339804752659124 content/env_shared_forest/assets/samples/plant_sample_01
 16836115537327099730 content/audio/wep_sickle
@@ -553,7 +553,7 @@
 13236617319809353751 content/audio/haz_bugcluster
 13837079467154678043 content/audio/env_bugs
 8544792714086142645 content/env_bugs/assets/samples/bug_intel_sample_01
-3124708172057168516 content/env_bugs/assets/samples/bug_egg_super_sample_01
+3124708172057168516 超级样本 - 变异虫卵
 322814213451470685 content/audio/obj_destroy_airbase
 13555939877178383322 content/audio/obj_dropship
 2289067984947815710 content/levels/lighting/desert/desert_day-cubemaps/reflection_probe_specular_bake
@@ -666,8 +666,8 @@
 1107004946896383133 content/audio/obj_destroy_gunship_spawner
 1918907825876909407 content/audio/obj_antiairgun
 16061406947694662020 content/audio/obj_destroy_command_bunker
-13741222368367787890 content/env_cyborg/samples/automaton_sample_01
-14347356236094671771 content/env_cyborg/samples/automaton_super_sample_01
+13741222368367787890 常见样本 - 小型机械零件
+14347356236094671771 超级样本 - 机密数据
 16350010024704713163 content/objectives/obj_cyborgs/cyborg_shutdown_grinder/grinder
 14017838307945042767 content/audio/plas_3_plasma_pistol
 1611415327122055123 content/audio/us/Tutorial_Helldiver_Recruit_VO
@@ -747,7 +747,7 @@
 15245448357206214806 content/planet_desert_savanna/assets/terrain_materials/textures_packed/savanna_dead_zone_displacement.tga
 15824211042946782180 content/audio/obj_briefcase
 5032345610106526414 content/audio/wep_sg8_punisher
-4749824949454633632 content/fac_helldivers/equipment/primary_weapons/pump_shotgun/pump_shotgun
+4749824949454633632 SG-8 制裁者
 762604621544406901 content/audio/obj_feedback_sounds
 5555529191604247531 content/audio/weapons_superearth
 9002059662857666867 content/audio/samples
@@ -1000,7 +1000,7 @@
 18345157310500842396 content/env_super_earth/habs/structures/ruin_scrap_heap_5m_01
 12421182327299345565 content/fac_illuminate/cha_observer/cha_observer
 15774580357443829330 content/fac_illuminate/equipment/illuminate_adept_circle/illuminate_adept_circle
-11601043503813400874 content/fac_helldivers/equipment/backpacks/drone_mg/drone_mg
+11601043503813400874 战备 AX/AR-23 "护卫犬" 无人机
 6756857302846632676 content/env_cyborg/props/bunker_door_01
 11105721130648470965 content/objectives/obj_common/raise_flag/hellpod_flag
 16789328665547383324 content/fac_helldivers/equipment/support_weapons/railgun/railgun_sabot
@@ -1086,7 +1086,7 @@
 913119522503676205 content/env_super_earth/habs/props/container_03
 3432762169642438488 content/env_super_earth/habs/props/container_06
 5284285530903897663 content/env_super_earth/habs/containers/box_02_2stack
-9291384900638350902 content/fac_helldivers/equipment/primary_weapons/jet_rifle/jet_rifle
+9291384900638350902 JAR-5 主宰
 689333780952378169 content/env_super_earth/habs/props/se_flag_horizontal_02
 3411403495940440006 content/env_super_earth/habs/props/container_09
 12288232278411403974 content/env_super_earth/habs/props/container_02
@@ -1173,9 +1173,9 @@
 5787948413593898778 content/fac_helldivers/hellpod/ammo_rack/ammo_rack
 16983968416304026806 content/fac_helldivers/vehicles/eagle/weapons/eagle_missile
 10859499723599640561 content/env_super_earth/habs/props/container_10
-2976556536743111746 content/env_super_earth/samples/research_bio_sample_01
+2976556536743111746 常见样本 - 金属箱
 10040057173013756660 content/env_cyborg/props/cy_trash_set_01
-535319041333920260 content/fac_helldivers/equipment/primary_weapons/arc_shotgun/arc_shotgun
+535319041333920260 ARC-12 雷霆（电喷）
 2453107319777848703 content/env_shared_arctic/assets/ice/ice_icicle_03
 3406124841849787344 content/env_shared_arctic/assets/ice/ice_structure_02
 6999938328087911373 content/env_shared_arctic/assets/ice/ice_icicle_02
@@ -1197,7 +1197,7 @@
 16580134850276331245 content/env_super_earth/military_base/utilities/cctv_camera_01
 8665684425948492064 content/env_illuminate/gameplay/il_spawner_01
 12117679636440953731 content/objectives/obj_illuminate/il_raise_building_01/il_raise_building_01
-3494241250398732730 content/env_super_earth/samples/research_sample_01
+3494241250398732730 常见样本 - 金属箱
 3770036446644409843 content/env_super_earth/habs/corpses/habs_corpse_02
 4674540359833765308 content/env_super_earth/habs/corpses/habs_corpse_03
 5361862703485749820 content/env_super_earth/wartorn/wartorn_frv_01
@@ -1212,7 +1212,7 @@
 14235779273505423382 content/objectives/obj_common/civilian_spawn_door/civilian_spawn_door
 16700633104728639089 content/env_super_earth/habs/props/headstone_04
 2505434705847444739 content/objectives/obj_common/seismic_probe/seismic_probe
-4878198249831276603 content/fac_helldivers/equipment/support_weapons/chemgun/chemgun
+4878198249831276603 战备 TX-41 灭菌器
 1594581125636265101 content/env_super_earth/habs/props/se_flag_horizontal_04
 13682275477419944701 content/env_super_earth/military_base/gate_02/gate_02
 1597300052856195612 content/env_super_earth/habs/utilities/xl_antenna
@@ -1223,7 +1223,7 @@
 307828452247201889 content/planet_forest_swamp/assets/organic/chimney/chimney_01
 4177869555311642659 content/env_super_earth/habs/props/headstone_03
 16606762893554956362 content/env_super_earth/habs/props/headstone_02
-2401215835282261016 content/fac_helldivers/equipment/support_weapons/heavy_mg/heavy_mg
+2401215835282261016 战备 MG-206 重机枪
 830284595714798800 content/objectives/obj_bugs/super_syringe/super_syringe
 18223572581977941174 content/fac_helldivers/vehicles/eagle/weapons/eagle_gunpod
 10154749436797274952 content/env_cyborg/props/cy_robot_arm
@@ -1235,7 +1235,7 @@
 13081660897026904544 content/env_super_earth/habs/props/tire_stack_04
 16776692261271397993 content/env_super_earth/habs/props/tire_stack_02
 14748816422034837943 content/fac_bugs/cha_boomer/cha_boomer_tier_2
-3865797767236207742 类星体
+3865797767236207742 战备 LAS-99 类星体加农炮
 11744930164547489566 content/env_super_earth/military_base/scrap/radar_wagon
 3334154476571242570 content/env_bugs/assets/gameplay/bug_spawner_small_01
 12120743282366334878 content/env_bugs/assets/gameplay/bug_spawner_medium_01
@@ -1368,7 +1368,7 @@
 17362800260994218604 content/env_illuminate/architecture/il_pillar_whole_small
 18352682196819795109 content/env_illuminate/rubble/il_rubble_large_01
 6122440444485611720 content/env_illuminate/architecture/il_wall_straight
-5691626237303103123 content/env_super_earth/samples/research_tech_sample_01
+5691626237303103123 常见样本 - 金属箱
 6571758006760580768 content/env_super_earth/habs/corpses/habs_corpse_arm_01
 7455337918377820636 content/env_super_earth/habs/corpses/habs_corpse_head_01
 10185177229901715431 content/env_super_earth/habs/corpses/habs_corpse_arm_02
@@ -1395,9 +1395,9 @@
 14779495313740428079 content/env_cyborg/props/ammocrate_closed_big_01
 6407688630304991730 content/env_super_earth/habs/utilities/weather_vane_old_01
 2606136244849604321 content/fac_cyborgs/vehicles/cyborg_spawner/wrecks/boss_wreck
-1890476018712837785 content/fac_helldivers/equipment/backpacks/drone_mg/drome_mg_magazine
-2692796710804508396 content/fac_helldivers/equipment/backpacks/drone_mg/drone_mg_backpack
-11756121139324203897 content/fac_helldivers/equipment/backpacks/drone_mg/drone_mg_weapon
+1890476018712837785 战备AX/AR-23 "护卫犬" 弹药匣
+2692796710804508396 战备AX/AR-23 "护卫犬" 背包
+11756121139324203897 战备AX/AR-23 "护卫犬" 武器
 4403088480278491987 content/env_super_earth/habs/utilities/se_pipeline_bend
 9942695107747714208 content/env_super_earth/habs/utilities/xl_elbow_90_side_sharp
 12198535771737971714 content/art_shared/meshes/cube_navmesh_volume
@@ -1433,25 +1433,28 @@
 18217730016436479233 content/env_super_earth/habs/utilities/se_pipeline_straight_4x
 2384674375031936646 content/env_shared/assets/props/equipment/helldiver_legs_01
 13465464769351373847 content/env_super_earth/habs/utilities/se_pipeline_straight_3x
-10768610637301609307 content/fac_helldivers/equipment/primary_weapons/smg_defender/smg_defender
-10177381595962512386 content/fac_helldivers/equipment/sidearm_weapons/revolver_pistol/revolver_pistol
-9675404802175538082 content/fac_helldivers/equipment/primary_weapons/laser_rifle_long/laser_rifle_long
+10768610637301609307 MP-98 骑士
+10177381595962512386 P-4 参议员
+9675404802175538082 LAS-16 镰刀
 8864800879179811976 LAS-7 匕首
 3310655598553981036 content/fac_helldivers/equipment/primary_weapons/marksman_rifle/marksman_rifle
-3852172782311805734 content/fac_helldivers/equipment/sidearm_weapons/automatic_pistol/automatic_pistol
-12279528435724053588 content/fac_helldivers/equipment/sidearm_weapons/plasma_pistol/plasma_pistol
-6912088101323449320 content/fac_helldivers/equipment/primary_weapons/battle_rifle/battle_rifle
-5972955417680186543 content/fac_helldivers/equipment/sidearm_weapons/grenade_pistol/grenade_pistol
-17623191861664038783 content/fac_helldivers/equipment/primary_weapons/crossbow_greyfax/crossbow_greyfax
+3852172782311805734 P-19 救世主
+12279528435724053588 PLAS-15 忠诚者（等离子手枪）
+6912088101323449320 BR-14 审判者
+5972955417680186543 GP-31 榴弹手枪
+1892480894983787169 P-113 裁决
+17623191861664038783 CB-9 爆燃弩
 12100643055971655455 content/fac_helldivers/equipment/primary_weapons/assault_rifle_patriot/assault_rifle_patriot
-17283952461205890046 content/fac_helldivers/equipment/primary_weapons/plasma_rifle_charge/plasma_rifle_charge
-5050852199397921576 content/fac_helldivers/equipment/primary_weapons/assault_shotgun/assault_shotgun
-14845617694460717074 content/fac_helldivers/equipment/primary_weapons/assault_rifle_rico/assault_rifle_rico
-10216731484117571310 content/fac_helldivers/equipment/primary_weapons/jet_rifle_phoenix/jet_rifle_phoenix
-421324886246020354 content/fac_helldivers/equipment/primary_weapons/pump_shotgun_plasma/pump_shotgun_plasma
-6047980762772154079 content/fac_helldivers/equipment/primary_weapons/pump_shotgun_slug/pump_shotgun_slug
+17283952461205890046 PLAS-101 净化者
+5050852199397921576 SG-225 破裂者
+14845617694460717074 AR-61 肉锤
+10216731484117571310 R-36 爆裂铳
+421324886246020354 SG-8P 等离子“制裁者”
+6047980762772154079 SG-8S 重炮手
 13361269385325929572 content/fac_helldivers/equipment/sidearm_weapons/revolver_pistol/revolver_speedloader
-1892480894983787169 P-113裁决
+14840077516977962372 StA-52 突击步枪（杀戮地带联动）
+5450511615252257986 StA-11 冲锋枪（杀戮地带联动）
+8422338628769435505 敌对单位 跃迁飞船（光能者飞船）
 685817687590585291 roof_solar_panel_5x5_01
 2905571548111627985 abs_ventilation_roof_05
 3230743807044598365 abs_ventilation_roof_06
@@ -1600,7 +1603,7 @@
 12287098225181096707 ert/cyborg_scrap_96m_01
 10999731129893469566 g_base/cyborg_tank_trap
 14517712558484802198 ch_wall_3m_135degree_01
-2782525763696284166 rone/media_drone_camera
+2782525763696284166 护卫犬配件 摄像头
 497192496790422730 cy_camp_phalanx_hard_01
 6628209308951201431 d/cy_mine_marker_single
 14383014008647542868 g_camp_predator_hard_01
@@ -1660,7 +1663,7 @@
 7417615579510982226 acksaffron_sample_4m_01
 5328510968245253181 _cargo_truck_dropoff_03
 182992623115417608 weapon/casings/link_5mm
-3003496806383724538 _cover/expandable_cover
+3003496806383724538 环境物品 可扩展掩体
 8333326914143541659 /magazine/lmg_box_large
 10358974322213239449 lieutenant_flag/lieutenant_flag
 4269409199117105864 ntral_core_hole_plug_01
@@ -2004,7 +2007,7 @@
 6571563197611799755 iorburrows_satellite_01
 2203540975259281323 /corpses_old_sitting_03
 5589133777242241293 camp_predator_medium_02
-8540606443036588471 _grenade/impact_grenade
+8540606443036588471 G-16 冲击弹
 4878632177575002674 ns/poster_propaganda_04
 14141094736426912425 nits/cy_tac_sam_site_01
 11066157384975603148 ultshotgun_box_magazine
@@ -2026,8 +2029,8 @@
 10633423367086567509 g_sub_clear_bug_nest_01
 16096945016470576184 ter_01/il_teleporter_01
 17094545627505210396 post_easy_checkpoint_01
-281046277510948131 arksman_rifle_vigilance
-7955636554177052997 igilance_counter_sniper
+281046277510948131 R-63 勤勉
+7955636554177052997 R-63CS 反狙击“勤勉”
 11182671710931255056 lance_magazine_standard
 717990104451743814 t/se_wallbig_pillar_top
 2987964038624375438 e_wallbig_wall_top_full
@@ -2035,7 +2038,7 @@
 11101335894434359736 talkerlair_satellite_01
 15302679433909676901 n_sub_retrieve_codes_01
 16594429787753258384 ntral_core_hole_plug_02
-294590291936179579 gas_grenade/gas_grenade
+294590291936179579 G-4 毒气榴弹（毒气雷）
 649438881035352089 units/gen_extraction_04
 7502806125561757459 /bug_tac_stalkerlair_02
 595897935603719864 bug_corpse_gore_pile_01
@@ -2055,7 +2058,7 @@
 12932116655381949714 upport_pillar_01_static
 15449781694547216312 rport/air_control_tower
 15765174586647248146 s/bug_corpse_charger_01
-16779953258782481441 aultrifle_drum_magazine
+16779953258782481441 AR-23 弹鼓（弹夹）
 9518279854513374013 ug_tac_shrieker_nest_02
 15920236552887926321 ire_ground_medium_plume
 17594118734305103680 /cy_prime_kill_hulks_01
@@ -2067,7 +2070,7 @@
 16854873943367457242 ship_right_engine_wreck
 371217515047951823 y_detained_prisoners_02
 16249499796136226510 extraction_killhorde_01
-16576307969206587212 tomatic_cannon_backpack
+16576307969206587212 AC-8 机炮背包
 2288319193313691275 _markers/railgun_marker
 8827395923538162987 n_exploration_bunker_02
 15355678926089585987 ons/plasma_rifle_marker
@@ -2264,8 +2267,8 @@
 18322510763745569925 ee_set_02_04_leafy_gibs
 15655580800594019753 ts/cy_sat_trench_16m_02
 1064520352145330610 pon/casings/shotgun_8ga
-11646351279956404590 /drone_generic_backpack
-13818065140795549496 ine/laser_battery_small
+11646351279956404590 通用无人机背包
+13818065140795549496 激光武器散热器
 16472578507204645895 ry_mine/incendiary_mine
 17297258079668724512 _launcher/mine_launcher
 1404678352540667834 atform_kit_slope_double
@@ -2322,7 +2325,7 @@
 17029449273818478986 t/swamp_bushland_16m_01
 17542535109172955520 t/swamp_bushland_16m_03
 8282331285680803312 e_artifact_sample_3m_01
-5822449117051217313 ink_laserrifle_standard
+5822449117051217313 激光武器散热器
 1375368963944101018 green_corp_biosphere_02
 13885440358757338530 gen_sub_collect_data_05
 1131446064710253430 cy_sat_minefield_16m_02
@@ -2333,7 +2336,7 @@
 2617982279336744434 loadout_room_ceiling_01
 2670274017945229613 l_death_trench_floor_01
 5898175551575417794 een_01/big_tv_screen_01
-7715225218085078398 s/he_grenade/he_grenade
+7715225218085078398 G-12 高爆弹
 8946587257946037594 tabmachine/stab_machine
 11349407765291189289 ne/machinegun_box_large
 11538333829303046120 lldummy_01/helldummy_01
@@ -2343,7 +2346,7 @@
 18343770295729215789 tifact_sample_shrine_03
 14411385651761151143 _stalker_spawner_20m_01
 8515224622975059530 _cache_bio_sample_4m_01
-6468799106264970105 kpack/jumppack_backpack
+6468799106264970105 战备 LIFT-850 喷气背包（跳包）
 11887883385073101999 rifle_standard_magazine
 3241555748163380294 cy_sat_minefield_20m_01
 12456649099204783320 ug_camp_armored_easy_03
@@ -2395,7 +2398,7 @@
 5013173367511336177 yborg_pipeline_tsection
 18445005886574837521 tivate_oil_pump_hive_12
 317731429996312652 en_sub_siesmic_probe_03
-1353568197974522460 /energy_shield_backpack
+1353568197974522460 战备 SH-32 防护罩生成背包（蛋盾）
 7423294389606505733 easy_frontlinetrench_02
 9487721015951028427 ug_camp_armored_easy_02
 13329290998793222286 escape_pod_satellite_01
@@ -2404,7 +2407,7 @@
 3624365056803792884 en_sub_siesmic_probe_04
 3884242873408244407 eature/bone_creature_06
 16242088275130888802 eature/bone_creature_05
-564645113943917665 lance_magazine_extended
+564645113943917665 R-63 勤勉 (20发弹匣)
 13970479000496615966 ug_tac_fog_generator_05
 11835963975469053451 _resources/missing_unit
 5344342009845511154 egendarium_sample_3m_01
@@ -2428,7 +2431,7 @@
 1454591494437847205 _sub_military_uplink_03
 4725857427885449009 e_node_lvl4_destruction
 17559168572749206480 _units/se_extraction_05
-9291105500383269587 焦土用的电池
+9291105500383269587 焦土弹夹
 1515292398772483103 yborg_pipeline_straight
 6248733627791434014 e/cyborg_turret_aa_base
 6485842431221935366 stroy_command_bunker_03
@@ -2479,13 +2482,13 @@
 633398596845718005 units/cy_tac_gunship_03
 2139581615385328285 ns/cy_trench_wall_3m_x6
 5480181823593116864 its/cy_sat_debris_8m_01
-12439365467465081873 _plasma_pistol_standard
+12439365467465081873 PLAS-15 忠诚者弹匣（标准型）
 16653674489725268507 r_male/cha_fighting_worker_male
-5641428405267160100 personal_defense_weapon
+5641428405267160100 SMG-37 防卫者
 13093153068183744956 asings/pistol_12mm_long
-14133186296882294161 l_defense_weapon_pepper
+14133186296882294161 SMG-72 暴击斗士
 18044816879460781764 xtended_magazine_pepper
-5690760409550920280 _backpack/ammo_backpack
+5690760409550920280 B-1 补给背包
 5358154537028771113 oration_superuranium_03
 6563007120769998790 b_destroy_ammo_depot_01
 13330155786947888229 ammunition_stockpile_01
@@ -2496,15 +2499,15 @@
 13907623419439883124 extraction_killhorde_02
 15191100519257421067 /scaffolding_support_01
 8423576657775725772 _units/se_extraction_02
-2234115518034825186 dard_missile_projectile
-5259367311712237185 ne/faf_missile_standard
-10287068634025973658 ssile_launcher_backpack
+2234115518034825186 FAF-14 飞矛弹头
+5259367311712237185 FAF-14 飞矛弹药
+10287068634025973658 FAF-14 飞矛背包
 1415814751654635771 ender_extended_magazine
 4216066899030188547 te_refueling_station_03
 4666615105649546505 iotable_small_01_folded
 17888321182266888779 t_phalanx_medium_fob_02
 8774622370807313833 _acid_easy_protohive_02
-36176771630602099 les/flashbang/flashbang
+36176771630602099 G-23 眩晕弹
 6990081766135146598 c_rock_generic_small_02
 14223135248260015506 t_boomer_spawner_20m_01
 7898489735045576140 s/bug_camp_acid_easy_02
@@ -2592,7 +2595,7 @@
 18027255834757056570 jective_horde_colony_06
 8535223867567167375 nits/se_sat_tower_8m_01
 3204169791969800816 cy_camp_assault_easy_02
-316723890334202692 nade/incendiary_grenade
+316723890334202692 G-10 燃烧手雷
 13786279134266159736 gen_prime_raise_flag_01
 10382342855028433267 /bug_tac_stalkerlair_01
 7502621355042909490 st_satellite_corpses_01
@@ -2650,9 +2653,9 @@
 17393510106958049723 /grassland_hero_tree_03
 17712075600110020140 sland_hero_tree_03_gibs
 13338040999929798412 en_sub_siesmic_probe_07
-871864056920437339 穿甲解放者
-5542218890398374779 ag_grenade/frag_grenade
-12333718053527461656 assault_rifle_explosive
+871864056920437339 AR-23P 穿甲"解放者"
+5542218890398374779 G-6 破片手雷
+12333718053527461656 AR-23C 震荡"解放者"
 2300568554162195620 y_square_rock_medium_01
 4388628338513997117 loration_utah_ravine_01
 419169158298846199 ss/moor_mossy_pillow_03
@@ -2747,7 +2750,7 @@
 15393204128914489592 form_circle_inverted_6r
 15408860269943245407 ime_interrupt_ritual_02
 4481848084650076030 oliage/bug_web_loose_01
-14923473746413089367 arch_artifact_sample_01
+14923473746413089367 常见样本 - 金属箱
 18439040811980203224 nits/cy_tac_sam_site_02
 11600509534360788456 ration_northern_habs_01
 10676260944347673984 t/units/flies_flying_4m
@@ -2931,13 +2934,13 @@
 8501188729738716653 _units/se_extraction_04
 8468803907470352685 s/gen_war_crater_16m_01
 15163574751229957356 prime_clear_bug_nest_03
-11027915531501354241 _plasma_pistol_extended
+11027915531501354241 PLAS-15 忠诚者弹匣 (扩容型)
 10585829414170001362 ug_camp_armored_hard_02
 6350080909480148382 gen_prime_raise_flag_02
 6618629811552364586 ifle_drum_magazine_ergo
 213212706452155845 prime_retrieve_larva_01
 12833675536131590181 g_camp_predator_easy_02
-3275834919183443858 ded_magazine_fastreload
+3275834919183443858 AR-23 解放者 加长弹匣
 10323943194243497453 ine_extended_fastreload
 2232346823676129010 l_pipe_accessory_part_2
 13799570749297615626 g_tcs_support_pillar_01
@@ -3112,7 +3115,7 @@
 2529833518230079766 ts/cy_sat_trench_16m_01
 14468519789192387782 id_medium_bugchimney_01
 11664608597180333792 objective_oil_pickup_01
-13710523807626019905 ender_standard_magazine
+13710523807626019905 MP-98 骑士弹匣
 8995430076172877824 _kill_alpha_striders_01
 15940471598006358545 s/bug_camp_acid_hard_01
 11465881746343723450 rs_cornerpiece_short_01
@@ -3205,7 +3208,7 @@
 933653454563350283 mission_activate_tcs_01
 10086654503306388020 irport_chair_4_seats_01
 13180095837937427090 ug_camp_generic_easy_02
-2217448057072065667 jet_rifle_drum_magazine
+2217448057072065667 JAR-5 主宰 弹匣
 6866602524866869719 azine/grenade_40mm_frag
 12461691755508315868 y_camp_panzer_medium_01
 8084158486128589488 e_destroy_harvesters_02
@@ -3219,10 +3222,10 @@
 17310192988094915596 /level_design/sphere_01
 12523409329206909142 tor_easy_hunternests_02
 5010070954658250637 _cargo_truck_dropoff_01
-14452522868562188951 istol_extended_magazine
+14452522868562188951 P-19 救世主
 4932621271560182731 ium_02_satellite_bug_02
 7804744251270833284 y_tac_detector_tower_04
-16965724150372546684 cendiary_impact_grenade
+16965724150372546684 G-13 燃烧冲击弹
 9257296273295791541 cache_e710_sample_2m_01
 15431716619786503935 nits/il_sat_ruin_20m_02
 8418439861011189345 er_destroyed_right_door
@@ -3233,7 +3236,7 @@
 15022264489388865902 ed_left_wing_section_01
 7400678424961384593 s/cy_sat_pillbox_16m_03
 17188156872846113929 _sat_parking_lot_16m_03
-25933506294237940 P-113裁决弹匣
+25933506294237940 手枪_标准弹匣（P-113裁决）
 17734063664249075691 ug_tac_shrieker_nest_05
 4057450719208857466 y_camp_panzer_medium_02
 16526882722016140140 _camp_armored_medium_01
@@ -3307,7 +3310,7 @@
 7310482346471809846 jective_horde_colony_05
 11723075293133786544 loration_crashedship_01
 1950547364197336178 acksaffron_sample_3m_01
-6766936627846269706 e_grenade/smoke_grenade
+6766936627846269706 G-3 烟雾弹
 16294628168385905640 gen_exploration_habs_02
 14042120314763610323 _units/cy_extraction_06
 4654817686620198910 me_neutralize_cannon_01
@@ -3321,7 +3324,7 @@
 8675352600341050845 _sat_parking_lot_20m_03
 3595131666926014561 g_camp_predator_hard_03
 6893109603181049991 me_upload_commstower_03
-1818307318784878249 净化者用的电池
+1818307318784878249 等离子武器 标准弹匣(净化者用)
 8813155642792750734 s/cy_tac_mortar_base_03
 8727780113472920083 nits/cy_tac_sam_site_04
 44236152232993670 nna_acacia_03_destroyed
@@ -3400,7 +3403,7 @@
 4612927062438974594 ts/cy_sat_trench_16m_03
 16867023216246118172 extraction_killhorde_01
 3320385570385962205 nits/il_sat_ruin_20m_04
-8630543079368103156 e/pdw_extended_magazine
+8630543079368103156 SMG-37 防卫者 弹匣
 7678951162187884369 nits/cy_tac_sam_site_03
 11854099019885100039 b_activate_generator_01
 375816934372579658 ts/gen_cache_ammo_4m_01
@@ -3519,7 +3522,7 @@
 9188473749905303330 ns_blocker_spiky_96m_01
 14546621390149345150 s_blocker_spiky_152m_01
 14910829608050989353 ns_blocker_spiky_32m_01
-14249494547947571097 _grenade/sticky_grenade
+14249494547947571097 G-123 铝热弹
 12519572773558264389 /cy_prime_kill_hulks_04
 11696368014699955036 oration_superuranium_02
 188302688213144003 le_stick_magazine_large
@@ -3528,7 +3531,7 @@
 17727581056672187308 me_neutralize_cannon_02
 14215564244339320586 fle_drum_magazine_large
 13212272664253913848 units/gen_extraction_03
-16671435828232852140 r_burst_rocket_backpack
+16671435828232852140 RL-77 空爆火箭发射器背包
 3297783261784572491 saffron_sample_field_01
 16544962736645479679 xploration_se_trench_01
 13563594195668553897 ts/gen_cache_ammo_3m_01
@@ -3640,7 +3643,7 @@
 7737586323460789464 /cy_camp_panzer_easy_03
 9377228762502281359 _kill_alpha_chargers_02
 16571044250179160369 oster_ministry_unity_02
-2802369506329449110 r_burst_rocket_launcher
+2802369506329449110 RL-77 空爆火箭发射器
 12823345036025130557 camp_predator_medium_01
 822384543320862662 ountains_blocker_48m_01
 904731243539677607 arctic_snowdunes_64m_02
@@ -3769,44 +3772,180 @@
 5030696667446829639 _sat_parking_lot_20m_02
 17869558012532173217 gue_research_station_04
 17083241647592728848 gy_shield/energy_shield
-5729597501657769521 agazine/pistol_magazine
+5729597501657769521 P-2 和平制造者 弹匣
 3450733228184264447 gen_sub_collect_data_01
 6450423349635206691 he_ammo_4m_ms51_dupe_04
 4122942087343371866 cy_camp_assault_easy_01
 3580554067389676115 r_medium_stalkerlair_01
 410538129773584665 CyborgEyeGlow???
 10035997378415074895 CyborgEyeGlow2???
-4945697432933156965 4倍瞄准镜
-16634382492500136054 鹰眼
-18319281757224320923 电弧榴弹发射器(GL-52)
-2980234130573201393 双刃镰刀
+16064443138864374590 披风图标包 2
+17930960658647838937 披风 处刑者帷幔 “毒蛇突击兵”战争债券第二页
+18030670767332283468 披风 赤红獠牙印记 “毒蛇突击兵”战争债券第一页
+6553400691192210317 披风 炽燃义警 “绝地潜兵动员”第九页
+460810856539232617 披风图标包 1
+9237633306850489432 披风 真公民斗篷
+5248014932023588139 披风 无瑕忠契（旧版/未使用）
+11810197047138317273 披风 自由先驱 “绝地潜兵动员”第二页
+2982796504883821197  披风 陨落英雄之仇
+17812094976374501048 披风 暴君猎手
+2749694754015871637 披风 后世谢忱 “铁血老兵”第二页
+4097631480574807593 披风 星河选票 “绝地潜兵动员”第三页
+10527363359930012046 披风 独立先驱“绝地潜兵动员”第一页
+3584900901205812695 披风 审判日
+11193725246344177118 披风 荣誉之巅 “绝地潜兵动员”第七页
+7163888887031855365 披风 机械屠戮者 “遥遥领先”战争债券第一页
+9404051733271662255 披风 猎暴人 “铁血老兵”第一页
+7379930772498816436 披风 正直堡垒
+14237933283674886014 披风 飞鹰之怒 "民主爆破"战争债券第二页
+3516647676366922993 披风 荣耀帷幕 “绝地潜兵动员”第四页
+10312876474349433908 披风 无暇忠诚 "绝地潜兵动员"第五页
+13402156099706020038 披风 异见者梦魇
+14966489755646972034 Harbinger of True Equality
+17909237777973958196 Freedom's Tapestry
+707371273334243907 披风 永恒自由之光
+645303194344666028 Agent of Oblivion
+17894286657332813425 披风 人民意志 超级怨种披风
+10649534859991241444 披风 永恒荣耀之翼 “极地爱国者”第二页
+16158836954116421041 Martyris Rex
+8511784892410722659 披风 检举者的荣耀 “真理执行者”第二页
+3920461336904238725 披风 安全距离标准“化学专家”第一页
+11194374144475565446 披风 零号病人遗思 “化学专家”第二页
+10205688452656732735 Proof of Faultless Virtue
+3434522770037271184 Cover of Darkness
+6910014273626452517 披风 神圣投票团 “极地爱国者”第三页
+10835289456440565066 敌防单位 猎杀器 （光能三足）
+15202650839921264242 Strength in Our Arms（疑似披风）
+10056836025475208186 efender of Our Dream（疑似披风）
+15124629307682360961 re Liberum（疑似披风）
+3269081635107968027 Per Democrasum（疑似披风）
+8189977833357009796 Vision of Freedom（疑似披风）
+14158655057415792855 披风 自由之眼
+4916445370003389824 Emblem of Freedom（疑似披风）
+13473041482812368650 光能者统御舰
+8806287475843878476 SEAF士兵
+13650214626151558605 超级货币（蓝币）
+15725536894954390575 申购点
+8591814228145000671 战争债券奖章盒（勋章）
+1456507421651509424 TED-63 炸药（C4）
+3258790968645519416 G-50 寻踪者
+17848709375785648310 K-2 飞刀
+284602740380634958 G-142 烟花术
+4587284938949573643 G-109 海胆
+15821755148612569419 G-31 电弧
+13558475039457634667 AR-32 安抚者
+8896268509512551590 R-2124 宪法
+1117846648694268261 R-2 修正
+10717884433990741653 SMG-32 训斥
+7073132068558755510 SG-225SP 千发百中“破裂者”（鸟喷）
+16634382492500136054 R-6 鹰眼
+15214248472323070124 SG-451 野炊
+1291563472355841634 SG-20 止息
+2980234130573201393 LAS-17 双刃镰刀
+5742363029208942635 Flam-66 火炬手
+17983663411446975103 VG-70 变数
+3109983482551492476 SG-22 游击兵
+4580928717960105129 P-72 迅击
+4714430103453754419 LAS-58 猛爪
+15470422196992643923 P-11 治疗手枪
+11435027044679925718 GP-20 最后通牒
+18219495801425257306 CQC-2 军刀
+8467154841892407376 CQC-5 战斗短柄斧
+16408494556715988068 CQC-19 眩晕长矛
+14229469521397221872 CQC-30 眩晕短棍
+8731737688384722662 CQC-42 砍刀
+16743928489815142323 挖掘工具
+14954542309183038509 P-92 法令
+3460488074252222302 PLAS-39 加速步枪 （杀戮地带联动）
+12750169196543686872 战备 CQC-1 唯一真旗
+18319281757224320923 战备 GL-52 缓和使者
+6453678319562593995 战备 MLS-4X 突击兵
+16777584932715761236 战备 PLAS-45 纪元
+11882632134944470026 战备 SH-51 定向护盾
+14733648658679365221 战备 StA-X3 W.A.S.P. 发射器（杀戮地带联动）
+17308323378831780460 R-72 审查官
+8110598756017148880 AR-59 消音器
+8221051007693717489 DBS-2 双重自由
+11201896471107657063 战备 B/MD C4背包c4
+3033447149328295793 战备 B/MD C4背包
+5905641205788913469 战备 B/MD C4背包 起爆器
+11675163230052555240 TM-01 诱饵地雷
+14667500224945540068 战备 "护卫犬" K-9 "护卫犬" 热狗  漫游车（激光狗）
+14019044913798069754 AX/ARC-3 "护卫犬" K-9 背包
+18271568465823421664 AX/ARC-3 "护卫犬" K-9 武器
+3464783698532994381 AX/FLAM-75 "热狗" 背包
+14324723450444766661 AX/FLAM-75 "热狗"武器
+6624453650490018537 AX/LAS-5 漫游车 武器（激光狗）
+1341614955790344216 2倍红点瞄准镜
+3503658004598565718 手电筒的激光瞄准器
+14897104891499249134 LAS-5 长柄镰标准枪管配件
+13834130950471716570 AX/TX-13 "护卫犬" 腐息背包+武器（毒气狗）
+8410798392120980739 10号标准喉缩（枪械配件）
+13074477769665559454 10号半喉缩（枪械配件）
+4244847585173431214 10号全喉缩（枪械配件）
+14340382343174070789 10号鸭嘴喉缩（枪械配件）
+769608404923492902 12号半喉缩（枪械配件）
+8462610023518099908 12号全喉缩（枪械配件）
+10147513372326869849 12号鸭嘴枪口（枪械配件）
+8461770958804471754 5毫米螺纹保护盖（枪械配件）
+3375286472059951732 5毫米消焰器（枪械配件）
+6637750995636466699 5毫米枪口制退器（枪械配件）
+2931537446798109347 5毫米补偿器（枪械配件）
+8869063222391656748 8毫米螺纹保护盖（枪械配件）
+17998083042837534904 8毫米消焰器（枪械配件）
+12795189377325640140 8毫米枪口制退器（枪械配件）
+11580211633362345240 8毫米补偿器（枪械配件）
+7748723127387084686 12毫米螺纹保护盖（枪械配件）
+3560721596127226263 12毫米消焰器（枪械配件）
+2804704169649005861 12毫米枪口制退器（枪械配件）
+17042267079945714520 12毫米补偿器（枪械配件）
+18429164175047304065 审判者 枪口制退器（枪械配件）
+4691712668585732061 直角前握把（枪械配件）
+4242942856953408323 带激光的直角前握把（枪械配件）
+12223223486608688232 刺刀（宪法上面的）（枪械配件）
+13637539437075989295 勤勉 反狙击勤勉枪口制退器（枪械配件）
+15622846233925959454 枪口制退器（枪械配件）
+5211183018200410695 P-4 参议员 枪管（枪械配件）
+13826991243227841058 安抚者 枪口制退器（枪械配件）
+9239560465644030393 穿甲“解放者”枪口制退器（枪械配件）
+16624552526519423065 Solo Light（疑似枪械手电配件）
+2559082817754219621 肉锤 口制退器（枪械配件）
+18005146981972618389 垂直前握把（枪械配件）
+10757409993037698465 带手电筒的垂直握把（枪械配件）
+10825187123122472636 AR-2 野狼 弹匣（枪械配件）
+1633441327921975190 AR-32 安抚者 容弹匣（枪械配件）
+4420540739595044300 1.5倍红点瞄准镜（枪械配件）
+2618761105051491521 2倍红点瞄准镜（枪械配件）
+4945697432933156965 4倍红点瞄准镜（枪械配件）
+7878032900213954322 10倍红点瞄准镜（枪械配件）
+18045803217869572949 全息瞄准镜（枪械配件）
+18010877653793700566 机械瞄具（枪械配件）
+8683669270922933622 手枪反射式瞄准镜（枪械配件）
+8287102548341161912 PLAS-39 加速步枪 瞄准镜（杀戮地带联动）
+11366112015617280481 反射式瞄准镜（枪械配件）
+5025563496969204956 反射式瞄准镜MK.2（枪械配件）
+11155000903228636302 战备 -100 便携式地狱火炸弹
+9684680887513648452 FAF-14 飞矛 瞄准镜
+931302122504656470 LIFT-182 传送背包能量球
+13012964727571811944 战备 LIFT-182 传送背包
+6829725667368330959 战备 LIFT-860 悬浮背包
+18313671109943761465 战备 SH-32 防护罩生成背包
+4966489755646972034 披风 真正的平等先锋 "民主爆破"战争债券第一页
+909237777973958196 披风 自由织锦 "民主爆破"战争债券第三页
+45303194344666028 披风 湮灭特工
+6158836954116421041 披风 殉道之王 “遥遥领先”第二页
+205688452656732735 披风 无暇德行之证“真理执行者”第三页
+434522770037271184 披风 黑暗帷幕
 9288730696111894479 双刃镰刀散热器
-3503658004598565718 武器配件1
-9239560465644030393 武器配件2
-8461770958804471754 武器配件3
 16204118255537618540 野炊握把
-15214248472323070124 野炊
-1291563472355841634 止息
 13587784487751848637 焦土枪口
-18005146981972618389 垂直握把
 10335616611084114797 握把
 897083239955988588 枪口配件
-2559082817754219621 武器配件
-11366112015617280481 反射式瞄具
-1341614955790344216 2倍红点瞄准镜
-4420540739595044300 1.5倍红点瞄具
-18045803217869572949 全息瞄具
 15304878361562187723 霸王虫
-11435027044679925718 GP-13
-9526594500243002157 AR-2野狼
-10825187123122472636 AR-2野狼弹匣
+9526594500243002157 AR-2 野狼
 10438714418406872918 M90A霰弹枪 光环
-10717884433990741653 SMG-32训斥
 8318874702721913123 SMG-32训斥弹匣
-1117846648694268261 R-2修正
-5742363029208942635 FlAM-66 火炬手
 5843720425933115949 FlAM-66 火炬手的燃料罐
-4714430103453754419 LAS-58 猛爪
 16518722998695771425 LAS-58 猛爪弹匣
 5573423824998200517 M6C/特种作战手枪
 5763345476439588671 M6C/特种作战手枪弹匣
@@ -3815,18 +3954,10 @@
 7483912604024319283 肉瘤体
 12877445900026273694 EAT-700 消耗性凝固汽油弹
 12201875276601049603 AR/GL-21 幺二
-201944147320653301 幺二的下挂榴弹发射器
-6061479068752966788 幺二的弹匣
-8869063222391656748 幺二的枪口配件
-15622846233925959454 武器枪管
-5025563496969204956 反射式瞄准镜MK2
-16777584932715761236 PLAS-45 纪元
-6453678319562593995 MLS-4X 突击兵火箭筒
+201944147320653301 AR/GL-21 幺二的下挂榴弹发射器
+6061479068752966788 AR/GL-21 幺二的弹匣
 4874456896233937276 重装机枪加特林
-16408494556715988068 眩晕长矛
-15470422196992643923 P-11 治疗剂手枪
-13794669626618815823 弹链式榴弹战备的弹链
-9854668298113416351 弹链式榴弹战备的榴弹发射器
-13495904577777136893 弹链式榴弹战备的榴弹背包
-7073132068558755510 SG-225SP-千发百中“破裂者”
-17983663411446975103 VG-70 变数
+13794669626618815823 战备 弹链式榴弹的弹链
+9854668298113416351 战备 弹链式榴弹的榴弹发射器
+13495904577777136893 战备 弹链式榴弹的榴弹背包
+3939411889253242210 RL-77 空爆火箭发射器的火箭弹头
