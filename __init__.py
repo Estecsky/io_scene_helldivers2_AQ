@@ -25,6 +25,7 @@ from bpy.props import StringProperty, BoolProperty, IntProperty, EnumProperty, P
 from bpy.types import Panel, Operator, PropertyGroup, Scene, Menu
 
 from .stingray.animation import StingrayAnimation, AnimationException
+from .stingray.raw_dump import StingrayRawDump
 from .stingray.material import LoadShaderVariables, LoadShaderVariables_CN, StingrayMaterial,Global_ShaderVariables,Global_ShaderVariables_CN, AddMaterialToBlend_EMPTY
 from .stingray.composite_unit import StingrayCompositeUnit
 from .stingray.bones import LoadBoneHashes, StingrayBones
@@ -744,7 +745,7 @@ class TocEntry:
         if self.TypeID == UnitID: callback = LoadStingrayUnit
         if self.TypeID == TexID: callback = LoadStingrayTexture
         if self.TypeID == MaterialID: callback = LoadStingrayMaterial
-        if self.TypeID == ParticleID: callback = LoadStingrayParticle
+        if self.TypeID == ParticleID: callback = LoadStingrayDump
         if self.TypeID == CompositeUnitID: callback = LoadStingrayCompositeUnit
         if self.TypeID == BoneID: callback = LoadStingrayBones
         if self.TypeID == AnimationID: callback = LoadStingrayAnimation
@@ -766,7 +767,7 @@ class TocEntry:
         if self.TypeID == UnitID: callback = SaveStingrayMesh
         if self.TypeID == TexID: callback = SaveStingrayTexture
         if self.TypeID == MaterialID: callback = SaveStingrayMaterial
-        if self.TypeID == ParticleID: callback = SaveStingrayParticle
+        if self.TypeID == ParticleID: callback = SaveStingrayDump
         if self.TypeID == AnimationID: callback = SaveStingrayAnimation
         if self.TypeID == BoneID: callback = SaveStingrayBones
         if self.TypeID == StateMachineID: callback = SaveStingrayStateMachine
@@ -1416,24 +1417,40 @@ def SaveStingrayMaterial(self, ID, TocData, GpuData, StreamData, LoadedData):
             StingrayTex.Serialize(Toc, Gpu, Stream)
             # add texture entry to archive
             Entry = TocEntry()
-            Entry.FileID = r.randint(1, 0xffffffffffffffff)
+            
+            TextureID = oldTexID
+            if bpy.context.scene.Hd2ToolPanelSettings.GenerateRandomTextureIDs:
+               TextureID = r.randint(1, 0xffffffffffffffff)
+            
+            Entry.FileID = TextureID 
             Entry.TypeID = TexID
             Entry.IsCreated = True
             Entry.SetData(Toc.Data, Gpu.Data, Stream.Data, False)
             Global_TocManager.AddNewEntryToPatch(Entry)
-            mat.TexIDs[TexIdx] = Entry.FileID
+            mat.TexIDs[TexIdx] = TextureID
                 
         else:
             Global_TocManager.Load(int(mat.TexIDs[TexIdx]), TexID, False, True)
             Entry = Global_TocManager.GetEntry(int(mat.TexIDs[TexIdx]), TexID, True)
             if Entry != None:
                 Entry = deepcopy(Entry)
-                Entry.FileID = r.randint(1, 0xffffffffffffffff)
-                Entry.IsCreated = True
-                Global_TocManager.AddNewEntryToPatch(Entry)
-                mat.TexIDs[TexIdx] = Entry.FileID
                 
-        Global_TocManager.RemoveEntryFromPatch(oldTexID, TexID)
+                TextureID = oldTexID
+                if bpy.context.scene.Hd2ToolPanelSettings.GenerateRandomTextureIDs:
+                    TextureID = r.randint(1, 0xffffffffffffffff)
+                
+                Entry.FileID = TextureID 
+                Entry.IsCreated = True
+                
+                ExistingEntry = Global_TocManager.GetEntry(Entry.FileID, Entry.TypeID)
+                if ExistingEntry:
+                    Global_TocManager.RemoveEntryFromPatch(ExistingEntry.FileID, ExistingEntry.TypeID)
+
+                Global_TocManager.AddNewEntryToPatch(Entry)
+                mat.TexIDs[TexIdx] = TextureID
+                
+        if bpy.context.scene.Hd2ToolPanelSettings.GenerateRandomTextureIDs:
+            Global_TocManager.RemoveEntryFromPatch(oldTexID, TexID)
     f = MemoryStream(IOMode="write")
     LoadedData.Serialize(f)
     return [f.Data, b"", b""]
@@ -1637,6 +1654,13 @@ def SaveStingrayParticle(self, ID, TocData, GpuData, StreamData, LoadedData):
     f = MemoryStream(TocData, IOMode="write") # Load in original TocData before overwriting it
     LoadedData.Serialize(f)
     return [f.Data, b"", b""]
+
+def LoadStingrayDump(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject):
+    StingrayDumpData = StingrayRawDump()
+    return StingrayDumpData
+
+def SaveStingrayDump(self, ID, TocData, GpuData, StreamData, LoadedData):
+    return [TocData, GpuData, StreamData]
 #endregion
 
 
@@ -3312,6 +3336,10 @@ class ExportArchiveListOperator(Operator):
         
         file_name = "full_archive_list.txt"
         
+        if os.path.exists(os.path.join(output_folder, file_name)):
+            # 存在则删除原文件
+            os.remove(os.path.join(output_folder, file_name))
+        
         with open(os.path.join(output_folder, file_name), 'w', encoding='utf-8') as log_file:
             for key in get_full_package_list():
                 log_file.write(f"{key}\n")
@@ -3641,6 +3669,7 @@ class Hd2ToolPanelSettings(PropertyGroup):
     RemoveGoreMeshes : BoolProperty(name="Remove Gore Meshes", description = "自动删除所有使用断肢材质的顶点", default = True)
     shadervariablesUI : BoolProperty(name="Shader Variables UI", description = "显示着色器变量参数UI", default = True)
     LegacyWeightNames     : BoolProperty(name="Legacy Weight Names", description="使用旧版顶点组权重名称", default = False)
+    GenerateRandomTextureIDs : BoolProperty(name="Generate Random Texture IDs", description = "保存材质时为导入的纹理生成随机ID，关闭将不改变ID。\n对于保存多个引用贴图相同只是材质参数不同的材质，可以关闭生成随机ID", default = True)
 
     # ShadeSmooth      : BoolProperty(name="Shade Smooth", description = "导入模型时平滑着色,开启此项将关闭自动平滑", default = True)
     # Search
@@ -3777,6 +3806,8 @@ class HellDivers2ToolsPanel(Panel):
             row.prop(addon_prefs, "ShowArchivePatchPath",text="实时显示Archive和Patch路径")
             row.prop(addon_prefs,"Layout_search_New",text="显示搜索已知Archive为主的布局")
             row.prop(addon_prefs, "ShowQuickSwitch",text="显示快捷设置按钮")
+            row.prop(addon_prefs,"ShowZipPatchButton",text="显示打包Patch为Zip功能")
+            row.prop(addon_prefs,"DisplayRenameButton",text="显示重命名按钮")
             row = layout.row(); row.separator(); row.label(text="导入设置"); box = row.box(); row = box.grid_flow(columns=1)
             row.prop(scene.Hd2ToolPanelSettings, "ImportMaterials",text="导入材质")
             row.prop(scene.Hd2ToolPanelSettings, "ImportLods",text="导入Lods")
@@ -3796,10 +3827,9 @@ class HellDivers2ToolsPanel(Panel):
             row.prop(scene.Hd2ToolPanelSettings, "AutoLods",text="自动Lods")
             row.prop(scene.Hd2ToolPanelSettings, "SaveBonePositions",text="保存动画骨骼位置")
             row.prop(addon_prefs,"SaveUseAutoSmooth",text="保存网格时开启自动平滑")
-            row.prop(addon_prefs,"ShowZipPatchButton",text="显示打包Patch为Zip功能")
-            row.prop(addon_prefs,"DisplayRenameButton",text="显示重命名按钮")
             row = layout.row(); row.separator(); row.label(text="其他设置"); box = row.box(); row = box.grid_flow(columns=1)
             row.prop(scene.Hd2ToolPanelSettings, "LegacyWeightNames",text="旧权重名称")
+            row.prop(scene.Hd2ToolPanelSettings, "GenerateRandomTextureIDs",text="生成随机纹理ID")
             row.prop(scene.Hd2ToolPanelSettings, "MergeArmatures",text="合并Armature")
             row.prop(addon_prefs, "CustomGamePath",text="自定义游戏文件目录")
             row.prop(addon_prefs, "advanced_mode",text="附加功能")
