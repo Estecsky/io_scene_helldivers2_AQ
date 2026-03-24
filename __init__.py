@@ -3632,6 +3632,14 @@ def CustomPropertyContext(self, context):
 
 #region Menus and Panels
 
+def update_abs_path(self, context):
+    """更新时强制转换为绝对路径并覆盖存储"""
+    if self.NewPatchOutPath:
+        # 转换为绝对路径
+        abs_path = bpy.path.abspath(self.NewPatchOutPath)
+        # 覆盖原值
+        self["NewPatchOutPath"] = abs_path
+
 def LoadedArchives_callback(scene, context):
     items = [(Archive.Name,Archive.Name , "") for Archive in Global_TocManager.LoadedArchives]
     return items
@@ -3679,7 +3687,7 @@ class Hd2ToolPanelSettings(PropertyGroup):
     IsRenamePatch : BoolProperty(name="RenamePatch",default = False,description = "重命名patch")
     IsChangeOutPath : BoolProperty(name="ChangeOutPath",default = False,description = "修改输出路径")
     NewPatchName : StringProperty(name="NewPatchName",default = "")
-    NewPatchOutPath : StringProperty(name="NewOutPath",default = "",subtype='DIR_PATH')
+    NewPatchOutPath : StringProperty(name="NewOutPath",default = "",subtype='DIR_PATH',update=update_abs_path)
     IsZipPatch : BoolProperty(name="ZipPatch",default = False,description = "压缩patch")
 
 class HellDivers2ToolsPanel(Panel):
