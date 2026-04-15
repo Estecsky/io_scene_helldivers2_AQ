@@ -1880,7 +1880,7 @@ def NameFromMesh(mesh, id, customization_info, bone_names, use_sufix=True):
 
     return name
 
-def CreateModel(stingray_unit, id, Global_BoneNames, bones_entry, state_machine_entry):
+def CreateModel(stingray_unit, id, Global_BoneNames, Global_NameHashes, bones_entry, state_machine_entry):
     addon_prefs = AQ_PublicClass.get_addon_prefs()
     model, customization_info, bone_names, transform_info, bone_info = stingray_unit.RawMeshes, stingray_unit.CustomizationInfo, stingray_unit.BoneNames, stingray_unit.TransformInfo, stingray_unit.BoneInfoArray
 
@@ -1913,7 +1913,11 @@ def CreateModel(stingray_unit, id, Global_BoneNames, bones_entry, state_machine_
                 if index > len(mesh.VertexPositions):
                     raise Exception("Bad Mesh Parse: indices do not match vertices")
         # generate name
-        name = NameFromMesh(mesh, id, customization_info, bone_names)
+        if addon_prefs.DisplayFriendlyName_Mesh_Skel:
+            friendlyName = GetFriendlyNameFromID(id, Global_NameHashes)
+        else:
+            friendlyName = id
+        name = NameFromMesh(mesh, friendlyName, customization_info, bone_names)
 
         # create mesh
         new_mesh = bpy.data.meshes.new(name)
@@ -2036,7 +2040,7 @@ def CreateModel(stingray_unit, id, Global_BoneNames, bones_entry, state_machine_
                 armature = bpy.data.armatures.new(f"{id}_skeleton")
                 armature.display_type = "OCTAHEDRAL"
                 armature.show_names = False
-                skeletonObj = bpy.data.objects.new(f"{id}_rig", armature)
+                skeletonObj = bpy.data.objects.new(f"{friendlyName}_rig", armature)
                 skeletonObj['BonesID'] = str(stingray_unit.BonesRef)
                 skeletonObj['StateMachineID'] = str(stingray_unit.StateMachineRef)
                 skeletonObj.show_in_front = True
@@ -2252,3 +2256,12 @@ def CreateModel(stingray_unit, id, Global_BoneNames, bones_entry, state_machine_
             else:
                 new_mesh.use_auto_smooth = False
                 new_mesh.shade_smooth()
+                
+def GetFriendlyNameFromID(ID, NameHashes):
+    try:
+        hash_info_name = NameHashes[int(ID)]
+        if hash_info_name != "":
+            return str(hash_info_name)
+    except KeyError:
+        pass
+    return str(ID)
