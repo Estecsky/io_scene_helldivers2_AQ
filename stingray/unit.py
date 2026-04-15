@@ -9,7 +9,7 @@ from ..utils.memoryStream import MemoryStream, MakeTenBitUnsigned, TenBitUnsigne
 from ..utils.logger import PrettyPrint
 from .hash import murmur32_hash
 from ..utils.constants import *
-from ..AQ_Prefs_HD2 import AQ_PublicClass
+from ..AQ_Prefs_HD2 import AQ_PublicClass , AQ_StaticMeshError
 from .material import AddMaterialToBlend_EMPTY
 
 Global_MaterialSlotNames = {}
@@ -403,7 +403,7 @@ class StingrayMeshFile:
                         if bpy.context.scene.Hd2ToolPanelSettings.ImportMaterials:
                             Global_TocManager.Load(mat.MatID, MaterialID, False, True)
                         else:
-                            AddMaterialToBlend_EMPTY(mat.MatID)
+                            AddMaterialToBlend_EMPTY(mat.MatID) # 占位符空材质
                     else:
                         try   : bpy.data.materials[mat.MatID]
                         except: bpy.data.materials.new(mat.MatID)
@@ -1884,6 +1884,8 @@ def CreateModel(stingray_unit, id, Global_BoneNames, bones_entry, state_machine_
     addon_prefs = AQ_PublicClass.get_addon_prefs()
     model, customization_info, bone_names, transform_info, bone_info = stingray_unit.RawMeshes, stingray_unit.CustomizationInfo, stingray_unit.BoneNames, stingray_unit.TransformInfo, stingray_unit.BoneInfoArray
 
+    StaticMeshCount = 0
+
     if len(model) < 1: return
     # Make collection
     old_collection = bpy.context.collection
@@ -1901,6 +1903,9 @@ def CreateModel(stingray_unit, id, Global_BoneNames, bones_entry, state_machine_
         if not bpy.context.scene.Hd2ToolPanelSettings.ImportCulling and mesh.IsCullingBody():
             continue
         if not addon_prefs.ImportStatic and mesh.IsStaticMesh():
+            StaticMeshCount += 1 # 统计静态网格数量
+            if StaticMeshCount == len(model): # 如果所有网格都是静态网格，则抛出提示异常
+                raise AQ_StaticMeshError("网格全部为静态网格，开启导入静态网格后再导入！")
             continue
         # do safety check
         for face in mesh.Indices:
@@ -1927,12 +1932,12 @@ def CreateModel(stingray_unit, id, Global_BoneNames, bones_entry, state_machine_
         # set object properties
         new_object["MeshInfoIndex"] = mesh.MeshInfoIndex
         new_object["BoneInfoIndex"] = mesh.LodIndex
-        new_object["Z_ObjectID"]      = str(id)
-        new_object["Z_SwapID_0"] = ""
-        new_object["Z_SwapID_1"] = ""
-        new_object["Z_SwapID_2"] = ""
-        new_object["Z_SwapID_3"] = ""
-        new_object["Z_SwapID_4"] = ""
+        new_object["Z_ObjectID"]    = str(id)
+        new_object["Z_SwapID_0"]    = ""
+        new_object["Z_SwapID_1"]    = ""
+        new_object["Z_SwapID_2"]    = ""
+        new_object["Z_SwapID_3"]    = ""
+        new_object["Z_SwapID_4"]    = ""
         if customization_info.BodyType != "":
             new_object["Z_CustomizationBodyType"] = customization_info.BodyType
             new_object["Z_CustomizationSlot"]     = customization_info.Slot

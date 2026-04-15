@@ -42,7 +42,7 @@ from .utils.math import MakeTenBitUnsigned, TenBitUnsigned
 from .utils.memoryStream import MemoryStream
 from .utils.logger import PrettyPrint
 from .utils.slim import is_slim_version, load_package, get_package_toc, slim_init,reconstruct_package_from_bundles ,get_full_package_list
-from .AQ_Prefs_HD2 import AQ_PublicClass
+from .AQ_Prefs_HD2 import AQ_PublicClass, AQ_StaticMeshError
 
 import zipfile
 import configparser
@@ -1609,8 +1609,10 @@ def LoadStingrayUnit(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject, 
     state_machine_entry = Global_TocManager.GetEntry(StingrayMesh.StateMachineRef, StateMachineID, SearchAll=True, IgnorePatch=False)
     if state_machine_entry and not state_machine_entry.IsLoaded:
         state_machine_entry.Load(False, False)
-    if MakeBlendObject and bones_entry and state_machine_entry: CreateModel(StingrayMesh, str(ID), Global_BoneNames, bones_entry.LoadedData, state_machine_entry.LoadedData)
-    elif MakeBlendObject: CreateModel(StingrayMesh, str(ID), Global_BoneNames, None, None)
+    if MakeBlendObject and bones_entry and state_machine_entry: 
+        CreateModel(StingrayMesh, str(ID), Global_BoneNames, bones_entry.LoadedData, state_machine_entry.LoadedData)
+    elif MakeBlendObject: 
+        CreateModel(StingrayMesh, str(ID), Global_BoneNames, None, None)
     return StingrayMesh
 
 def SaveStingrayMesh(self,ID, TocData, GpuData, StreamData, StingrayMesh):
@@ -2419,15 +2421,26 @@ class ImportStingrayMeshOperator(Operator):
     def execute(self, context):
         EntriesIDs = IDsFromString(self.object_id)
         Errors = []
+        StaticMeshError = []
         for EntryID in EntriesIDs:
             if len(EntriesIDs) == 1:
-                Global_TocManager.Load(EntryID, UnitID)
+                try:
+                    Global_TocManager.Load(EntryID, UnitID)
+                except AQ_StaticMeshError as error:
+                    self.report({'ERROR'}, "网格全部为静态网格，开启导入静态网格后再导入！")
             else:
                 try:
                     Global_TocManager.Load(EntryID, UnitID)
+                    
+                except AQ_StaticMeshError as error: # 单独捕获静态网格错误，其他错误另外归类
+                    StaticMeshError.append(EntryID)
                 except Exception as error:
                     Errors.append([EntryID, error])
 
+        # 单独报告静态网格警告，其他错误另外报告
+        if len(StaticMeshError) > 0:
+            self.report({'WARNING'}, f"导入的多个网格条目中存在全静态网格，ID包括： {StaticMeshError} 无法导入，请开启导入静态网格后再导入")
+        
         if len(Errors) > 0:
             PrettyPrint("\nThese errors occurred while attempting to load meshes...", "error")
             idx = 0
