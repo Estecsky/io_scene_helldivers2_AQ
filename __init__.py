@@ -435,11 +435,14 @@ def GetIDFromTypeName(Name):
     return None
 
 def GetFriendlyNameFromID(ID):
-    for hash_info in Global_NameHashes:
-        if int(ID) == hash_info[0]:
-            if hash_info[1] != "":
-                return hash_info[1]
+    try:
+        hash_info_name = Global_NameHashes[int(ID)]
+        if hash_info_name != "":
+            return str(hash_info_name)
+    except KeyError:
+        pass
     return str(ID)
+    
 
 def GetArchiveNameFromID(EntryID):
     global Global_updatearchivelistCN_list
@@ -450,27 +453,22 @@ def GetArchiveNameFromID(EntryID):
     return ""
 
 def HasFriendlyName(ID):
-    for hash_info in Global_NameHashes:
-        if int(ID) == hash_info[0]:
-            return True
-    return False
+    return (int(ID) in Global_NameHashes)
 
 def AddFriendlyName(ID, Name):
     Global_TocManager.SavedFriendlyNames = []
     Global_TocManager.SavedFriendlyNameIDs = []
-    for hash_info in Global_NameHashes:
-        if int(ID) == hash_info[0]:
-            hash_info[1] = str(Name)
-            SaveFriendlyNames()  # 更新已有ID的名称
-            return
-    Global_NameHashes.append([int(ID), str(Name)])
+
+    Global_NameHashes[int(ID)] = str(Name)
     SaveFriendlyNames()
+
 
 def SaveFriendlyNames():
     with open(Global_friendlynamespath, 'w') as f:
-        for hash_info in Global_NameHashes:
-            if hash_info[1] != "":
-                string = str(hash_info[0]) + " " + str(hash_info[1])
+        for hash_key in Global_NameHashes.keys():
+            hash_value = Global_NameHashes[hash_key]
+            if hash_value != "":
+                string = str(hash_key) + " " + str(hash_value)
                 f.writelines(string+"\n")
 
 
@@ -543,14 +541,14 @@ def LoadTypeHashes():
             parts = line.split(" ")
             Global_TypeHashes.append([int(parts[0], 16), parts[1].replace("\n", "")])
 
-Global_NameHashes = []
+Global_NameHashes = {}
 def LoadNameHashes():
     Loaded = []
     with open(Global_friendlynamespath, 'r') as f:
         for line in f.readlines():
             parts = line.split(" ")
             if int(parts[0]) not in Loaded:
-                Global_NameHashes.append([int(parts[0]), " ".join(parts[1:]).replace("\n", "")])
+                Global_NameHashes[int(parts[0])] = " ".join(parts[1:]).replace("\n", "")
                 Loaded.append(int(parts[0]))
 
 
@@ -2422,6 +2420,7 @@ class ImportStingrayMeshOperator(Operator):
         EntriesIDs = IDsFromString(self.object_id)
         Errors = []
         StaticMeshError = []
+        StaticMeshFriendlyName = []
         for EntryID in EntriesIDs:
             if len(EntriesIDs) == 1:
                 try:
@@ -2439,7 +2438,9 @@ class ImportStingrayMeshOperator(Operator):
 
         # 单独报告静态网格警告，其他错误另外报告
         if len(StaticMeshError) > 0:
-            self.report({'WARNING'}, f"导入的多个网格条目中存在全静态网格，ID包括： {StaticMeshError} 无法导入，请开启导入静态网格后再导入")
+            for entry_id in StaticMeshError:
+                StaticMeshFriendlyName.append(GetFriendlyNameFromID(entry_id))
+            self.report({'WARNING'}, f"导入的多个网格条目中存在全静态网格，ID名称包括： {StaticMeshFriendlyName} 无法导入，请开启导入静态网格后再导入")
         
         if len(Errors) > 0:
             PrettyPrint("\nThese errors occurred while attempting to load meshes...", "error")
@@ -3674,7 +3675,7 @@ class Hd2ToolPanelSettings(PropertyGroup):
     ShowMaterials    : BoolProperty(name="Materials", description = "Show Materials", default = True)
     # ShowAnimations   : BoolProperty(name="Animations", description = "Show Animations", default = False)
     ShowOthers       : BoolProperty(name="Other", description = "Show All Else", default = False)
-    ImportMaterials  : BoolProperty(name="Import Materials", description = "完全导入材质,通过附加利用的纹理,否则创建占位符", default = True)
+    ImportMaterials  : BoolProperty(name="Import Materials", description = "导入材质,会同时导入引用的纹理并打包进Blend文件,否则创建ID占位符空材质。\n默认关闭，因为会增加导入耗时和文件体积，建议在需要研究材质贴图位时开启", default = False)
     ImportLods       : BoolProperty(name="Import LODs", description = "导入LODs", default = False)
     ImportGroup0     : BoolProperty(name="Import Group 0 Only", description = "仅导入第一个顶点组,忽略其他组", default = True)
     ImportCulling    : BoolProperty(name="Import Culling", description = "导入剔除网格", default = False)
