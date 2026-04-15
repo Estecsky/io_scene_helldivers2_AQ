@@ -1608,9 +1608,9 @@ def LoadStingrayUnit(ID, TocData, GpuData, StreamData, Reload, MakeBlendObject, 
     if state_machine_entry and not state_machine_entry.IsLoaded:
         state_machine_entry.Load(False, False)
     if MakeBlendObject and bones_entry and state_machine_entry: 
-        CreateModel(StingrayMesh, str(ID), Global_BoneNames, bones_entry.LoadedData, state_machine_entry.LoadedData)
+        CreateModel(StingrayMesh, str(ID), Global_BoneNames,Global_NameHashes, bones_entry.LoadedData, state_machine_entry.LoadedData)
     elif MakeBlendObject: 
-        CreateModel(StingrayMesh, str(ID), Global_BoneNames, None, None)
+        CreateModel(StingrayMesh, str(ID), Global_BoneNames,Global_NameHashes, None, None)
     return StingrayMesh
 
 def SaveStingrayMesh(self,ID, TocData, GpuData, StreamData, StingrayMesh):
@@ -3834,6 +3834,7 @@ class HellDivers2ToolsPanel(Panel):
             row.prop(scene.Hd2ToolPanelSettings, "ImportMaterials",text="导入材质")
             row.prop(scene.Hd2ToolPanelSettings, "ImportLods",text="导入Lods")
             row.prop(scene.Hd2ToolPanelSettings, "ImportGroup0",text="只导入Group 0")
+            row.prop(addon_prefs,"DisplayFriendlyName_Mesh_Skel", text="在导入网格和骨架时赋予可读名称（如果有）")
             row.prop(addon_prefs, "MakeCollections",text="为每个物体创建集合")
             row.prop(scene.Hd2ToolPanelSettings, "ImportCulling",text="导入剔除网格")
             row.prop(addon_prefs, "ImportStatic",text="导入静态网格（无权重）")
