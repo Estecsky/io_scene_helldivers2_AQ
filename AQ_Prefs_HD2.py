@@ -23,3 +23,9 @@ class AQ_Prefs:
 class AQ_PublicClass(AQ_Prefs):
 
     AQ_ADDON_NAME = basename(dirname(realpath(__file__)))
+    
+class AQ_StaticMeshError(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self): 
+        return repr(self.value)
