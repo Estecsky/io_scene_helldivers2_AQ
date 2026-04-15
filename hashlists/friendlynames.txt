@@ -896,12 +896,12 @@
 11851454873300656628 content/fac_bugs/cha_hunter/cha_hunter
 16642140156128883241 content/fac_bugs/cha_hunter/cha_hunter_tongue
 686568487327854111 content/fac_bugs/cha_warrior/cha_warrior
-14731312854664874139 content/fac_bugs/cha_boomer_nurser/cha_boomer_nurser
+14731312854664874139 抚育喷涌虫（黄胖）
 13929086676903993606 content/fac_bugs/cha_scavenger/cha_scavenger
 4251221953861716889 content/fac_bugs/cha_charger_bull/cha_charger_bull
 15358116161893188517 content/fac_bugs/cha_warrior_big/cha_warrior_big
 12300518439027380185 content/fac_bugs/cha_scavenger_predator/cha_scavenger_predator
-3939129929398354246 content/fac_bugs/cha_boomer/cha_boomer
+3939129929398354246 胆汁喷涌虫（绿胖）
 11669807341511884260 content/fac_bugs/cha_warrior_plus/cha_warrior_plus
 8261922003134896957 content/fac_bugs/cha_scavenger_spitter/cha_scavenger_spitter
 13707236614338800569 content/fac_bugs/cha_warrior/cha_warrior_tier_1
@@ -1234,7 +1234,7 @@
 7049905600803600442 content/planet_forest_swamp/assets/organic/trees/gnarly_tree_02
 13081660897026904544 content/env_super_earth/habs/props/tire_stack_04
 16776692261271397993 content/env_super_earth/habs/props/tire_stack_02
-14748816422034837943 content/fac_bugs/cha_boomer/cha_boomer_tier_2
+14748816422034837943 胆汁喷涌虫2（n10绿胖）
 3865797767236207742 战备 LAS-99 类星体加农炮
 11744930164547489566 content/env_super_earth/military_base/scrap/radar_wagon
 3334154476571242570 content/env_bugs/assets/gameplay/bug_spawner_small_01
@@ -3972,3 +3972,4 @@
 7537808846485703056 AX/TX-13 "护卫犬" 腐息（毒气狗） 武器
 4361428863637469552 LAS-13 三叉戟
 8509380141312129223 EAT-411 荡平者
+11781875241940413332 爆裂喷涌虫 （遁地绿胖）
