@@ -1310,6 +1310,9 @@ class SerializeFunctions:
     def SerializeVec2HalfComponent(f: MemoryStream, value):
         return f.vec2_half(value)
         
+    def SerializeVec3HalfComponent(f: MemoryStream, value):
+        return f.vec3_half(value)
+    
     def SerializeVec4HalfComponent(f: MemoryStream, value):
         if isinstance(value, float):
             return f.vec4_half([value,value,value,value])
@@ -1340,6 +1343,7 @@ class StreamComponentFormat:
     VEC4_1010102 = 25
     UNK_NORMAL = 26
     VEC2_HALF = 29
+    VEC3_HALF = 30
     VEC4_HALF = 31
     UNKNOWN_TYPE = -1
             
@@ -1366,6 +1370,7 @@ class FUNCTION_LUTS:
         StreamComponentFormat.VEC4_1010102: SerializeFunctions.SerializeVec41010102Component,
         StreamComponentFormat.UNK_NORMAL: SerializeFunctions.SerializeUnkNormalComponent,
         StreamComponentFormat.VEC2_HALF: SerializeFunctions.SerializeVec2HalfComponent,
+        StreamComponentFormat.VEC3_HALF: SerializeFunctions.SerializeVec3HalfComponent,
         StreamComponentFormat.VEC4_HALF: SerializeFunctions.SerializeVec4HalfComponent
     }
     
