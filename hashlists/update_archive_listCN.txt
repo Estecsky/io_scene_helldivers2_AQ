@@ -1,4 +1,4 @@
-本地更新时间：2026-04-15 16:25:27.975
+本地更新时间：2026-04-28 11:51:22.719
 0089bbe3e284fcaa#战备#榴弹发射器
 009da023c64d178d#大概环境物体#有虫子地形常见的发光蘑菇
 00c928ec7e330f9e#大概环境物体#None
@@ -746,7 +746,7 @@ None#None#None
 60a3c45e1f64f2d1#未知#None
 60cbc9458302a275#大概环境物体#None
 60e0f2e800173da1#无网格#j
-6104a2fc6ba869ca#战备#超级大炮炮弹 六种炮弹包括弹药架都在里面
+6104a2fc6ba869ca#战备#超级大炮炮弹以及音效
 6154252a7226b73c#无网格#None
 6162bd6b510c4afd#无网格#None
 617d3a2d9b57c7af#已无法搜索#（已搜索不到该文件）
@@ -3551,7 +3551,7 @@ b97df541a966620a#敌人#御门者
 409052c3b344d741#None#None
 40c4758f372a1801#大概环境物体#None
 40c5300ca89b0b8e#None#None
-414feae0e1b4ce15#其他#None
+414feae0e1b4ce15#枪配件#SMG-34弹鼓
 424af8359dcdaaf8#None#None
 43f2415945df0792#未知#None
 45b59386aefe3035#None#None
@@ -3580,7 +3580,7 @@ b97df541a966620a#敌人#御门者
 5b73f98b008c964a#None#None
 5bd4fd9f1c128d32#未知#None
 5d13dc5a2ca98db8#None#None
-5e264395c66c0013#其他#SMG-34弹夹？
+5e264395c66c0013#枪配件#SMG-34短弹匣
 5e3d8b2230416187#None#None
 5e40404d846b2b00#未知#None
 5f39890ef062ffa1#None#None
@@ -3588,7 +3588,7 @@ b97df541a966620a#敌人#御门者
 60fb48ea785b8ae8#None#None
 61af2936b803a374#未知#None
 6398f212e5044776#None#None
-63bd4fd7d65199fe#其他#SMD-34 配件
+63bd4fd7d65199fe#枪配件#SMD-34 配件
 64c37a90c0d906de#None#None
 64c6378a76c88f96#未知#None
 65bd4de1a845c629#None#None
