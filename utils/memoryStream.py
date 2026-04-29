@@ -110,6 +110,11 @@ class MemoryStream:
         if len(value) != 3:
             value = self.__resize_vec(value, 3)
         return [self.float32(value[0]), self.float32(value[1]), self.float32(value[2])]
+    
+    def vec4_float(self, value):
+        if len(value) != 4:
+            value = self.__resize_vec(value, 4)
+        return [self.float32(value[0]), self.float32(value[1]), self.float32(value[2]), self.float32(value[3])]
 
     def vec2_half(self, value):
         if len(value) != 2:
@@ -126,6 +131,21 @@ class MemoryStream:
             value = self.__resize_vec(value, 4)
         return [self.float16(value[0]), self.float16(value[1]), self.float16(value[2]), self.float16(value[3])]
 
+    def vec2_int8(self, value):
+        if len(value) != 2:
+            value = self.__resize_vec(value, 2)
+        return [self.int8(value[0]), self.int8(value[1])]
+
+    def vec3_int8(self, value):
+        if len(value) != 3:
+            value = self.__resize_vec(value, 3)
+        return [self.int8(value[0]), self.int8(value[1]), self.int8(value[2])]
+
+    def vec4_int8(self, value):
+        if len(value) != 4:
+            value = self.__resize_vec(value, 4)
+        return [self.int8(value[0]), self.int8(value[1]), self.int8(value[2]), self.int8(value[3])]
+
     def vec4_uint8(self, value):
         if len(value) != 4:
             value = self.__resize_vec(value, 4)
@@ -135,6 +155,16 @@ class MemoryStream:
         if len(value) != 4:
             value = self.__resize_vec(value, 4)
         return [self.uint16(value[0]), self.uint16(value[1]), self.uint16(value[2]), self.uint16(value[3])]
+
+    def vec2_uint32(self, value):
+        if len(value) != 2:
+            value = self.__resize_vec(value, 2)
+        return [self.uint32(value[0]), self.uint32(value[1])]
+
+    def vec3_uint32(self, value):
+        if len(value) != 3:
+            value = self.__resize_vec(value, 3)
+        return [self.uint32(value[0]), self.uint32(value[1]), self.uint32(value[2])]
 
     def vec4_uint32(self, value):
         if len(value) != 4:
