@@ -306,7 +306,7 @@ Global_Materials = (
         ("basic+Fixed", "Basic+", "A basic material with a color, normal, and PBR map which renders in the UI, Sourced from a SEAF NPC"),
         ("basic", "Basic", "A basic material with a color, normal, and PBR map. Sourced from a trash bag prop."),
         ("alphaclip", "Alpha Clip", "金属度在颜色贴图的alpha通道，A material that supports an alpha mask which does not render in the UI. Sourced from a skeleton pile"),
-        ("alphaclip+", "Alpha Clip+", "一个支持alpha遮罩的材质，金属度在颜色贴图的alpha通道，带有额外的发光功能，来自机器人生物处理器"),
+        ("alphaclip+", "Alpha Clip+", "一个支持alpha遮罩的材质，金属度在颜色贴图的alpha通道，带有额外的发光功能，不会在UI中显示，来自机器人生物处理器"),
 
     )
 
