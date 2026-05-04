@@ -2,7 +2,7 @@
 ## 不要下release版本！！！！直接下main分支文件
 ## 点击下载：[io_scene_helldivers2_AQ](https://github.com/Estecsky/io_scene_helldivers2_AQ/archive/refs/heads/main.zip)
 
-# 个人魔改版
+# [AQ_Ex](https://space.bilibili.com/3493298962434150)魔改版
 - 添加新材质(泛光，流光，advanced，alpha clip，玻璃等)
 - 顶部信息按钮会跳转到[Archive ID 中文收集表](https://www.kdocs.cn/l/csRnAs7QlZvQ)
 - 添加Patch重命名功能与新建Patch时调整序号功能，支持自动填充为基础资产的重命名
