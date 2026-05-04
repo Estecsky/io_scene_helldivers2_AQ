@@ -1173,6 +1173,7 @@ class TocManager():
             for Archive in self.SearchArchives:
                 if Archive.HasEntry(FileID, TypeID):
                     return self.LoadArchive(Archive.Path, False).GetEntry(FileID, TypeID)
+            PrettyPrint(f"Could not find entry of FileID: {FileID} TypeID: {TypeID}")
         return None
 
     def Load(self, FileID, TypeID, Reload=False, SearchAll=False):
