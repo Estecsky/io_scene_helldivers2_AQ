@@ -3,8 +3,8 @@
         "logs": [
             {
                 "filename": "<system>",
-                "timestamp": "20:32:00.128",
-                "unix_time": 1777638720128,
+                "timestamp": "17:31:52.556",
+                "unix_time": 1777887112556,
                 "level": "info",
                 "args": [
                     "脚本环境(2.0)初始化..."
@@ -12,8 +12,8 @@
             },
             {
                 "filename": "<system>",
-                "timestamp": "20:32:00.131",
-                "unix_time": 1777638720131,
+                "timestamp": "17:31:52.559",
+                "unix_time": 1777887112559,
                 "level": "info",
                 "args": [
                     "已开始执行"
@@ -21,8 +21,8 @@
             },
             {
                 "filename": "<system>",
-                "timestamp": "20:32:00.233",
-                "unix_time": 1777638720233,
+                "timestamp": "17:31:52.796",
+                "unix_time": 1777887112796,
                 "level": "info",
                 "args": [
                     "执行完毕"
@@ -9408,7 +9408,7 @@
             [
                 "f684a08f07d67b9d",
                 "音频",
-                "日语舰桥语音（民主官，船员，舰桥广播"
+                "nü"
             ],
             [
                 "f6b59d283df68ad0",
