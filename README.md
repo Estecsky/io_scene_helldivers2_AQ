@@ -1,5 +1,3 @@
-## 不要下release版本！！！！直接下main分支文件
-## 不要下release版本！！！！直接下main分支文件
 ## 点击下载：[io_scene_helldivers2_AQ](https://github.com/Estecsky/io_scene_helldivers2_AQ/archive/refs/heads/main.zip)
 
 # [AQ_Ex](https://space.bilibili.com/3493298962434150)个人魔改版
