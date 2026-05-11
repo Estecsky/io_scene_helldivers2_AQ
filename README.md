@@ -25,5 +25,5 @@
 ### 可在插件偏好属性中检查并更新，需要有能访问GitHub的代理网络
 
 # 参考
-- Toasted modding team 制作[原始版本](https://github.com/Estecsky/AQ_Toolkit)
+- Toasted modding team 制作[原始版本](https://github.com/kboykboy2/io_scene_helldivers2)
 - 部分代码与功能参考Boxofbiscuits97的[HD2SDK-CommunityEdition](https://github.com/Boxofbiscuits97/HD2SDK-CommunityEdition)
